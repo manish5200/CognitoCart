@@ -9,7 +9,6 @@ import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
 public class SmartcartApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(SmartcartApplication.class, args);
+        SpringApplication.run(SmartcartApplication.class, args);
 	}
-
 }
