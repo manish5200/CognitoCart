@@ -1,7 +1,6 @@
 package com.manish.smartcart.config.jwt;
 
-import com.manish.smartcart.config.UsersUserDetails;
-import com.manish.smartcart.config.UsersUserDetailsService;
+import com.manish.smartcart.config.CustomUserDetailsService;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -11,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -22,10 +20,16 @@ import java.io.IOException;
 public class JwtFilter extends OncePerRequestFilter {
 
     @Autowired
-    private UserDetailsService userDetailsService;
+    private CustomUserDetailsService userDetailsService;
 
     @Autowired
-    private JwtUtilService jwtService;
+    private JwtUtil jwtUtil;
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return request.getServletPath().startsWith("/auth");
+    }
+
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -39,7 +43,7 @@ public class JwtFilter extends OncePerRequestFilter {
         }
         authToken = header.substring(7);
         try{
-            username = jwtService.extractUsername(authToken); // Uses JwtService
+            username = jwtUtil.extractUsername(authToken); // Uses JwtService
         } catch (Exception e) {
             filterChain.doFilter(request,response);
             return;
@@ -48,7 +52,7 @@ public class JwtFilter extends OncePerRequestFilter {
         if(username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                   try{
                       UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                      if(jwtService.validateToken(authToken,userDetails)){
+                      if(jwtUtil.validateToken(authToken,userDetails)){
                           UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
                                   userDetails,
                                   null,
@@ -58,7 +62,8 @@ public class JwtFilter extends OncePerRequestFilter {
                       }
 
                   }catch (JwtException e){
-                      response.sendError(HttpServletResponse.SC_UNAUTHORIZED,"Invalid token");
+                      //response.sendError(HttpServletResponse.SC_UNAUTHORIZED,"Invalid token");
+                      SecurityContextHolder.clearContext();
                   }
         }
          filterChain.doFilter(request,response);

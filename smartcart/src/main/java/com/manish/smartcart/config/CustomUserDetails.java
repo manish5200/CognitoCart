@@ -5,18 +5,17 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.List;
 
-public class UsersUserDetails implements UserDetails {
+public class CustomUserDetails implements UserDetails {
 
     private String email; //will be used as username
     private String password;
     private List<GrantedAuthority>authorities;
 
-    public UsersUserDetails(Users users) {
+    public CustomUserDetails(Users users) {
         this.email = users.getEmail();
         this.password = users.getPassword();
         String role = users.getRole().name();

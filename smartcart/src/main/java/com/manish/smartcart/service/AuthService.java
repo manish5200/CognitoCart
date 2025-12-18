@@ -1,9 +1,10 @@
 package com.manish.smartcart.service;
 
-import com.manish.smartcart.config.jwt.JwtUtilService;
-import com.manish.smartcart.dto.AuthRequest;
-import com.manish.smartcart.dto.LoginRequest;
+import com.manish.smartcart.config.jwt.JwtUtil;
+import com.manish.smartcart.dto.*;
 import com.manish.smartcart.enums.Role;
+import com.manish.smartcart.model.CustomerProfile;
+import com.manish.smartcart.model.SellerProfile;
 import com.manish.smartcart.model.Users;
 import com.manish.smartcart.repository.UsersRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -31,40 +33,40 @@ public class AuthService {
     private AuthenticationManager authenticationManager;
 
     @Autowired
-    private JwtUtilService jwtService;
+    private JwtUtil jwtService;
 
-    //Register
-    public ResponseEntity<?> register(AuthRequest authRequest) {
-        try {
-            String email = authRequest.getEmail() == null ? null : authRequest.getEmail();
-
-            if (email == null || email.isBlank()) {
-                return ResponseEntity.badRequest().body(Map.of("error", "email is required"));
-            }
-
-            if (usersRepository.existsByEmail(email)) {
-                return ResponseEntity.badRequest().body(Map.of("error", "email already exists"));
-            }
-
-            Users newUser = new Users();
-            newUser.setName(authRequest.getName().trim());
-            newUser.setEmail(email);
-            newUser.setPassword(passwordEncoder.encode(authRequest.getPassword()));
-            newUser.setRole(authRequest.getRole() != null ? authRequest.getRole() : Role.CUSTOMER);
-            Users savedUser = usersRepository.save(newUser);
-
-            //don't expose hashed password
-            Map<String, Object> body = new LinkedHashMap<>();
-            body.put("id", savedUser.getId());
-            body.put("name", savedUser.getName());
-            body.put("email", savedUser.getEmail());
-            body.put("role", savedUser.getRole());
-            body.put("createdAt", savedUser.getCreatedAt());
-            return ResponseEntity.status(HttpStatus.CREATED).body(body);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("Error in registering", e.getMessage()));
-        }
-    }
+//    //Register
+//    public ResponseEntity<?> register(AuthRequest authRequest) {
+//        try {
+//            String email = authRequest.getEmail() == null ? null : authRequest.getEmail();
+//
+//            if (email == null || email.isBlank()) {
+//                return ResponseEntity.badRequest().body(Map.of("error", "email is required"));
+//            }
+//
+//            if (usersRepository.existsByEmail(email)) {
+//                return ResponseEntity.badRequest().body(Map.of("error", "email already exists"));
+//            }
+//
+//            Users newUser = new Users();
+//            newUser.setName(authRequest.getName().trim());
+//            newUser.setEmail(email);
+//            newUser.setPassword(passwordEncoder.encode(authRequest.getPassword()));
+//            newUser.setRole(authRequest.getRole() != null ? authRequest.getRole() : Role.CUSTOMER);
+//            Users savedUser = usersRepository.save(newUser);
+//
+//            //don't expose hashed password
+//            Map<String, Object> body = new LinkedHashMap<>();
+//            body.put("id", savedUser.getId());
+//            body.put("name", savedUser.getName());
+//            body.put("email", savedUser.getEmail());
+//            body.put("role", savedUser.getRole());
+//            body.put("createdAt", savedUser.getCreatedAt());
+//            return ResponseEntity.status(HttpStatus.CREATED).body(body);
+//        } catch (Exception e) {
+//            return ResponseEntity.badRequest().body(Map.of("Error in registering", e.getMessage()));
+//        }
+//    }
 
     //Login
    public ResponseEntity<?>login(LoginRequest loginRequest){
@@ -74,7 +76,8 @@ public class AuthService {
 
              if(authentication.isAuthenticated()){
                   String token = jwtService.generateToken(loginRequest.getEmail());
-                  return ResponseEntity.status(HttpStatus.OK).body(Map.of(token,"status : 200"));
+                  String role = usersRepository.findByEmail(loginRequest.getEmail()).orElseThrow(()-> new NullPointerException("Error in finding the role.")).getRole().name();
+                  return ResponseEntity.status(HttpStatus.OK).body(new LoginResponse(token,200,role));
              }else{
                  return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "username or password incorrect"));
              }
@@ -83,5 +86,101 @@ public class AuthService {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("Error in login", e.getMessage()));
          }
     }
+
+
+
+    public ResponseEntity<?>registerCustomer(CustomerAuthRequest customerAuthRequest){
+                 try{
+                     // 1. Validate email
+                     String email = customerAuthRequest.getEmail() == null ? null : customerAuthRequest.getEmail();
+                     if(email == null){
+                         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "email is required"));
+                     }
+                     if(usersRepository.existsByEmail(email)){
+                         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "email already exists"));
+                     }
+                     String hashedPassword = passwordEncoder.encode(customerAuthRequest.getPassword());
+
+                     // 2. Create User
+                     Users user = new Users(email,hashedPassword,Role.CUSTOMER);
+
+                     // 3. Create Customer Profile
+                     CustomerProfile customerProfile = new CustomerProfile();
+                     customerProfile.setName(customerAuthRequest.getName());
+                     customerProfile.setPhone(customerAuthRequest.getPhone());
+                     customerProfile.setDefaultShippingAddress(customerAuthRequest.getShippingAdder());
+                     customerProfile.setDefaultBillingAddress(customerAuthRequest.getBillingAdder());
+
+                     // 4. Link both sides (VERY IMPORTANT)
+                     user.setCustomerProfile(customerProfile);
+
+                     // 5. Save only user (cascade persists profile)
+                     Users savedUser = usersRepository.save(user);
+
+
+                     //don't expose hashed password
+                     Map<String,Object> body = new LinkedHashMap<>();
+                     body.put("id", customerProfile.getId());
+                     body.put("name", customerProfile.getName());
+                     body.put("email", savedUser.getEmail());
+                     body.put("role", savedUser.getRole());
+                     body.put("createdAt", savedUser.getCreatedAt());
+                     body.put("phone" , customerProfile.getPhone());
+
+                     return ResponseEntity.status(HttpStatus.OK).body(Map.of("Customer registered successfully.✅",body));
+
+                 }catch(Exception e){
+                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("Error in registerCustomer", e.getMessage()));
+                 }
+    }
+
+
+
+    //Register Seller
+    public ResponseEntity<?>registerSeller(SellerAuthRequest sellerAuthRequest){
+        try{
+            // 1. Validate email
+            String email = sellerAuthRequest.getEmail() == null ? null : sellerAuthRequest.getEmail();
+            if(email == null){
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "email is required"));
+            }
+            if(usersRepository.existsByEmail(email)){
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "email already exists"));
+            }
+            String hashedPassword = passwordEncoder.encode(sellerAuthRequest.getPassword());
+
+            // 2. Create User
+            Users user = new Users(email,hashedPassword,Role.SELLER);
+
+            // 3. Create Customer Profile
+            SellerProfile sellerProfile = new SellerProfile();
+            sellerProfile.setStoreName(sellerAuthRequest.getStoreName());
+            sellerProfile.setBusinessAddress(sellerAuthRequest.getBusinessAdder());
+            sellerProfile.setGstin(sellerAuthRequest.getGstin());
+            sellerProfile.setPanCard(sellerAuthRequest.getPanCard());
+            // 4. Link both sides (VERY IMPORTANT)
+            user.setSellerProfile(sellerProfile);
+
+            // 5. Save only user (cascade persists profile)
+            Users savedUser = usersRepository.save(user);
+
+
+            //don't expose hashed password
+            Map<String,Object> body = new LinkedHashMap<>();
+            body.put("id", sellerProfile.getId());
+            body.put("name", sellerProfile.getStoreName());
+            body.put("Business Address", sellerProfile.getBusinessAddress());
+            body.put("GST IN", sellerProfile.getGstin());
+            body.put("PAN CARD" , sellerProfile.getPanCard());
+            body.put("email", savedUser.getEmail());
+            body.put("role", savedUser.getRole());
+            body.put("createdAt", savedUser.getCreatedAt());
+            return ResponseEntity.status(HttpStatus.OK).body(Map.of("Seller registered successfully.✅",body));
+
+        }catch(Exception e){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("Error in registering seller.❌", e.getMessage()));
+        }
+    }
+
 
 }
