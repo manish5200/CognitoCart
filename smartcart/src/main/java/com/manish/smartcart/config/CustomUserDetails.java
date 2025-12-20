@@ -11,16 +11,23 @@ import java.util.List;
 
 public class CustomUserDetails implements UserDetails {
 
+    private Long userId;
     private String email; //will be used as username
     private String password;
     private List<GrantedAuthority>authorities;
 
     public CustomUserDetails(Users users) {
+        this.userId = users.getId();
         this.email = users.getEmail();
         this.password = users.getPassword();
         String role = users.getRole().name();
         String prefixedRole = "ROLE_" + role;
         this.authorities = List.of(new SimpleGrantedAuthority(prefixedRole));
+    }
+
+    // Getter for the ID so the Controller can access it
+    public Long getUserId() {
+        return userId;
     }
 
     @Override

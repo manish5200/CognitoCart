@@ -1,5 +1,6 @@
 package com.manish.smartcart.model.product;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -56,9 +57,18 @@ public class Product {
     @Column(name = "seller_id", nullable = false)
     private Long sellerId; // Loose coupling for microservices
 
+    // This prevents "HttpMessageNotWritableException" when returning a Product in JSON.
+    // It stops Jackson from trying to load Hibernate's internal proxy fields
+    // after the database session is closed.
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id")
+    @JoinColumn(name = "category_id",
+    foreignKey = @ForeignKey(name = "fk_product_category"))
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Category category;
+
+    // Inside your Product class
+    @Transient
+    private Long categoryId; // Used only for mapping the incoming JSON ID
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Review> reviews = new ArrayList<>();
@@ -215,5 +225,12 @@ public class Product {
 
     public void setIsAvailable(Boolean available) {
         isAvailable = available;
+    }
+    public Long getCategoryId() {
+        return categoryId;
+    }
+
+    public void setCategoryId(Long categoryId) {
+        this.categoryId = categoryId;
     }
 }

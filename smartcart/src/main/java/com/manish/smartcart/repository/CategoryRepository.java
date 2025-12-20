@@ -15,4 +15,8 @@ public interface CategoryRepository extends JpaRepository<Category,Long> {
     // Get all top-level categories for the navbar
     List<Category> findByParentCategoryIsNull();
 
+    // Useful if you want to look up categories by name in your service
+    Optional<Category> findByNameIgnoreCase(String name);
+
+    List<Category> findByParentCategoryId(Long currentId);
 }

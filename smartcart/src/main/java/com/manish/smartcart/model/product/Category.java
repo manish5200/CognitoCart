@@ -1,5 +1,9 @@
 package com.manish.smartcart.model.product;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -14,6 +18,8 @@ import java.util.List;
 
 @Entity
 @Table(name = "categories")
+// Add this at the top of the class to skip any weird unknown JSON fields
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Category {
 
     @Id
@@ -27,18 +33,19 @@ public class Category {
     @Column(unique = true)
     private String slug; // Smart: e.g., "men-footwear" // Smart: For SEO URLs (e.g., /category/laptops)
 
+    // Prevents "no session" errors when serializing the parent-child relationship.
+    // This allows the JSON to show the category details without crashing on
+    // Hibernate's lazy-loading proxies.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Category parentCategory; //// The "Parent" node
 
+    @JsonIgnore
     @OneToMany(mappedBy = "parentCategory", cascade = CascadeType.ALL)
     private List<Category> subCategories = new ArrayList<>();
 
     public Category() {
-    }
-    public Category(String name, String slug) {
-        this.name = name;
-        this.slug = slug;
     }
 
     public Long getId() {

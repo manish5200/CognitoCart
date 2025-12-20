@@ -166,4 +166,42 @@ public class AuthService {
     }
 
 
+    public ResponseEntity<?>registerAdmin(AdminAuthRequest admin){
+        try{
+
+            // 1. Validate email and role
+            String email = admin.getEmail() == null ? null : admin.getEmail();
+            if(email == null){
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "email is required"));
+            }
+            if(usersRepository.existsByEmail(email)){
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "email already exists"));
+            }
+
+            String roleString = admin.getRole();
+            Role role = roleString == null ||
+                    roleString.isBlank() ? Role.ADMIN : Role.valueOf(roleString);
+
+            if(role != Role.ADMIN){
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Invalid role"));
+            }
+
+            String hashedPassword = passwordEncoder.encode(admin.getPassword());
+
+            Users user = new Users(email,hashedPassword,role);
+            Users savedUser = usersRepository.save(user);
+            Map<String,Object> body = new LinkedHashMap<>();
+            body.put("id", savedUser.getId());
+            body.put("email", savedUser.getEmail());
+            body.put("role", savedUser.getRole());
+            body.put("createdAt", savedUser.getCreatedAt());
+            return ResponseEntity.status(HttpStatus.CREATED).body(body);
+
+        }catch(Exception e){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("Error in registerAdmin", e.getMessage()));
+        }
+    }
+
+
+
 }

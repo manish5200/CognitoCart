@@ -1,9 +1,6 @@
 package com.manish.smartcart.controller;
 
-import com.manish.smartcart.dto.AuthRequest;
-import com.manish.smartcart.dto.CustomerAuthRequest;
-import com.manish.smartcart.dto.LoginRequest;
-import com.manish.smartcart.dto.SellerAuthRequest;
+import com.manish.smartcart.dto.*;
 import com.manish.smartcart.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +26,12 @@ public class AuthController {
     @PostMapping("/register/seller")
     public ResponseEntity<?>registerCustomer(@RequestBody SellerAuthRequest authRequest){
         return authService.registerSeller(authRequest);
+    }
+
+    //Register Admin
+    @PostMapping("/register/admin")
+    public ResponseEntity<?>registerAdmin(@RequestBody AdminAuthRequest authRequest){
+        return authService.registerAdmin(authRequest);
     }
 
     //Login
