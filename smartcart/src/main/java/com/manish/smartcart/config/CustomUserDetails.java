@@ -1,6 +1,6 @@
 package com.manish.smartcart.config;
 
-import com.manish.smartcart.model.Users;
+import com.manish.smartcart.model.user.Users;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

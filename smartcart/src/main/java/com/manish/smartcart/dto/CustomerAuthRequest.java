@@ -1,5 +1,6 @@
 package com.manish.smartcart.dto;
 
+import com.manish.smartcart.enums.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -17,6 +18,8 @@ public class CustomerAuthRequest {
     @Size(message = "Password must me at least 4 characters")
     private String password;
 
+    private String role;
+
     private String phone;
 
     private String shippingAdder;
@@ -30,6 +33,7 @@ public class CustomerAuthRequest {
         this.name = name;
         this.email = email;
         this.password = password;
+        this.role = Role.CUSTOMER.toString();
         this.phone = phone;
         this.billingAdder = billingAdder;
         this.shippingAdder = shippingAdder;
@@ -81,5 +85,13 @@ public class CustomerAuthRequest {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 }

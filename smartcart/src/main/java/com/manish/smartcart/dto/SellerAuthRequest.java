@@ -16,6 +16,8 @@ public class SellerAuthRequest {
     @Size(min =4, message = "Password must be at least 4 characters")
     private String password;
 
+    private String role;
+
     @NotBlank(message = "Store name is required")
     @Size(max = 255)
     private String storeName;
@@ -31,6 +33,7 @@ public class SellerAuthRequest {
     public SellerAuthRequest(String email, String password, String storeName, String businessAdder, String gstin, String panCard) {
         this.email = email;
         this.password = password;
+        this.role = Role.SELLER.name();
         this.storeName = storeName;
         this.businessAdder = businessAdder;
         this.gstin = gstin;
@@ -83,6 +86,14 @@ public class SellerAuthRequest {
 
     public void setPanCard(String panCard) {
         this.panCard = panCard;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 
 }

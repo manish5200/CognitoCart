@@ -3,9 +3,9 @@ package com.manish.smartcart.service;
 import com.manish.smartcart.config.jwt.JwtUtil;
 import com.manish.smartcart.dto.*;
 import com.manish.smartcart.enums.Role;
-import com.manish.smartcart.model.CustomerProfile;
-import com.manish.smartcart.model.SellerProfile;
-import com.manish.smartcart.model.Users;
+import com.manish.smartcart.model.user.CustomerProfile;
+import com.manish.smartcart.model.user.SellerProfile;
+import com.manish.smartcart.model.user.Users;
 import com.manish.smartcart.repository.UsersRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,7 +15,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -34,40 +33,6 @@ public class AuthService {
 
     @Autowired
     private JwtUtil jwtService;
-
-//    //Register
-//    public ResponseEntity<?> register(AuthRequest authRequest) {
-//        try {
-//            String email = authRequest.getEmail() == null ? null : authRequest.getEmail();
-//
-//            if (email == null || email.isBlank()) {
-//                return ResponseEntity.badRequest().body(Map.of("error", "email is required"));
-//            }
-//
-//            if (usersRepository.existsByEmail(email)) {
-//                return ResponseEntity.badRequest().body(Map.of("error", "email already exists"));
-//            }
-//
-//            Users newUser = new Users();
-//            newUser.setName(authRequest.getName().trim());
-//            newUser.setEmail(email);
-//            newUser.setPassword(passwordEncoder.encode(authRequest.getPassword()));
-//            newUser.setRole(authRequest.getRole() != null ? authRequest.getRole() : Role.CUSTOMER);
-//            Users savedUser = usersRepository.save(newUser);
-//
-//            //don't expose hashed password
-//            Map<String, Object> body = new LinkedHashMap<>();
-//            body.put("id", savedUser.getId());
-//            body.put("name", savedUser.getName());
-//            body.put("email", savedUser.getEmail());
-//            body.put("role", savedUser.getRole());
-//            body.put("createdAt", savedUser.getCreatedAt());
-//            return ResponseEntity.status(HttpStatus.CREATED).body(body);
-//        } catch (Exception e) {
-//            return ResponseEntity.badRequest().body(Map.of("Error in registering", e.getMessage()));
-//        }
-//    }
-
     //Login
    public ResponseEntity<?>login(LoginRequest loginRequest){
          try{
@@ -91,7 +56,7 @@ public class AuthService {
 
     public ResponseEntity<?>registerCustomer(CustomerAuthRequest customerAuthRequest){
                  try{
-                     // 1. Validate email
+                     // 1. Validate email and role
                      String email = customerAuthRequest.getEmail() == null ? null : customerAuthRequest.getEmail();
                      if(email == null){
                          return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "email is required"));
@@ -99,10 +64,19 @@ public class AuthService {
                      if(usersRepository.existsByEmail(email)){
                          return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "email already exists"));
                      }
+
+                     String roleString = customerAuthRequest.getRole();
+                     Role role = roleString == null ||
+                             roleString.isBlank() ? Role.CUSTOMER : Role.valueOf(roleString);
+
+                     if(role != Role.CUSTOMER){
+                         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Invalid role"));
+                     }
+
                      String hashedPassword = passwordEncoder.encode(customerAuthRequest.getPassword());
 
                      // 2. Create User
-                     Users user = new Users(email,hashedPassword,Role.CUSTOMER);
+                     Users user = new Users(email,hashedPassword,role);
 
                      // 3. Create Customer Profile
                      CustomerProfile customerProfile = new CustomerProfile();
@@ -147,10 +121,19 @@ public class AuthService {
             if(usersRepository.existsByEmail(email)){
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "email already exists"));
             }
+
+            String roleString = sellerAuthRequest.getRole();
+            Role role = roleString == null ||
+                    roleString.isBlank() ? Role.SELLER : Role.valueOf(roleString);
+
+            if(role != Role.SELLER){
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Invalid role"));
+            }
+
             String hashedPassword = passwordEncoder.encode(sellerAuthRequest.getPassword());
 
             // 2. Create User
-            Users user = new Users(email,hashedPassword,Role.SELLER);
+            Users user = new Users(email,hashedPassword,role);
 
             // 3. Create Customer Profile
             SellerProfile sellerProfile = new SellerProfile();

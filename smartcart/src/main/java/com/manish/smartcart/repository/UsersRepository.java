@@ -1,6 +1,6 @@
 package com.manish.smartcart.repository;
 
-import com.manish.smartcart.model.Users;
+import com.manish.smartcart.model.user.Users;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

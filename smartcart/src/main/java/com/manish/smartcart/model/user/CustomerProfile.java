@@ -1,4 +1,4 @@
-package com.manish.smartcart.model;
+package com.manish.smartcart.model.user;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;

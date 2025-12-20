@@ -1,4 +1,4 @@
-package com.manish.smartcart.model;
+package com.manish.smartcart.model.user;
 
 import com.manish.smartcart.enums.Role;
 import jakarta.persistence.*;
