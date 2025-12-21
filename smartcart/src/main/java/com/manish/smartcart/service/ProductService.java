@@ -1,5 +1,6 @@
 package com.manish.smartcart.service;
 
+import com.manish.smartcart.dto.ProductResponse;
 import com.manish.smartcart.model.product.Category;
 import com.manish.smartcart.model.product.Product;
 import com.manish.smartcart.model.product.Review;
@@ -9,6 +10,8 @@ import com.manish.smartcart.repository.ReviewRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -104,8 +107,19 @@ public class ProductService {
      * Phase 1: Simple retrieval methods. We will add Pagination & Filtering later.
      */
 
-    public List<Product>getAllProducts(){
-        return productRepository.findAll();
+    public List<ProductResponse>getAllProducts(){
+        List<ProductResponse>body = new ArrayList<>();
+        for(Product product: productRepository.findAll()){
+              ProductResponse newProd = new ProductResponse(
+                product.getId(),
+                product.getProductName(),
+                      product.getDescription(),
+                      product.getPrice(),
+                      product.getStockQuantity()
+              );
+              body.add(newProd);
+        }
+        return body;
     }
 
     /**

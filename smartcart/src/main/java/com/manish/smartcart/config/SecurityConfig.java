@@ -4,6 +4,7 @@ import com.manish.smartcart.config.jwt.JwtFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -37,8 +38,9 @@ public class SecurityConfig {
                                     "/swagger-ui.html",
                                     "/v3/api-docs/**",
                                     "/actuator/**",
-                                    "/api/product/public"
+                                    "/api/products"
                                     ).permitAll()
+                            .requestMatchers(HttpMethod.GET, "/api/products").permitAll()
                             .anyRequest().authenticated()
                     )
                     .sessionManagement(session-> session

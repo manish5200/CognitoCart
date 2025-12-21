@@ -29,6 +29,13 @@ public class ProductController {
     @Autowired
     private UsersRepository usersRepository;
 
+
+    //Get Al products
+    @GetMapping
+    public ResponseEntity<?>getAllProducts(){
+         return ResponseEntity.status(HttpStatus.OK).body(Map.of("List of Products",productService.getAllProducts()));
+    }
+
     /**
      * POST: Create a new product (Seller only as for now)
      * Returns 201 Created with the finalized Product (with Slug/SKU)
