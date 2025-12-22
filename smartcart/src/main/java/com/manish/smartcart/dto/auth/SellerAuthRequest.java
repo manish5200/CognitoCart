@@ -1,4 +1,4 @@
-package com.manish.smartcart.dto;
+package com.manish.smartcart.dto.auth;
 
 import com.manish.smartcart.enums.Role;
 import jakarta.validation.constraints.Email;

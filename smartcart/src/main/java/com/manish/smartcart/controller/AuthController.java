@@ -1,6 +1,9 @@
 package com.manish.smartcart.controller;
 
-import com.manish.smartcart.dto.*;
+import com.manish.smartcart.dto.auth.AdminAuthRequest;
+import com.manish.smartcart.dto.auth.CustomerAuthRequest;
+import com.manish.smartcart.dto.auth.LoginRequest;
+import com.manish.smartcart.dto.auth.SellerAuthRequest;
 import com.manish.smartcart.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

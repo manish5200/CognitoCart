@@ -1,6 +1,6 @@
 package com.manish.smartcart.service;
 
-import com.manish.smartcart.dto.ProductResponse;
+import com.manish.smartcart.dto.product.ProductResponse;
 import com.manish.smartcart.model.product.Category;
 import com.manish.smartcart.model.product.Product;
 import com.manish.smartcart.model.product.Review;

@@ -1,4 +1,4 @@
-package com.manish.smartcart.dto;
+package com.manish.smartcart.dto.product;
 
 import java.math.BigDecimal;
 
