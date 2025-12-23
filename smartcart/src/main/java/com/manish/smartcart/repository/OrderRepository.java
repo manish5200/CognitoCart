@@ -1,9 +1,12 @@
 package com.manish.smartcart.repository;
 
+import com.manish.smartcart.enums.OrderStatus;
 import com.manish.smartcart.model.order.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Repository
@@ -14,4 +17,11 @@ public interface OrderRepository extends JpaRepository<Order,Long> {
 
     // Find all orders for a user, newest first
     List<Order> findByUserIdOrderByOrderDateDesc(Long userId);
+
+    //ADMIN DASHBOARD
+    @Query("SELECT SUM(o.total) FROM Order o WHERE o.orderStatus = 'DELIVERED'")
+    BigDecimal calculateRevenue();
+
+    Long countByOrderStatus(OrderStatus status);
+
 }
