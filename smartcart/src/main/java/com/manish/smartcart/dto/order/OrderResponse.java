@@ -16,6 +16,19 @@ public class OrderResponse {
     //List of the items we ordered
     private List<OrderItemDTO> items;
 
+    public OrderResponse(Long orderId, LocalDateTime orderDate, BigDecimal totalAmount, OrderStatus status, Address shippingAddress, List<OrderItemDTO> items) {
+        this.orderId = orderId;
+        this.orderDate = orderDate;
+        this.totalAmount = totalAmount;
+        this.status = status;
+        this.shippingAddress = shippingAddress;
+        this.items = items;
+    }
+
+    public OrderResponse() {
+
+    }
+
     public static class OrderItemDTO{
         private String productName;
         private Integer quantity;
