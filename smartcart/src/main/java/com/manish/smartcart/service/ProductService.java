@@ -3,7 +3,6 @@ package com.manish.smartcart.service;
 import com.manish.smartcart.dto.product.ProductResponse;
 import com.manish.smartcart.model.product.Category;
 import com.manish.smartcart.model.product.Product;
-import com.manish.smartcart.model.product.Review;
 import com.manish.smartcart.repository.CategoryRepository;
 import com.manish.smartcart.repository.ProductRepository;
 import com.manish.smartcart.repository.ReviewRepository;
@@ -136,22 +135,6 @@ public class ProductService {
         return productRepository.findBySlug(slug)
                 .orElseThrow(()-> new RuntimeException("Product not found"));
     }
-
-    /**
-     * Add a review and automatically recalculate the product's average rating.
-     * This is a "Smart" business logic step.
-     * Done by customer only
-     */
-    @Transactional
-    public void addReview(Long productId, Review review) {
-         Product product = productRepository.findById(productId)
-                 .orElseThrow(()->new RuntimeException("Product not found"));
-
-        // Save the review
-        review.setProduct(product);
-        reviewRepository.save(review);
-    }
-
     /**
      * Delete product by using product id.
      * Done by seller or Admin only

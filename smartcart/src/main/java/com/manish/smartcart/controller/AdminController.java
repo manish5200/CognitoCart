@@ -1,7 +1,13 @@
 package com.manish.smartcart.controller;
 
 import com.manish.smartcart.dto.admin.DashboardResponse;
+import com.manish.smartcart.dto.admin.StatusChangeRequest;
+import com.manish.smartcart.dto.order.OrderResponse;
+import com.manish.smartcart.enums.OrderStatus;
+import com.manish.smartcart.mapper.OrderMapper;
+import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.service.AdminService;
+import com.manish.smartcart.service.OrderService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,8 +21,10 @@ import java.util.Map;
 public class AdminController {
 
     private final AdminService adminService;
-    public AdminController(AdminService adminService) {
+    private final OrderMapper orderMapper;
+    public AdminController(AdminService adminService,  OrderMapper orderMapper) {
         this.adminService = adminService;
+        this.orderMapper = orderMapper;
     }
 
 
@@ -35,6 +43,16 @@ public class AdminController {
                 return ResponseEntity.status(HttpStatus.OK).body(adminStats);
             }
 
+        }catch(Exception e){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/change-order-status")
+    public ResponseEntity<?> changeOrderStatus(@RequestBody StatusChangeRequest request){
+        try{
+            Order order = adminService.changeTheStatusOfOrders(request);
+            return ResponseEntity.ok(orderMapper.toOrderResponse(order));
         }catch(Exception e){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
         }

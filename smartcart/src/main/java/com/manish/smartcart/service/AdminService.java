@@ -2,8 +2,10 @@ package com.manish.smartcart.service;
 
 import com.manish.smartcart.dto.admin.DashboardResponse;
 import com.manish.smartcart.dto.admin.LowStockResponse;
+import com.manish.smartcart.dto.admin.StatusChangeRequest;
 import com.manish.smartcart.dto.admin.TopProductDTO;
 import com.manish.smartcart.enums.OrderStatus;
+import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.model.product.Product;
 import com.manish.smartcart.repository.OrderRepository;
 import com.manish.smartcart.repository.ProductRepository;
@@ -67,4 +69,25 @@ public class AdminService {
                 topSellingProducts
         );
     }
+
+
+    // Play with the order
+    public Order changeTheStatusOfOrders(StatusChangeRequest statusChangeRequest) {
+        Order order = orderRepository.findById(statusChangeRequest.getOrderId())
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        // Guard Clause: Only allow movement from PENDING
+        if (order.getOrderStatus() != OrderStatus.PENDING) {
+            throw new RuntimeException("Order is in " + order.getOrderStatus() + " state and cannot be modified.");
+        }
+        try {
+            // Convert String to Enum safely
+            OrderStatus newStatus = OrderStatus.valueOf(statusChangeRequest.getOrderStatus().toUpperCase());
+            order.setOrderStatus(newStatus);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid Order Status provided: " + statusChangeRequest.getOrderStatus());
+        }
+        return orderRepository.save(order);
+    }
+
 }

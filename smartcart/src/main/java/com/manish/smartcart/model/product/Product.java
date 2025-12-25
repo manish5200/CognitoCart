@@ -1,6 +1,7 @@
 package com.manish.smartcart.model.product;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.manish.smartcart.model.feedback.Review;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
