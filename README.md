@@ -4,7 +4,7 @@
 
 ---
 
-[![Java](https://img.shields.io/badge/Java-21-007396?logo=java\&logoColor=white)](https://www.oracle.com/java/) [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0-6DB33F?logo=spring\&logoColor=white)](https://spring.io/projects/spring-boot) [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Java](https://img.shields.io/badge/Java-17-007396?logo=java\&logoColor=white)](https://www.oracle.com/java/) [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0-6DB33F?logo=spring\&logoColor=white)](https://spring.io/projects/spring-boot) [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ## Table of Contents
 
