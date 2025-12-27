@@ -37,10 +37,11 @@ public class SecurityConfig {
                                     "/swagger-ui/**",
                                     "/swagger-ui.html",
                                     "/v3/api-docs/**",
-                                    "/actuator/**",
-                                    "/api/products"
+                                    "/actuator/**"
                                     ).permitAll()
-                            .requestMatchers(HttpMethod.GET, "/api/products").permitAll()
+                            .requestMatchers(HttpMethod.GET,
+                                    "/api/products",
+                                    "/api/products/search").permitAll()
                             .anyRequest().authenticated()
                     )
                     .sessionManagement(session-> session

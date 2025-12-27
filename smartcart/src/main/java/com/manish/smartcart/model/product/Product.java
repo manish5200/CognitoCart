@@ -74,6 +74,17 @@ public class Product {
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Review> reviews = new ArrayList<>();
 
+    //Hibernate will automatically create a secondary table called product_images.
+    //It will have two columns: product_id and image_url.
+    @ElementCollection
+    @CollectionTable(
+            name = "product_images",
+            joinColumns = @JoinColumn(name = "product_id")
+    )
+    @Column(name = "image_url")
+    private List<String> imageUrls = new ArrayList<>();
+
+
     @Version
     private Long version;
 
@@ -234,4 +245,13 @@ public class Product {
     public void setCategoryId(Long categoryId) {
         this.categoryId = categoryId;
     }
+
+    public List<String> getImageUrls() {
+        return imageUrls;
+    }
+
+    public void setImageUrls(List<String> imageUrls) {
+        this.imageUrls = imageUrls;
+    }
+
 }

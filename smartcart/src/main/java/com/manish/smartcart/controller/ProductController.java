@@ -1,11 +1,19 @@
 package com.manish.smartcart.controller;
 
 import com.manish.smartcart.config.CustomUserDetails;
+import com.manish.smartcart.dto.product.ProductRequest;
+import com.manish.smartcart.dto.product.ProductResponse;
+import com.manish.smartcart.dto.product.ProductSearchDTO;
 import com.manish.smartcart.model.product.Product;
 import com.manish.smartcart.repository.UsersRepository;
 import com.manish.smartcart.service.CategoryService;
 import com.manish.smartcart.service.ProductService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -42,13 +50,13 @@ public class ProductController {
      */
     @PostMapping
     @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<?>createProduct(@RequestBody Product product, Authentication authentication) {
+    public ResponseEntity<?>createProduct(@RequestBody ProductRequest productRequest, Authentication authentication) {
         try{
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-            Product createdProduct = productService.createProduct(product,userDetails.getUserId());
+            ProductResponse createdProduct = productService.createProduct(productRequest,userDetails.getUserId());
             return ResponseEntity.status(HttpStatus.CREATED).body(createdProduct);
         }catch(Exception e){
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
         }
     }
 
@@ -121,5 +129,31 @@ public class ProductController {
          }
     }
 
+
+    /**
+     * Advanced Search and Filtering Endpoint
+     * GET /api/products/search?category=Electronics&maxPrice=500&page=0&size=10
+     */
+
+    @GetMapping("/search")
+    public ResponseEntity<?>searchProduct(
+            @Valid ProductSearchDTO searchDTO,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction){
+        try {
+            Sort sort = direction.equalsIgnoreCase("desc") ?
+                    Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+
+            Pageable pageable = PageRequest.of(page, size, sort);
+
+            Page<ProductResponse> result = productService.getFilteredProduct(searchDTO, pageable);
+
+            return ResponseEntity.status(HttpStatus.OK).body(Map.of("Search result",result));
+        }catch (Exception e){
+            return  ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
+        }
+    }
 
 }
