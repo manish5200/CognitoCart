@@ -2,12 +2,9 @@ package com.manish.smartcart.controller;
 
 import com.manish.smartcart.dto.admin.DashboardResponse;
 import com.manish.smartcart.dto.admin.StatusChangeRequest;
-import com.manish.smartcart.dto.order.OrderResponse;
-import com.manish.smartcart.enums.OrderStatus;
 import com.manish.smartcart.mapper.OrderMapper;
 import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.service.AdminService;
-import com.manish.smartcart.service.OrderService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,13 +24,11 @@ public class AdminController {
         this.orderMapper = orderMapper;
     }
 
-
     @GetMapping("/stats")
     public ResponseEntity<?> getStats(
             @RequestParam(defaultValue = "5") int stockThreshold,
             @RequestParam(defaultValue = "0") int pageNumber,
             @RequestParam(defaultValue = "5")int pageSize){
-        try{
             // threshold: items with stock less than this
             // page/size: pagination for the Top Sellers list
             DashboardResponse adminStats = adminService.getAdminStats(stockThreshold, pageNumber, pageSize);
@@ -42,19 +37,11 @@ public class AdminController {
             }else{
                 return ResponseEntity.status(HttpStatus.OK).body(adminStats);
             }
-
-        }catch(Exception e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
-        }
     }
 
     @PostMapping("/change-order-status")
     public ResponseEntity<?> changeOrderStatus(@RequestBody StatusChangeRequest request){
-        try{
             Order order = adminService.changeTheStatusOfOrders(request);
             return ResponseEntity.ok(orderMapper.toOrderResponse(order));
-        }catch(Exception e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
-        }
     }
 }

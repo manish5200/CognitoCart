@@ -8,7 +8,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/reviews")
@@ -25,12 +24,12 @@ public class ReviewController {
             @PathVariable Long productId,
             @RequestBody ReviewRequestDTO  reviewRequestDTO,
             Authentication authentication) {
-        try{
             CustomUserDetails  customUserDetails = (CustomUserDetails) authentication.getPrincipal();
             Long userId = customUserDetails.getUserId();
-            return ResponseEntity.ok(reviewService.addOrUpdateReview(userId, productId, reviewRequestDTO));
-        }catch(Exception e){
-            return ResponseEntity.badRequest().body(Map.of("error",e.getMessage()));
-        }
+            return ResponseEntity
+                    .ok(reviewService.addOrUpdateReview(
+                            userId,
+                            productId,
+                            reviewRequestDTO));
     }
 }

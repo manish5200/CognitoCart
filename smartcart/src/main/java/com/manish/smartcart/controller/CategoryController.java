@@ -9,7 +9,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/categories")
@@ -24,12 +23,8 @@ public class CategoryController{
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?>addCategory(@RequestBody Category category) {
-          try{
-              return ResponseEntity.status(HttpStatus.CREATED)
+        return ResponseEntity.status(HttpStatus.CREATED)
                       .body(categoryService.createCategory(category));
-          }catch(Exception e){
-              return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-          }
     }
     /**
      * POST: Only Admins can create new categories in bulk
@@ -37,12 +32,8 @@ public class CategoryController{
     @PostMapping("/bulk")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?>addCategoryBulk(@RequestBody List<Category> categories) {
-        try{
-            return ResponseEntity.status(HttpStatus.CREATED)
+        return ResponseEntity.status(HttpStatus.CREATED)
                     .body(categoryService.createCategoriesBulk(categories));
-        }catch(Exception e){
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
     }
 
     /**
@@ -51,10 +42,6 @@ public class CategoryController{
 
     @GetMapping
     public ResponseEntity<?> getCategories() {
-         try{
-             return ResponseEntity.ok(categoryService.getAllCategories());
-         } catch (Exception e) {
-             return ResponseEntity.badRequest().body(Map.of("error",e.getMessage()));
-         }
+        return ResponseEntity.ok(categoryService.getAllCategories());
     }
 }

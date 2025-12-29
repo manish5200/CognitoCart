@@ -5,8 +5,10 @@ import com.manish.smartcart.dto.cart.CartRequest;
 import com.manish.smartcart.dto.cart.CartResponse;
 import com.manish.smartcart.model.cart.Cart;
 import com.manish.smartcart.service.CartService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -23,8 +25,7 @@ public class CartController {
     // POST: Add item to cart
     // Request Body: { "productId": 1, "quantity": 2 }
     @PostMapping("/add")
-    public ResponseEntity<?>addItemToCart(@RequestBody CartRequest cartRequest, Authentication authentication){
-          try{
+    public ResponseEntity<?>addItemToCart(@RequestBody @Valid CartRequest cartRequest, Authentication authentication){
               CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
               Cart updatedCart = cartService.addItemToCart(
                       userDetails.getUserId(),
@@ -33,55 +34,45 @@ public class CartController {
               );
               CartResponse cartResponse = new CartResponse().getCartResponse(updatedCart);
               return ResponseEntity.ok().body(Map.of("Cart updated :",cartResponse));
-
-          }catch (Exception e){
-              return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error",e.getMessage()));
-          }
     }
 
     //Cart Summary
     @GetMapping("/summary")
     public ResponseEntity<?> getCartSummary(Authentication authentication){
-           try{
-               CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-                Cart cart = cartService.getCartForUser(userDetails.getUserId());
-                CartResponse cartResponse = new CartResponse().getCartResponse(cart);
-                return ResponseEntity.ok().body(cartResponse);
-           }catch (Exception e){
-               return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error",e.getMessage()));
-           }
+           CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+            Cart cart = cartService.getCartForUser(userDetails.getUserId());
+            CartResponse cartResponse = new CartResponse().getCartResponse(cart);
+            return ResponseEntity.ok().body(cartResponse);
+
     }
 
     @DeleteMapping("/clear")
     public ResponseEntity<?> clearCart(Authentication authentication){
-        try{
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
             Long userId = userDetails.getUserId();
             cartService.clearTheCart(userId);
             return  ResponseEntity.ok().body(Map.of("message","Cart cleared successfully✅"));
-        }catch (Exception e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error",e.getMessage()));
-        }
     }
 
     @PostMapping("/apply-coupon")
-    public ResponseEntity<?> applyCoupon(@RequestParam Double percentage, Authentication authentication){
-        try{
+    public ResponseEntity<?> applyCoupon(@RequestParam @Min(value = 0) @Max(value = 100) Double percentage, Authentication authentication){
+
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
             Long userId = userDetails.getUserId();
-
-            if(percentage < 0 || percentage > 100){
-                throw new Exception("Invalid percentage");
-            }
-
             Cart cart = cartService.applyCoupon(userId, percentage);
 
             CartResponse cartResponse = new CartResponse().getCartResponse(cart);
 
             return ResponseEntity.ok().body(cartResponse);
-        }catch (Exception e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error",e.getMessage()));
-        }
     }
 
+
+    @DeleteMapping("/item/{productId}")
+    public ResponseEntity<?> deleteItemFromCart(@PathVariable("productId") Long productId, Authentication auth){
+            CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+            Long userId = userDetails.getUserId();
+            Cart cart = cartService.removeItemFromCart(userId, productId);
+            CartResponse cartResponse = new CartResponse().getCartResponse(cart);
+            return ResponseEntity.ok().body(cartResponse);
+    }
 }

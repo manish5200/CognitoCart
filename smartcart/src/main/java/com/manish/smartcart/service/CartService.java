@@ -39,25 +39,24 @@ public class CartService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(()-> new RuntimeException("Product not found"));
 
-        if(quantity < 0){
-            throw new RuntimeException("Invalid quantity. Please try again");
-        }
-        if(product.getStockQuantity()<quantity){
-            throw new RuntimeException("Not enough stock available. We will back soon.");
-        }
-
         // 3. Update existing item or add new one
         CartItem cartItem = cartItemRepository.findByCartIdAndProductId(cart.getId(),productId)
                 .orElse(new CartItem());
 
-        //4. check if are getting else add to the new one
+        // RECTIFICATION: Validate against TOTAL quantity (Current in Cart + New Request)
+        int requestedQuantity = (cartItem.getId() == null) ? quantity : cartItem.getQuantity() + quantity;
+        if(requestedQuantity<quantity){
+            throw new RuntimeException("Insufficient stock. Available: " + product.getStockQuantity());
+        }
+
+        //4. check if    are getting else add to the new one
         if(cartItem.getId() == null){
             cartItem.setCart(cart);
             cartItem.setProduct(product);
             cartItem.setPrice(product.getPrice());
             cartItem.setQuantity(quantity);
             //Final add to the list of the cart
-            cart.getItems().add(cartItem);
+            cart.addCartItem(cartItem); // Using helper
         }else{
             cartItem.setQuantity(cartItem.getQuantity() + quantity);
         }
@@ -136,6 +135,24 @@ public class CartService {
         // Rounding to 2 decimal places (Industry Standard)
         cart.setTotalAmount(newTotal.setScale(2, RoundingMode.HALF_UP));
 
+        return cartRepository.save(cart);
+    }
+
+
+
+    //Remove a specific item from the cart
+    @Transactional
+    public Cart removeItemFromCart(Long userId, Long productId){
+        Cart cart = cartRepository.findByUserId(userId)
+                .orElseThrow(()-> new RuntimeException("Cart not found"));
+
+        CartItem itemToRemove = cart.getItems().stream()
+                .filter(item -> item.getProduct().getId().equals(productId))
+                .findFirst()
+                .orElseThrow(()-> new RuntimeException("Item not in the cart"));
+
+        cart.removeCartItem(itemToRemove);
+        updateCartTotal(cart);
         return cartRepository.save(cart);
     }
 

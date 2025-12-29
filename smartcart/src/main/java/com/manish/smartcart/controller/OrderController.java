@@ -11,7 +11,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -25,40 +24,27 @@ public class OrderController {
 
     @PostMapping("/checkout")
     public ResponseEntity<?> placeOrder(@Valid @RequestBody OrderRequest orderRequest, Authentication authentication) {
-        try{
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
             Long userId = userDetails.getUserId();
             OrderResponse orderResponse = orderService.placeOrder(userId,orderRequest);
             return ResponseEntity.status(HttpStatus.OK).body(orderResponse);
-        }catch(Exception e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
-        }
     }
 
 
     @GetMapping("/history")
     public ResponseEntity<?> getOrderHistory(Authentication authentication) {
-        try{
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
             Long userId = userDetails.getUserId();
 
             List<OrderResponse> history = orderService.getOrderHistoryForUser(userId);
             return ResponseEntity.ok(history);
-
-        }catch(Exception e){
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Could not retrieve order history"));
-        }
     }
 
     @PutMapping("/{orderId}/cancel")
     public ResponseEntity<?> cancelOrder(@PathVariable Long orderId, Authentication authentication) {
-        try{
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
             Long userId = userDetails.getUserId();
             OrderResponse orderResponse = orderService.cancelOrder(userId,orderId);
             return ResponseEntity.ok(orderResponse);
-        }catch(Exception e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
-        }
     }
 }

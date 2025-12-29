@@ -20,7 +20,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 
@@ -38,10 +37,12 @@ public class ProductController {
     private UsersRepository usersRepository;
 
 
-    //Get Al products
+    //Get All products
     @GetMapping
     public ResponseEntity<?>getAllProducts(){
-         return ResponseEntity.status(HttpStatus.OK).body(Map.of("List of Products",productService.getAllProducts()));
+         return ResponseEntity
+                 .status(HttpStatus.OK)
+                 .body(Map.of("List of Products",productService.getAllProducts()));
     }
 
     /**
@@ -51,13 +52,10 @@ public class ProductController {
     @PostMapping
     @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<?>createProduct(@RequestBody ProductRequest productRequest, Authentication authentication) {
-        try{
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-            ProductResponse createdProduct = productService.createProduct(productRequest,userDetails.getUserId());
+            ProductResponse createdProduct = productService
+                    .createProduct(productRequest,userDetails.getUserId());
             return ResponseEntity.status(HttpStatus.CREATED).body(createdProduct);
-        }catch(Exception e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
-        }
     }
 
 
@@ -66,11 +64,9 @@ public class ProductController {
      */
     @GetMapping("/{slug}")
     public ResponseEntity<?>getProductBySlug(@PathVariable String slug) {
-         try{
-             return ResponseEntity.status(HttpStatus.OK).body(productService.getProductBySlug(slug));
-         }catch(Exception e){
-             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
-         }
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(productService.getProductBySlug(slug));
+
     }
 
     /**
@@ -79,16 +75,12 @@ public class ProductController {
      */
     @GetMapping("/category/{categoryId}")
     public ResponseEntity<?>getProductByCategoryId(@PathVariable Long categoryId) {
-        try{
             List<Long>allCategoryIds = categoryService.getAllChildCategoryIds(categoryId);
             List<Product>products = productService.getProductsByCategoryIds(allCategoryIds);
 
             // Return 200 OK with empty list if no products,
             // OR handle the case where the parent category ID itself doesn't exist.
             return ResponseEntity.status(HttpStatus.OK).body(products);
-        }catch (Exception e){
-             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error",e.getMessage()));
-        }
     }
 
     /**
@@ -97,16 +89,12 @@ public class ProductController {
     @PatchMapping("/{id}/toggle")
     @PreAuthorize("hasAnyRole('SELLER','ADMIN')")
     public ResponseEntity<?>toggleVisibility(@PathVariable Long id, Authentication authentication) {
-        try{
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
             boolean isAdmin = userDetails.getAuthorities()
                     .stream()
                     .anyMatch(a->a.getAuthority().equals("ROLE_ADMIN"));
             productService.toggleAvailability(id,userDetails.getUserId(),isAdmin);
             return ResponseEntity.ok(Map.of("message", "Visibility updated successfully."));
-        }catch(Exception e){
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
-        }
     }
 
     /**
@@ -115,7 +103,6 @@ public class ProductController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
     public ResponseEntity<?>deleteProduct(@PathVariable Long id, Authentication authentication) {
-         try{
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
              boolean isAdmin = userDetails.getAuthorities()
                      .stream()
@@ -124,9 +111,6 @@ public class ProductController {
 
              productService.deleteProduct(id,userDetails.getUserId(),isAdmin);
              return ResponseEntity.ok(Map.of("message", "Product deleted successfully."));
-         }catch(Exception e){
-             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
-         }
     }
 
 
@@ -142,7 +126,6 @@ public class ProductController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "desc") String direction){
-        try {
             Sort sort = direction.equalsIgnoreCase("desc") ?
                     Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
 
@@ -151,9 +134,6 @@ public class ProductController {
             Page<ProductResponse> result = productService.getFilteredProduct(searchDTO, pageable);
 
             return ResponseEntity.status(HttpStatus.OK).body(Map.of("Search result",result));
-        }catch (Exception e){
-            return  ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
-        }
     }
 
 }

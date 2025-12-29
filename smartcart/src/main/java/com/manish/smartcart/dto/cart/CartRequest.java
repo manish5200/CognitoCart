@@ -1,8 +1,12 @@
 package com.manish.smartcart.dto.cart;
 
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Positive;
+
 public class CartRequest {
 
     private Long productId;
+    @Min(value = 0)
     private Integer quantity;
 
     public CartRequest() {
