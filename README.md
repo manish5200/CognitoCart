@@ -92,9 +92,8 @@ mvn spring-boot:run
 
 **Manish Kumar Singh**
 
-* [LinkedIn](https://www.google.com/search?q=YOUR_LINKEDIN_URL)
-* [Portfolio](https://www.google.com/search?q=YOUR_PORTFOLIO_URL)
-
+* [![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/maniish5200/)
+* 
 Built with ☕ and code during the 100 Days of Code challenge.
 
 ```
