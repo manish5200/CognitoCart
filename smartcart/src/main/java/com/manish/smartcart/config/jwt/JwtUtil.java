@@ -50,7 +50,7 @@ public class JwtUtil {
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
-        return (username.equals(extractUsername(token)) && !isTokenExpired(token));
+        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
     }
 
     // Internal helper methods
@@ -63,7 +63,7 @@ public class JwtUtil {
                return (Claims) Jwts.parser()
                        .verifyWith(getSigningKey())
                        .build()
-                       .parse(token)
+                       .parseSignedClaims(token)
                        .getPayload();
     }
     private boolean isTokenExpired(String token) {
@@ -76,7 +76,7 @@ public class JwtUtil {
     }
 
     private SecretKey getSigningKey(){
-        byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
+        byte[] keyBytes = Decoders.BASE64URL.decode(SECRET_KEY);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 }

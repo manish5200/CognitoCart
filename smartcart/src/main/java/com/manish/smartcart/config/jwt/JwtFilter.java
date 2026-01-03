@@ -1,6 +1,7 @@
 package com.manish.smartcart.config.jwt;
 
 import com.manish.smartcart.config.CustomUserDetailsService;
+import com.manish.smartcart.util.AppConstants;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -34,10 +35,10 @@ public class JwtFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
-        String header = request.getHeader("Authorization");
+        String header = request.getHeader(AppConstants.AUTH_HEADER); // "Authorization"
         String authToken = null;
         String username = null;
-        if(header == null || !header.startsWith("Bearer ")){
+        if(header == null || !header.startsWith(AppConstants.TOKEN_PREFIX)){  //"Bearer "
              filterChain.doFilter(request,response);
              return;
         }

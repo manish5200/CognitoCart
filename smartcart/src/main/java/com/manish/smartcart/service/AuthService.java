@@ -166,9 +166,9 @@ public class AuthService {
     }
 
 
-    public ResponseEntity<?>registerAdmin(AdminAuthRequest admin){
+    //Admin Registration Login -> will delete it later and adds a admin Seeder
+   /* public ResponseEntity<?>registerAdmin(AdminAuthRequest admin){
         try{
-
             // 1. Validate email and role
             String email = admin.getEmail() == null ? null : admin.getEmail();
             if(email == null){
@@ -201,7 +201,6 @@ public class AuthService {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("Error in registerAdmin", e.getMessage()));
         }
     }
-
-
+    */
 
 }

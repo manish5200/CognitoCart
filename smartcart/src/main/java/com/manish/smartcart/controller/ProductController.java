@@ -8,6 +8,12 @@ import com.manish.smartcart.model.product.Product;
 import com.manish.smartcart.repository.UsersRepository;
 import com.manish.smartcart.service.CategoryService;
 import com.manish.smartcart.service.ProductService;
+import com.manish.smartcart.util.AppConstants;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -25,6 +31,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/products")
+@Tag(name = "4. Product Management", description = "Browse, search, and manage products")
 public class ProductController {
 
     @Autowired
@@ -49,6 +56,8 @@ public class ProductController {
      * POST: Create a new product (Seller only as for now)
      * Returns 201 Created with the finalized Product (with Slug/SKU)
      */
+    @Operation(summary = "Add Product (Seller Only)", description = "Creates a new product in the catalog.")
+    @SecurityRequirement(name = "bearerAuth") // Marks this specific method as protected
     @PostMapping
     @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<?>createProduct(@RequestBody ProductRequest productRequest, Authentication authentication) {
@@ -119,13 +128,16 @@ public class ProductController {
      * GET /api/products/search?category=Electronics&maxPrice=500&page=0&size=10
      */
 
+    @Operation(summary = "Search Products",
+            description = "Search products by name, " +
+                    "category, or price range with pagination.")
     @GetMapping("/search")
     public ResponseEntity<?>searchProduct(
             @Valid ProductSearchDTO searchDTO,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "desc") String direction){
+            @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int page,
+            @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size,
+            @RequestParam(defaultValue = AppConstants.DEFAULT_SORT_BY) String sortBy,
+            @RequestParam(defaultValue = AppConstants.DEFAULT_SORT_DIRECTION) String direction){
             Sort sort = direction.equalsIgnoreCase("desc") ?
                     Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
 

@@ -2,6 +2,7 @@ package com.manish.smartcart.model.product;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.manish.smartcart.model.feedback.Review;
+import com.manish.smartcart.util.AppConstants;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -52,8 +53,8 @@ public class Product {
     @Column(name = "tag")
     private Set<String> tags = new HashSet<>(); // Smart: For "Similar Products" search
 
-    private Double averageRating = 0.0; // Denormalized for performance
-    private Integer totalReviews = 0;
+    private Double averageRating = AppConstants.INITIAL_RATING; // Denormalized for performance
+    private Integer totalReviews = AppConstants.INITIAL_REVIEW_COUNT;
 
     @Column(name = "seller_id", nullable = false)
     private Long sellerId; // Loose coupling for microservices

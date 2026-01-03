@@ -14,8 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.List;
-import java.util.Optional;
+
 
 @Service
 public class CartService {
@@ -45,11 +44,11 @@ public class CartService {
 
         // RECTIFICATION: Validate against TOTAL quantity (Current in Cart + New Request)
         int requestedQuantity = (cartItem.getId() == null) ? quantity : cartItem.getQuantity() + quantity;
-        if(requestedQuantity<quantity){
+        if(requestedQuantity > product.getStockQuantity()){
             throw new RuntimeException("Insufficient stock. Available: " + product.getStockQuantity());
         }
 
-        //4. check if    are getting else add to the new one
+        //4. check if are getting else add to the new one
         if(cartItem.getId() == null){
             cartItem.setCart(cart);
             cartItem.setProduct(product);
@@ -69,9 +68,7 @@ public class CartService {
 
     //Helper method to create a cart
     private Cart creatNewCart(Long userId) {
-
-        Users user = usersRepository.findById(userId)
-                .orElseThrow(()-> new RuntimeException("User not found"));
+        Users user = usersRepository.getReferenceById(userId);
         Cart cart = new Cart();
         cart.setUser(user);
         cart.setTotalAmount(BigDecimal.ZERO);
@@ -134,7 +131,6 @@ public class CartService {
 
         // Rounding to 2 decimal places (Industry Standard)
         cart.setTotalAmount(newTotal.setScale(2, RoundingMode.HALF_UP));
-
         return cartRepository.save(cart);
     }
 

@@ -106,9 +106,6 @@ public class OrderService {
        if(order.getOrderStatus() != OrderStatus.PENDING){
            throw new RuntimeException("Order cannot be cancelled. Current status: " + order.getOrderStatus());
        }
-
-
-
         // 3. Inventory Restoration: Return stock to Product table - every product
         // RESTORE STOCK: Loop through items and update products
        for(OrderItem orderItem : order.getOrderItems()) {

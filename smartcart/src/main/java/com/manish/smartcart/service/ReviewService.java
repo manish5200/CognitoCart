@@ -42,7 +42,9 @@ public class ReviewService {
     @Transactional
     public Map<String,Object> addOrUpdateReview(Long userId, Long productId, ReviewRequestDTO  reviewRequestDTO) {
         // 1. Verify the product exists
-        Product product = productRepository.findById(productId).orElseThrow(()-> new RuntimeException("Product not found"));
+        Product product = productRepository
+                .findById(productId)
+                .orElseThrow(()-> new RuntimeException("Product not found"));
 
         // 2. VERIFIED PURCHASE CHECK (Real-World Rule)
         // Ensure user has an order with this product that is 'DELIVERED'
@@ -87,9 +89,12 @@ public class ReviewService {
     }
 
     private void updateProductRatingOnEdit(Product product, Integer oldRating, Integer newRating) {
+        if (product.getTotalReviews() == 0) return; // Defensive check
+
         double currentTotalScore = product.getAverageRating()*product.getTotalReviews();
         double newAverageRating = (currentTotalScore + newRating - oldRating) / product.getTotalReviews();
-        product.setAverageRating(newAverageRating);
+        // Consistent rounding for the UI
+        product.setAverageRating(Math.round(newAverageRating * 10.0) / 10.0);
         productRepository.save(product);
     }
 
@@ -99,8 +104,9 @@ public class ReviewService {
           double newAverageRating = (currentTotalScore + newRating )/newTotalReview;
 
           product.setTotalReviews(newTotalReview);
-          product.setAverageRating(newAverageRating);
-          productRepository.save(product);
+        // Apply rounding here as well
+         product.setAverageRating(Math.round(newAverageRating * 10.0) / 10.0);
+         productRepository.save(product);
     }
 
 }

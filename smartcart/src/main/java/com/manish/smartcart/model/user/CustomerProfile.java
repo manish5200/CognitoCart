@@ -29,12 +29,6 @@ public class CustomerProfile {
     @Size(max = 255)
     private String defaultBillingAddress;
 
-    @ElementCollection
-    @CollectionTable(name = "wishlist", joinColumns = @JoinColumn(name = "customer_id"),
-            foreignKey = @ForeignKey(name = "fk_wishlist_customer"))
-    @Column(name = "product_id")
-    private Set<Long> likedProductIds = new HashSet<>();
-
     public CustomerProfile() {
     }
 
@@ -56,6 +50,4 @@ public class CustomerProfile {
     public void setDefaultShippingAddress(String adder) { this.defaultShippingAddress = adder; }
     public String getDefaultBillingAddress() { return defaultBillingAddress; }
     public void setDefaultBillingAddress(String adder) { this.defaultBillingAddress = adder; }
-    public Set<Long> getLikedProductIds() { return likedProductIds; }
-    public void setLikedProductIds(Set<Long> likedProductIds) { this.likedProductIds = likedProductIds; }
 }

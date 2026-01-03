@@ -3,6 +3,7 @@ package com.manish.smartcart.dto.admin;
 import java.math.BigDecimal;
 import java.util.List;
 
+//Response for Admin Dashboard
 public class DashboardResponse {
 
     private BigDecimal totalRevenue;
