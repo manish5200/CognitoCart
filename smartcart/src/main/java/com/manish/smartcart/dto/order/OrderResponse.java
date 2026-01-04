@@ -9,6 +9,8 @@ import java.util.List;
 
 public class OrderResponse {
     private Long orderId;
+    private String email;
+    private String customerName;
     private LocalDateTime orderDate;
     private BigDecimal totalAmount;
     private OrderStatus status;
@@ -16,8 +18,10 @@ public class OrderResponse {
     //List of the items we ordered
     private List<OrderItemDTO> items;
 
-    public OrderResponse(Long orderId, LocalDateTime orderDate, BigDecimal totalAmount, OrderStatus status, Address shippingAddress, List<OrderItemDTO> items) {
+    public OrderResponse(Long orderId,String email, String customerName, LocalDateTime orderDate, BigDecimal totalAmount, OrderStatus status, Address shippingAddress, List<OrderItemDTO> items) {
         this.orderId = orderId;
+        this.email = email;
+        this.customerName = customerName;
         this.orderDate = orderDate;
         this.totalAmount = totalAmount;
         this.status = status;
@@ -65,6 +69,22 @@ public class OrderResponse {
 
     public void setOrderId(Long orderId) {
         this.orderId = orderId;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getCustomerName() {
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
     }
 
     public LocalDateTime getOrderDate() {

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="">
+<head>
+    <meta charset="UTF-8">
+    <title>Order Confirmation</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6;">
+
+<p>Hi <b>{{CUSTOMER_NAME}}</b>, 👋</p>
+
+<p>
+    Thank you for shopping with <b>{{STORE_NAME}}</b>!<br>
+    We’re happy to let you know that your order has been
+    <b>successfully placed</b>.
+</p>
+
+<hr>
+
+<h3>🧾 Order Details</h3>
+<ul>
+    <li><b>Order ID:</b> {{ORDER_ID}}</li>
+    <li><b>Order Date:</b> {{ORDER_DATE}}</li>
+    <li><b>Payment Method:</b> {{PAYMENT_METHOD}}</li>
+    <li><b>Total Amount:</b> ₹{{TOTAL_AMOUNT}}</li>
+</ul>
+
+<hr>
+
+<h3>📦 Shipping Address</h3>
+<p>{{SHIPPING_ADDRESS}}</p>
+
+<hr>
+
+<h3>🚚 What Happens Next?</h3>
+<ul>
+    <li>We’re preparing your items for shipment.</li>
+    <li>You’ll receive another email once your order is shipped.</li>
+    <li>You can track your order anytime from your account.</li>
+</ul>
+
+<hr>
+
+<p>
+    If you have any questions, feel free to reach out to us at<br>
+    📧 <b>{{SUPPORT_EMAIL}}</b>
+</p>
+
+<p>
+    Thank you for choosing <b>{{STORE_NAME}}</b> ❤️<br>
+    Happy Shopping!
+</p>
+
+<p>
+    —<br>
+    <b>{{STORE_NAME}} Team</b>
+</p>
+
+</body>
+</html>

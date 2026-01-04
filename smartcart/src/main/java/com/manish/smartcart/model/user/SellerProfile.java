@@ -3,7 +3,9 @@ package com.manish.smartcart.model.user;
 import com.manish.smartcart.enums.KycStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
+import lombok.Data;
 
+@Data
 @Entity
 @Table(name = "seller_profiles")
 public class SellerProfile {
@@ -30,27 +32,4 @@ public class SellerProfile {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private KycStatus kycStatus = KycStatus.PENDING;
-
-    public SellerProfile() {}
-
-    public SellerProfile(String storeName, String gstin) {
-        this.storeName = storeName;
-        this.gstin = gstin;
-    }
-
-    // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public Users getUser() { return user; }
-    public void setUser(Users user) { this.user = user; }
-    public String getStoreName() { return storeName; }
-    public void setStoreName(String storeName) { this.storeName = storeName; }
-    public String getBusinessAddress() { return businessAddress; }
-    public void setBusinessAddress(String adder) { this.businessAddress = adder; }
-    public String getGstin() { return gstin; }
-    public void setGstin(String gstin) { this.gstin = gstin; }
-    public String getPanCard() { return panCard; }
-    public void setPanCard(String panCard) { this.panCard = panCard; }
-    public KycStatus getKycStatus() { return kycStatus; }
-    public void setKycStatus(KycStatus status) { this.kycStatus = status; }
 }

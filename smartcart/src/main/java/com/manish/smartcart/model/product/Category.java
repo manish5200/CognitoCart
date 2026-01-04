@@ -13,7 +13,7 @@ import java.util.List;
 
 /**
  * The Category Entity (Recursive Tree)
- * This allows for infinite sub-levels (Electronics > Audio > Headphones).
+ * This allows for infinite sublevels (Electronics > Audio > Headphones).
  **/
 
 @Entity
@@ -44,47 +44,4 @@ public class Category {
     @JsonIgnore
     @OneToMany(mappedBy = "parentCategory", cascade = CascadeType.ALL)
     private List<Category> subCategories = new ArrayList<>();
-
-    public Category() {
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getSlug() {
-        return slug;
-    }
-
-    public void setSlug(String slug) {
-        this.slug = slug;
-    }
-
-    public List<Category> getSubCategories() {
-        return subCategories;
-    }
-
-    public void setSubCategories(List<Category> subCategories) {
-        this.subCategories = subCategories;
-    }
-
-    public Category getParentCategory() {
-        return parentCategory;
-    }
-
-    public void setParentCategory(Category parentCategory) {
-        this.parentCategory = parentCategory;
-    }
 }

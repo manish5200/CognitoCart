@@ -13,6 +13,8 @@ public class OrderMapper {
     public OrderResponse toOrderResponse(Order order) {
         OrderResponse orderResponse = new OrderResponse();
         orderResponse.setOrderId(order.getId());
+        orderResponse.setEmail(order.getUser().getEmail());
+        orderResponse.setCustomerName(order.getUser().getCustomerProfile().getName());
         orderResponse.setOrderDate(order.getOrderDate());
         orderResponse.setTotalAmount(order.getTotal());
         orderResponse.setStatus(order.getOrderStatus());

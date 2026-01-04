@@ -11,7 +11,9 @@ import com.manish.smartcart.model.order.OrderItem;
 import com.manish.smartcart.model.product.Product;
 import com.manish.smartcart.repository.OrderRepository;
 import com.manish.smartcart.repository.ProductRepository;
+import com.manish.smartcart.service.notifications.OrderNotificationService;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -19,28 +21,34 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class OrderService {
 
-    private OrderRepository orderRepository;
-    private ProductRepository productRepository;
-    private CartService cartService;
-    private OrderMapper orderMapper;
-    public OrderService(OrderRepository orderRepository, ProductRepository productRepository, CartService cartService, OrderMapper orderMapper) {
+    private final OrderRepository orderRepository;
+    private final ProductRepository productRepository;
+    private final CartService cartService;
+    private final OrderMapper orderMapper;
+    private final OrderNotificationService orderNotificationService;
+    public OrderService(OrderRepository orderRepository,
+                        ProductRepository productRepository,
+                        CartService cartService,
+                        OrderMapper orderMapper,
+                        OrderNotificationService orderNotificationService) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.cartService = cartService;
         this.orderMapper = orderMapper;
+        this.orderNotificationService = orderNotificationService;
     }
 
     @Transactional
-    public OrderResponse placeOrder(Long userId, OrderRequest orderRequest) {
+    public OrderResponse placeOrder(Long userId, OrderRequest orderRequest){
         // 1. Get the user's cart
         Cart cart = cartService.getCartForUser(userId);
         if(cart == null || cart.getItems().isEmpty()){
             throw  new RuntimeException("Cannot place order with an empty cart");
         }
-
         // 2. Create the Order "Header"
         Order order = new Order();
         order.setUser(cart.getUser());
@@ -75,8 +83,12 @@ public class OrderService {
         // 4. Save Order and Clear the Cart
         Order savedOrder = orderRepository.save(order);
         cartService.clearTheCart(userId);
-
-        return orderMapper.toOrderResponse(savedOrder);
+        OrderResponse orderResponse =  orderMapper.toOrderResponse(savedOrder);
+        // 5. Send mail
+        log.debug("Sending email notification for placed order for {}",orderResponse.getCustomerName());
+        orderNotificationService.sendEmailNotification(orderResponse);
+        log.info("Order Placed Successfully for {} having orderId {}",orderResponse.getCustomerName(),orderResponse.getOrderId());
+        return orderResponse;
     }
 
 
@@ -85,7 +97,7 @@ public class OrderService {
         List<Order>orders = orderRepository.findByUserIdOrderByOrderDateDesc(userId);
         // Map each Entity to a DTO to prevent infinite loops and hide internal DB details
         return orders.stream()
-                .map(order -> orderMapper.toOrderResponse(order))
+                .map(orderMapper::toOrderResponse)
                 .collect(Collectors.toList());
     }
 
@@ -98,7 +110,7 @@ public class OrderService {
 
         //It does not make sense but still but if by chance, lets B get oderId of A
         //So to prevent B from cancelling A's order
-        if(order.getUser().getId() != userId){
+        if(!order.getUser().getId().equals(userId)){
             throw new RuntimeException("Access Denied: You do not own this order.");
         }
 

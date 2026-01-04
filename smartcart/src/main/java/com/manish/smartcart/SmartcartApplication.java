@@ -1,12 +1,20 @@
 package com.manish.smartcart;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.scheduling.annotation.EnableAsync;
 
+@Slf4j
 @SpringBootApplication
+@EnableAsync // This allows @Async methods to run in a separate thread
 public class SmartcartApplication {
 
 	public static void main(String[] args) {
-        SpringApplication.run(SmartcartApplication.class, args);
-	}
+        ConfigurableApplicationContext context = SpringApplication.run(SmartcartApplication.class, args);
+        ConfigurableEnvironment appEnv = context.getEnvironment();
+        log.info("Current Spring Boot Environment : {}", appEnv.getActiveProfiles()[0]);
+    }
 }

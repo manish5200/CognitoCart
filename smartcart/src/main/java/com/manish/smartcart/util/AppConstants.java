@@ -1,6 +1,10 @@
 package com.manish.smartcart.util;
 
 public class AppConstants {
+
+    // --- Store Name ---
+    public static final String STORE_NAME = "CognitoCart - AI Driven E-commerce Platform";
+
     // --- Pagination Defaults ---
     public static final String DEFAULT_PAGE_NUMBER = "0";
     public static final String DEFAULT_PAGE_SIZE = "10";
