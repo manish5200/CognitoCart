@@ -3,9 +3,13 @@ package com.manish.smartcart.model.user;
 import com.manish.smartcart.enums.KycStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "seller_profiles")
 public class SellerProfile {

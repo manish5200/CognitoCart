@@ -1,5 +1,8 @@
 package com.manish.smartcart.util;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class AppConstants {
 
     // --- Store Name ---
@@ -29,6 +32,11 @@ public class AppConstants {
 
     // --- Wishlist & Cart Management ---
     public static final String PRODUCT_QUANTITY = "1";
+
+    // --- File Management ---
+    public static final List<String> ALLOWED_EXTENSIONS = Arrays.asList("jpg", "jpeg", "png", "webp");
+    public static final List<String> ALLOWED_MIME_TYPES = Arrays.asList("image/jpeg", "image/png", "image/webp");
+    public static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
     private AppConstants() {
         throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");

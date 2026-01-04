@@ -7,6 +7,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +19,9 @@ import java.util.List;
  * This allows for infinite sublevels (Electronics > Audio > Headphones).
  **/
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "categories")
 // Add this at the top of the class to skip any weird unknown JSON fields

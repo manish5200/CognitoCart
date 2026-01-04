@@ -7,7 +7,9 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -19,6 +21,8 @@ import java.util.List;
 import java.util.Set;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name="products")
 public class Product {
@@ -96,8 +100,6 @@ public class Product {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
-
-    public Product() {}
 
     // Smart: Helper to update ratings when a new review is added
     public void addReview(Review review) {

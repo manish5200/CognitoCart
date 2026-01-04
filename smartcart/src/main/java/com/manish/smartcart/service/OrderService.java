@@ -15,6 +15,8 @@ import com.manish.smartcart.service.notifications.OrderNotificationService;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -79,15 +81,29 @@ public class OrderService {
             orderItems.add(orderItem);
         }
         order.setOrderItems(orderItems);
-
         // 4. Save Order and Clear the Cart
         Order savedOrder = orderRepository.save(order);
         cartService.clearTheCart(userId);
         OrderResponse orderResponse =  orderMapper.toOrderResponse(savedOrder);
-        // 5. Send mail
-        log.debug("Sending email notification for placed order for {}",orderResponse.getCustomerName());
-        orderNotificationService.sendEmailNotification(orderResponse);
-        log.info("Order Placed Successfully for {} having orderId {}",orderResponse.getCustomerName(),orderResponse.getOrderId());
+
+        // 5. RECTIFIED: Send mail ONLY after successful DB Commit
+
+        if(TransactionSynchronizationManager.isActualTransactionActive()){
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            log.debug("Transaction committed. Triggering email for {}", orderResponse.getCustomerName());
+                            orderNotificationService.sendEmailNotification(orderResponse);
+                            TransactionSynchronization.super.afterCommit();
+                        }
+                    });
+        }else{
+            // Fallback for non-transactional calls (e.g., during testing)
+            orderNotificationService.sendEmailNotification(orderResponse);
+        }
+
+        log.info("Order processed successfully for orderId {}", orderResponse.getOrderId());
         return orderResponse;
     }
 

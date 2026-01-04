@@ -11,22 +11,23 @@ import org.springframework.util.StreamUtils;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 
 @Slf4j
 @Service
 public class OrderNotificationService {
 
     private final EmailService emailService;
+    private final String cachedTemplate; // Cache the HTML in memory
     public OrderNotificationService(EmailService emailService) {
         this.emailService = emailService;
+        this.cachedTemplate = loadTemplate(); // Load once at startup
     }
 
     // 1️⃣ Send email
     public void sendEmailNotification(OrderResponse orderResponse){
         try{
-            String template = loadTemplate();
-            String body = replacePlaceholders(template,orderResponse);
+            // Use the cachedTemplate instead of loading from disk
+            String body = replacePlaceholders(this.cachedTemplate, orderResponse);
             String subject = "✅ Order Confirmed! Order #" + orderResponse.getOrderId();
             emailService.sendMail(orderResponse.getEmail(), subject, body,"CognitoCart");
         } catch (Exception e) {
@@ -39,11 +40,11 @@ public class OrderNotificationService {
     private String loadTemplate(){
         try{
             ClassPathResource resource = new ClassPathResource("templates/email/order-confirmation.html");
-
             return StreamUtils.copyToString(
                     resource.getInputStream(), StandardCharsets.UTF_8);
         } catch (IOException e) {
-            throw new RuntimeException(String.valueOf(Map.of("Failed to load email template",e.getMessage())));
+            log.error("CRITICAL: Failed to load email template", e);
+            return "";// Fallback
         }
     }
 

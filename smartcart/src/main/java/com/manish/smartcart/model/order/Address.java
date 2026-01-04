@@ -2,9 +2,13 @@ package com.manish.smartcart.model.order;
 
 import jakarta.persistence.Embeddable;
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Embeddable //will not create new table... will be in order table only
 public class Address {
 

@@ -45,16 +45,16 @@ public class EmailService {
             // The 'true' argument enables multipart messages (for attachments, etc.)
             MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(email, true);
 
+            // Correct format: "CognitoCart <my-email@gmail.com>"
             mimeMessageHelper.setFrom(fromEmail, senderName);
 
             mimeMessageHelper.setTo(to);
             mimeMessageHelper.setSubject(subject);
-            mimeMessageHelper.setText(body,true);
-            mimeMessageHelper.setFrom(senderName);
+            mimeMessageHelper.setText(body,true);// true = HTML
             mailSender.send(email);
-            log.info("Email successfully sent to '{}' from '{}' having email id '{}' ",to,senderName,fromEmail);
+            log.info("Email sent to {}", to);
         }catch (Exception e) {
-            log.error("Exception in sending mail to {}",to,e);
+            log.error("Failed to send mail", e);
             throw new Exception("Exception in sending mail to " + to);
         }
     }

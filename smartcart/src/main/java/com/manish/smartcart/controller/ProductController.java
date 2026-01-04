@@ -5,10 +5,13 @@ import com.manish.smartcart.dto.product.ProductRequest;
 import com.manish.smartcart.dto.product.ProductResponse;
 import com.manish.smartcart.dto.product.ProductSearchDTO;
 import com.manish.smartcart.model.product.Product;
+import com.manish.smartcart.repository.ProductRepository;
 import com.manish.smartcart.repository.UsersRepository;
 import com.manish.smartcart.service.CategoryService;
+import com.manish.smartcart.service.FileService;
 import com.manish.smartcart.service.ProductService;
 import com.manish.smartcart.util.AppConstants;
+import com.manish.smartcart.util.FileValidator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -25,7 +28,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -34,15 +40,23 @@ import java.util.Map;
 @Tag(name = "4. Product Management", description = "Browse, search, and manage products")
 public class ProductController {
 
-    @Autowired
-    private ProductService productService;
-
-    @Autowired
-    private CategoryService categoryService;
-
-    @Autowired
-    private UsersRepository usersRepository;
-
+    private final ProductService productService;
+    private final CategoryService categoryService;
+    private final UsersRepository usersRepository;
+    private final ProductRepository productRepository;
+    private final FileService fileService;
+    public  ProductController(
+            ProductService productService,
+            CategoryService categoryService,
+            UsersRepository usersRepository,
+            ProductRepository productRepository,
+            FileService fileService ) {
+        this.productService = productService;
+        this.categoryService = categoryService;
+        this.usersRepository = usersRepository;
+        this.productRepository = productRepository;
+        this.fileService = fileService;
+    }
 
     //Get All products
     @GetMapping
@@ -146,6 +160,32 @@ public class ProductController {
             Page<ProductResponse> result = productService.getFilteredProduct(searchDTO, pageable);
 
             return ResponseEntity.status(HttpStatus.OK).body(Map.of("Search result",result));
+    }
+
+
+    //Image upload
+    @PostMapping("/{productId}/upload-image")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<?> uploadProductImage(
+            @PathVariable Long productId,
+            @RequestParam("file") MultipartFile file) throws IOException {
+
+        // 1. Validate the file (Security First!)
+        FileValidator.validateImage(file);
+
+        // 2. Proceed with upload if validation passes
+        String fileName = fileService.uploadImage(file);
+
+        // 3. Update Product in Database
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+
+        product.setImageUrls(Collections.singletonList(fileName));
+        productRepository.save(product);
+        return ResponseEntity.ok(Map.of(
+                "message", "Image verified and uploaded successfully",
+                "fileName", fileName
+        ));
     }
 
 }

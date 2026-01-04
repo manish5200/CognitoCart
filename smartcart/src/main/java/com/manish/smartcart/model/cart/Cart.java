@@ -4,7 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.manish.smartcart.model.user.Users;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -14,6 +16,8 @@ import java.util.List;
 * Cart Entity: Represents the container. It has a One-to-One relationship with the User.
 **/
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "carts")
 public class Cart {
