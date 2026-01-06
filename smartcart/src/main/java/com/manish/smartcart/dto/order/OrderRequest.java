@@ -3,7 +3,12 @@ package com.manish.smartcart.dto.order;
 import com.manish.smartcart.model.order.Address;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import lombok.*;
 
+@Setter
+@Getter
+@AllArgsConstructor
+@RequiredArgsConstructor
 public class OrderRequest {
 
     @NotNull(message = "Shipping address is required")
@@ -12,15 +17,6 @@ public class OrderRequest {
 
     // You can add more fields here later, e.g., String paymentId;
 
-    public OrderRequest() {}
-
-    public Address getShippingAddress() {
-        return shippingAddress;
-    }
-
-    public void setShippingAddress(Address shippingAddress) {
-        this.shippingAddress = shippingAddress;
-    }
 }
 
 

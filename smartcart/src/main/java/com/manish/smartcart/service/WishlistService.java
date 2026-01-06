@@ -5,19 +5,19 @@ import com.manish.smartcart.dto.product.ProductResponse;
 import com.manish.smartcart.dto.product.WishlistSummaryDTO;
 import com.manish.smartcart.mapper.ProductMapper;
 import com.manish.smartcart.model.cart.Cart;
-import com.manish.smartcart.model.cart.CartItem;
 import com.manish.smartcart.model.product.Product;
 import com.manish.smartcart.model.user.Wishlist;
 import com.manish.smartcart.repository.*;
 import jakarta.transaction.Transactional;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 @Service
+@AllArgsConstructor
 public class WishlistService {
 
     private final WishlistRepository wishlistRepository;
@@ -25,17 +25,6 @@ public class WishlistService {
     private final UsersRepository usersRepository;
     private final ProductMapper  productMapper;
     private final CartService cartService;
-    public WishlistService(WishlistRepository wishlistRepository,
-                           ProductRepository productRepository,
-                           UsersRepository usersRepository,
-                           ProductMapper productMapper,
-                           CartService cartService) {
-         this.wishlistRepository = wishlistRepository;
-         this.productRepository = productRepository;
-         this.usersRepository = usersRepository;
-         this.productMapper = productMapper;
-         this.cartService = cartService;
-    }
 
     @Transactional
     public String toggleWishlist(Long userId, Long productId) {

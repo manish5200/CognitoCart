@@ -32,7 +32,8 @@ public class ReviewController {
             @RequestBody ReviewRequestDTO  reviewRequestDTO,
             Authentication authentication) {
             CustomUserDetails  customUserDetails = (CustomUserDetails) authentication.getPrincipal();
-            Long userId = customUserDetails.getUserId();
+        assert customUserDetails != null;
+        Long userId = customUserDetails.getUserId();
             return ResponseEntity
                     .ok(reviewService.addOrUpdateReview(
                             userId,

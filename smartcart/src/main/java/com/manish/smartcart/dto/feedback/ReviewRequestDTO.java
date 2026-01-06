@@ -1,7 +1,13 @@
 package com.manish.smartcart.dto.feedback;
 
 import jakarta.validation.constraints.*;
+import lombok.*;
 
+@Setter
+@Getter
+@AllArgsConstructor
+@RequiredArgsConstructor
+@Builder
 public class ReviewRequestDTO {
 
     @NotNull(message = "Rating is required")
@@ -11,26 +17,4 @@ public class ReviewRequestDTO {
     @Size(max = 600, message = "Comment is too long")
     private String comment;
 
-    public ReviewRequestDTO() {}
-
-    public ReviewRequestDTO(Integer rating, String comment) {
-        this.rating = rating;
-        this.comment = comment;
-    }
-
-    public Integer getRating() {
-        return rating;
-    }
-
-    public void setRating(Integer rating) {
-        this.rating = rating;
-    }
-
-    public String getComment() {
-        return comment;
-    }
-
-    public void setComment(String comment) {
-        this.comment = comment;
-    }
 }

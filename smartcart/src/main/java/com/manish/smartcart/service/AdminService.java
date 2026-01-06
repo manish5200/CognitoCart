@@ -77,7 +77,7 @@ public class AdminService {
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
         // Guard Clause: Only allow movement from PENDING
-        if (order.getOrderStatus() != OrderStatus.PENDING) {
+        if (order.getOrderStatus() == OrderStatus.DELIVERED) {
             throw new RuntimeException("Order is in " + order.getOrderStatus() + " state and cannot be modified.");
         }
         try {

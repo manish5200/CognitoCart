@@ -6,19 +6,15 @@ import com.manish.smartcart.dto.product.ProductResponse;
 import com.manish.smartcart.dto.product.ProductSearchDTO;
 import com.manish.smartcart.model.product.Product;
 import com.manish.smartcart.repository.ProductRepository;
-import com.manish.smartcart.repository.UsersRepository;
 import com.manish.smartcart.service.CategoryService;
 import com.manish.smartcart.service.FileService;
 import com.manish.smartcart.service.ProductService;
 import com.manish.smartcart.util.AppConstants;
 import com.manish.smartcart.util.FileValidator;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -34,6 +30,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/products")
@@ -42,18 +39,15 @@ public class ProductController {
 
     private final ProductService productService;
     private final CategoryService categoryService;
-    private final UsersRepository usersRepository;
     private final ProductRepository productRepository;
     private final FileService fileService;
     public  ProductController(
             ProductService productService,
             CategoryService categoryService,
-            UsersRepository usersRepository,
             ProductRepository productRepository,
             FileService fileService ) {
         this.productService = productService;
         this.categoryService = categoryService;
-        this.usersRepository = usersRepository;
         this.productRepository = productRepository;
         this.fileService = fileService;
     }
@@ -76,7 +70,8 @@ public class ProductController {
     @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<?>createProduct(@RequestBody ProductRequest productRequest, Authentication authentication) {
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-            ProductResponse createdProduct = productService
+        assert userDetails != null;
+        ProductResponse createdProduct = productService
                     .createProduct(productRequest,userDetails.getUserId());
             return ResponseEntity.status(HttpStatus.CREATED).body(createdProduct);
     }
@@ -113,9 +108,10 @@ public class ProductController {
     @PreAuthorize("hasAnyRole('SELLER','ADMIN')")
     public ResponseEntity<?>toggleVisibility(@PathVariable Long id, Authentication authentication) {
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-            boolean isAdmin = userDetails.getAuthorities()
+        assert userDetails != null;
+        boolean isAdmin = userDetails.getAuthorities()
                     .stream()
-                    .anyMatch(a->a.getAuthority().equals("ROLE_ADMIN"));
+                    .anyMatch(a-> Objects.equals(a.getAuthority(), "ROLE_ADMIN"));
             productService.toggleAvailability(id,userDetails.getUserId(),isAdmin);
             return ResponseEntity.ok(Map.of("message", "Visibility updated successfully."));
     }
@@ -127,10 +123,11 @@ public class ProductController {
     @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
     public ResponseEntity<?>deleteProduct(@PathVariable Long id, Authentication authentication) {
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-             boolean isAdmin = userDetails.getAuthorities()
+        assert userDetails != null;
+        boolean isAdmin = userDetails.getAuthorities()
                      .stream()
-                     .anyMatch(a -> a
-                             .getAuthority().equals("ROLE_ADMIN"));
+                     .anyMatch(a -> Objects.equals(a
+                             .getAuthority(), "ROLE_ADMIN"));
 
              productService.deleteProduct(id,userDetails.getUserId(),isAdmin);
              return ResponseEntity.ok(Map.of("message", "Product deleted successfully."));

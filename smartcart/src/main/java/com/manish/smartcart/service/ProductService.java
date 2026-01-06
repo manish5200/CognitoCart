@@ -8,10 +8,9 @@ import com.manish.smartcart.model.product.Category;
 import com.manish.smartcart.model.product.Product;
 import com.manish.smartcart.repository.CategoryRepository;
 import com.manish.smartcart.repository.ProductRepository;
-import com.manish.smartcart.repository.ReviewRepository;
 import com.manish.smartcart.repository.specifications.ProductSpecifications;
 import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -22,22 +21,13 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
+@AllArgsConstructor
 public class ProductService {
 
-    @Autowired
-    private ProductRepository productRepository;
-
-    @Autowired
-    private CategoryRepository categoryRepository;
-
-    @Autowired
-    private ReviewRepository reviewRepository;
-
-    @Autowired
-    private ProductMapper  productMapper;
-
-    @Autowired
-    private CategoryService categoryService;
+    private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
+    private final ProductMapper  productMapper;
+    private final CategoryService categoryService;
 
 
     /**

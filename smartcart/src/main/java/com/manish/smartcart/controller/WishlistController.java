@@ -4,7 +4,6 @@ import com.manish.smartcart.config.CustomUserDetails;
 import com.manish.smartcart.dto.cart.CartResponse;
 import com.manish.smartcart.dto.product.ProductResponse;
 import com.manish.smartcart.dto.product.WishlistSummaryDTO;
-import com.manish.smartcart.model.cart.Cart;
 import com.manish.smartcart.service.WishlistService;
 import com.manish.smartcart.util.AppConstants;
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,9 +37,10 @@ public class WishlistController {
             description = "Wishlist updated successfully")
     @PostMapping("/toggle/{productId}")
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<?>toggeleWishlist(@PathVariable("productId") Long productId,
+    public ResponseEntity<?> toggleWishlist(@PathVariable("productId") Long productId,
                                             Authentication authentication){
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+        assert customUserDetails != null;
         Long userId = customUserDetails.getUserId();
         String message = wishlistService.toggleWishlist(userId, productId);
         return ResponseEntity.ok().body(Map.of("Status", message));
@@ -51,6 +51,7 @@ public class WishlistController {
     @GetMapping
     public ResponseEntity<List<ProductResponse>> getMyWishlist(Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        assert userDetails != null;
         List<ProductResponse> wishlist = wishlistService.getWishlistForUser(userDetails.getUserId());
         return ResponseEntity.ok(wishlist);
     }
@@ -63,6 +64,7 @@ public class WishlistController {
             @RequestParam(defaultValue = AppConstants.PRODUCT_QUANTITY) Integer quantity,
             Authentication authentication){
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+        assert customUserDetails != null;
         Long userId = customUserDetails.getUserId();
         CartResponse cartResponse = wishlistService.wishlistToCart(userId, productId, quantity);
         return ResponseEntity.ok(Map.of("Item moved to cart successfully",cartResponse));
@@ -73,7 +75,8 @@ public class WishlistController {
     @GetMapping("/summary")
     public ResponseEntity<?>getWishlistSummary(Authentication authentication){
          CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
-         Long userId = customUserDetails.getUserId();
+        assert customUserDetails != null;
+        Long userId = customUserDetails.getUserId();
         WishlistSummaryDTO wishlistSummaryDTO = wishlistService.getWishlistSummary(userId);
         return ResponseEntity.ok(Map.of("Wishlist Summary", wishlistSummaryDTO));
     }

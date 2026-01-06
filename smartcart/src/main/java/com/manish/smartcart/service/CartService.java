@@ -9,7 +9,6 @@ import com.manish.smartcart.repository.CartRepository;
 import com.manish.smartcart.repository.ProductRepository;
 import com.manish.smartcart.repository.UsersRepository;
 import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -19,14 +18,20 @@ import java.math.RoundingMode;
 @Service
 public class CartService {
 
-    @Autowired
-    private CartRepository cartRepository;
-    @Autowired
-    private CartItemRepository cartItemRepository;
-    @Autowired
-    private ProductRepository productRepository;
-    @Autowired
-    private UsersRepository  usersRepository;
+    private final CartRepository cartRepository;
+    private final CartItemRepository cartItemRepository;
+    private final ProductRepository productRepository;
+    private final UsersRepository  usersRepository;
+
+    public CartService(CartRepository cartRepository,
+                       CartItemRepository cartItemRepository,
+                       ProductRepository productRepository,
+                       UsersRepository usersRepository) {
+        this.cartRepository = cartRepository;
+        this.cartItemRepository = cartItemRepository;
+        this.productRepository = productRepository;
+        this.usersRepository = usersRepository;
+    }
 
     @Transactional
     public Cart addItemToCart(Long userId, Long productId, Integer quantity) {
@@ -97,21 +102,20 @@ public class CartService {
 
     //View cart
     public Cart getCartForUser(Long userId){
-        Cart cart = cartRepository.findByUserId(userId)
+        return cartRepository.findByUserId(userId)
                 .orElseThrow(()-> new RuntimeException("Cart not found"));
-        return cart;
     }
 
     //clear cart
     @Transactional
-    public Cart clearTheCart(Long userId){
+    public void clearTheCart(Long userId){
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Cart not found"));
         // 1. Clear the list (JPA orphanRemoval deletes the rows in DB)
         cart.getItems().clear();
         // 2. Reset the total to zero
         cart.setTotalAmount(BigDecimal.ZERO);
-        return cartRepository.save(cart);
+        cartRepository.save(cart);
     }
 
 

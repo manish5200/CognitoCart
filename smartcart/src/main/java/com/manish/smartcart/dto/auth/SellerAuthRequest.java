@@ -1,11 +1,15 @@
 package com.manish.smartcart.dto.auth;
 
-import com.manish.smartcart.enums.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.*;
 import org.hibernate.validator.constraints.UniqueElements;
 
+@Setter
+@Getter
+@AllArgsConstructor
+@RequiredArgsConstructor
 public class SellerAuthRequest {
 
     @NotBlank(message = "Email is required")
@@ -29,71 +33,5 @@ public class SellerAuthRequest {
     private String gstin;
 
     private String panCard;
-
-    public SellerAuthRequest(String email, String password, String storeName, String businessAdder, String gstin, String panCard) {
-        this.email = email;
-        this.password = password;
-        this.role = Role.SELLER.name();
-        this.storeName = storeName;
-        this.businessAdder = businessAdder;
-        this.gstin = gstin;
-        this.panCard = panCard;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getStoreName() {
-        return storeName;
-    }
-
-    public void setStoreName(String storeName) {
-        this.storeName = storeName;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getBusinessAdder() {
-        return businessAdder;
-    }
-
-    public void setBusinessAdder(String businessAdder) {
-        this.businessAdder = businessAdder;
-    }
-
-    public String getGstin() {
-        return gstin;
-    }
-
-    public void setGstin(String gstin) {
-        this.gstin = gstin;
-    }
-
-    public String getPanCard() {
-        return panCard;
-    }
-
-    public void setPanCard(String panCard) {
-        this.panCard = panCard;
-    }
-
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
 
 }

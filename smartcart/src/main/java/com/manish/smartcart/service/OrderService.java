@@ -13,6 +13,7 @@ import com.manish.smartcart.repository.OrderRepository;
 import com.manish.smartcart.repository.ProductRepository;
 import com.manish.smartcart.service.notifications.OrderNotificationService;
 import jakarta.transaction.Transactional;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
+@AllArgsConstructor
 public class OrderService {
 
     private final OrderRepository orderRepository;
@@ -32,17 +34,6 @@ public class OrderService {
     private final CartService cartService;
     private final OrderMapper orderMapper;
     private final OrderNotificationService orderNotificationService;
-    public OrderService(OrderRepository orderRepository,
-                        ProductRepository productRepository,
-                        CartService cartService,
-                        OrderMapper orderMapper,
-                        OrderNotificationService orderNotificationService) {
-        this.orderRepository = orderRepository;
-        this.productRepository = productRepository;
-        this.cartService = cartService;
-        this.orderMapper = orderMapper;
-        this.orderNotificationService = orderNotificationService;
-    }
 
     @Transactional
     public OrderResponse placeOrder(Long userId, OrderRequest orderRequest){
@@ -55,7 +46,7 @@ public class OrderService {
         Order order = new Order();
         order.setUser(cart.getUser());
         order.setOrderDate(LocalDateTime.now());
-        order.setOrderStatus(OrderStatus.PENDING);
+        order.setOrderStatus(OrderStatus.CREATED);
         order.setShippingAddress(orderRequest.getShippingAddress());
         order.setTotal(cart.getTotalAmount());
 
@@ -110,7 +101,7 @@ public class OrderService {
 
     //Order History feature.
     public List<OrderResponse>getOrderHistoryForUser(Long userId) {
-        List<Order>orders = orderRepository.findByUserIdOrderByOrderDateDesc(userId);
+        List<Order>orders = orderRepository.findByUserIdAndOrderItems(userId);
         // Map each Entity to a DTO to prevent infinite loops and hide internal DB details
         return orders.stream()
                 .map(orderMapper::toOrderResponse)
@@ -130,9 +121,9 @@ public class OrderService {
             throw new RuntimeException("Access Denied: You do not own this order.");
         }
 
-       // 2. Security Check: Only PENDING orders can be cancelled
-       if(order.getOrderStatus() != OrderStatus.PENDING){
-           throw new RuntimeException("Order cannot be cancelled. Current status: " + order.getOrderStatus());
+       // 2. Security Check: DELIVERED orders cannot be cancelled
+       if(order.getOrderStatus() == OrderStatus.DELIVERED){
+           throw new RuntimeException("Order cannot be cancelled❌❌. Current status: " + order.getOrderStatus());
        }
         // 3. Inventory Restoration: Return stock to Product table - every product
         // RESTORE STOCK: Loop through items and update products
@@ -149,5 +140,24 @@ public class OrderService {
        order.setOrderStatus(OrderStatus.CANCELLED);
        Order savedOrder = orderRepository.save(order);
        return orderMapper.toOrderResponse(savedOrder);
+    }
+
+    //OrderProcessing: Abandoning the stale orders
+
+    @Transactional
+    public void cancelAndReleaseStock(Order order){
+         log.info("Releasing stock for abandoned order ID: {}", order.getId());
+
+        // 1. Restore stock to the products
+        for(OrderItem orderItem : order.getOrderItems()) {
+            Product product = orderItem.getProduct();
+            int updatedStock = product.getStockQuantity() + orderItem.getQuantity();
+            product.setStockQuantity(updatedStock);
+            // saveAndFlush pushes the update to the DB immediately
+            productRepository.saveAndFlush(product);
+        }
+        // 2. Update order status
+        order.setOrderStatus(OrderStatus.CANCELLED);
+        orderRepository.save(order);// Or OrderStatus.EXPIRED
     }
 }

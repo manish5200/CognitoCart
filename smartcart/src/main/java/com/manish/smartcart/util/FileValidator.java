@@ -6,6 +6,18 @@ public class FileValidator {
 
     public static void validateImage(MultipartFile file) {
         // 1. Check if empty
+        String extension = getString(file);
+        if(!AppConstants.ALLOWED_EXTENSIONS.contains(extension)){
+            throw new RuntimeException("Only JPG, PNG, and WEBP files are allowed.");
+        }
+        // 4. Check Content Type (MIME)
+        String contentType = file.getContentType();
+        if(contentType==null || !AppConstants.ALLOWED_MIME_TYPES.contains(contentType)){
+            throw new RuntimeException("Invalid file content type.");
+        }
+    }
+
+    private static String getString(MultipartFile file) {
         if(file.isEmpty()){
             throw new RuntimeException("Cannot upload an empty file.");
         }
@@ -20,14 +32,8 @@ public class FileValidator {
         }
 
         String extension = originalFilename
-                .substring(originalFilename.lastIndexOf(".") + 1).toLowerCase();
-        if(!AppConstants.ALLOWED_EXTENSIONS.contains(extension)){
-            throw new RuntimeException("Only JPG, PNG, and WEBP files are allowed.");
-        }
-        // 4. Check Content Type (MIME)
-        String contentType = file.getContentType();
-        if(contentType==null || !AppConstants.ALLOWED_MIME_TYPES.contains(contentType)){
-            throw new RuntimeException("Invalid file content type.");
-        }
+                .substring(originalFilename.lastIndexOf(".") + 1)
+                .toLowerCase();
+        return extension;
     }
 }

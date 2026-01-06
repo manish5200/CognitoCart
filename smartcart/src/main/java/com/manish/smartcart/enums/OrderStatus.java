@@ -1,17 +1,14 @@
 package com.manish.smartcart.enums;
-
 public enum OrderStatus {
-    CREATED,
-    PENDING,
-    PAYMENT_PENDING,
-    PAID,
-    CONFIRMED,
-    PACKED,
-    SHIPPED,
-    DELIVERED,
-    CANCELLED,
-    RETURN_REQUESTED,
-    RETURNED,
-    REFUNDED,
-    FAILED
+    CREATED,              // Order placed
+    PAYMENT_PENDING,      // Waiting for payment
+    PAID,                 // Payment success event received
+    CONFIRMED,            // Seller/system confirmed
+    PACKING,              // Warehouse processing
+    SHIPPED,              // Handed to courier
+    DELIVERED,            // Completed
+    CANCELLED,            // Cancelled before shipping
+    RETURN_REQUESTED,     // Customer requested return
+    RETURNED,             // Item received back
+    REFUNDED              // Refund completed
 }

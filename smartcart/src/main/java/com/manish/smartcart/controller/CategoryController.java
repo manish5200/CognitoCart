@@ -5,7 +5,6 @@ import com.manish.smartcart.service.CategoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,8 +17,11 @@ import java.util.List;
 @Tag(name = "7. Category Management", description = "Manage and browse product categories")
 public class CategoryController{
 
-    @Autowired
-    private CategoryService  categoryService;
+    private final CategoryService  categoryService;
+
+    public CategoryController(CategoryService categoryService) {
+        this.categoryService = categoryService;
+    }
 
     /**
      * POST: Only Admins can create new categories

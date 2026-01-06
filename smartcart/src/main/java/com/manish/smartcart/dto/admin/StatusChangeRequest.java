@@ -1,9 +1,13 @@
 package com.manish.smartcart.dto.admin;
 
-import com.manish.smartcart.enums.OrderStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.*;
 
+@Setter
+@Getter
+@RequiredArgsConstructor
+@AllArgsConstructor
 public class StatusChangeRequest {
 
     @NotNull
@@ -12,27 +16,4 @@ public class StatusChangeRequest {
 
     @NotNull
     private String orderStatus;
-
-    public StatusChangeRequest() {}
-
-    public StatusChangeRequest(Long orderId, String orderStatus) {
-        this.orderId = orderId;
-        this.orderStatus = orderStatus;
-    }
-
-    public Long getOrderId() {
-        return orderId;
-    }
-
-    public void setOrderId(Long orderId) {
-        this.orderId = orderId;
-    }
-
-    public String getOrderStatus() {
-        return orderStatus;
-    }
-
-    public void setOrderStatus(String orderStatus) {
-        this.orderStatus = orderStatus;
-    }
 }

@@ -1,6 +1,5 @@
 package com.manish.smartcart.controller;
 
-import com.manish.smartcart.dto.auth.AdminAuthRequest;
 import com.manish.smartcart.dto.auth.CustomerAuthRequest;
 import com.manish.smartcart.dto.auth.LoginRequest;
 import com.manish.smartcart.dto.auth.SellerAuthRequest;
@@ -8,7 +7,6 @@ import com.manish.smartcart.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,8 +18,11 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "1. Authentication", description = "Endpoints for user registration and login")
 public class AuthController {
 
-     @Autowired
-     private AuthService authService;
+     private final AuthService authService;
+
+     public AuthController(AuthService authService) {
+         this.authService = authService;
+     }
 
      //Register
      @Operation(summary = "Register new user", description = "Creates a new user account and returns success message.")

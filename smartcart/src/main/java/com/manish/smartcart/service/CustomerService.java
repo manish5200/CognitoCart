@@ -5,6 +5,7 @@ import com.manish.smartcart.dto.order.OrderResponse;
 import com.manish.smartcart.mapper.OrderMapper;
 import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.repository.OrderRepository;
+import lombok.AllArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -15,15 +16,11 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Service
+@AllArgsConstructor
 public class CustomerService {
 
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
-    public CustomerService(OrderRepository orderRepository,  OrderMapper orderMapper) {
-        this.orderRepository = orderRepository;
-        this.orderMapper = orderMapper;
-    }
-
 
     public CustomerDashboardDTO getCustomerDashboard(Long userId, int pageNumber, int pageSize){
             // 1. Get total order count
@@ -34,7 +31,6 @@ public class CustomerService {
         BigDecimal totalSpent = orderRepository.calculateTotalSpentByUser(userId);
 
         // 3. Get the absolute latest order (for the 'Track' card)
-
         OrderResponse latestOrderResponse = orderRepository.findFirstByUserIdOrderByOrderDateDesc(userId)
                 .map(orderMapper::toOrderResponse)
                 .orElse(null);

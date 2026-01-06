@@ -3,7 +3,6 @@ package com.manish.smartcart.service;
 import com.manish.smartcart.model.product.Category;
 import com.manish.smartcart.repository.CategoryRepository;
 import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -14,10 +13,11 @@ import java.util.Set;
 @Service
 public class CategoryService {
 
-    @Autowired
-    private CategoryRepository categoryRepository;
+    private final CategoryRepository categoryRepository;
 
-
+    public CategoryService(CategoryRepository categoryRepository) {
+        this.categoryRepository = categoryRepository;
+    }
 
     @Transactional
     public Category createCategory(Category category){

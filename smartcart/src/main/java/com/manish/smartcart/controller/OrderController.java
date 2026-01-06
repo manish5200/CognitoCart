@@ -3,7 +3,6 @@ package com.manish.smartcart.controller;
 import com.manish.smartcart.config.CustomUserDetails;
 import com.manish.smartcart.dto.order.OrderRequest;
 import com.manish.smartcart.dto.order.OrderResponse;
-import com.manish.smartcart.service.EmailService;
 import com.manish.smartcart.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -24,7 +23,7 @@ import java.util.List;
 public class OrderController {
 
     private final OrderService orderService;
-    public OrderController(OrderService orderService, EmailService emailService) {
+    public OrderController(OrderService orderService) {
         this.orderService = orderService;
     }
 
@@ -37,7 +36,8 @@ public class OrderController {
     public ResponseEntity<?> placeOrder(@Valid @RequestBody OrderRequest orderRequest,
                                         Authentication authentication){
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-            Long userId = userDetails.getUserId();
+        assert userDetails != null;
+        Long userId = userDetails.getUserId();
             OrderResponse orderResponse = orderService.placeOrder(userId,orderRequest);
             return ResponseEntity.status(HttpStatus.OK).body(orderResponse);
     }
@@ -48,7 +48,8 @@ public class OrderController {
     @GetMapping("/history")
     public ResponseEntity<?> getOrderHistory(Authentication authentication) {
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-            Long userId = userDetails.getUserId();
+        assert userDetails != null;
+        Long userId = userDetails.getUserId();
 
             List<OrderResponse> history = orderService.getOrderHistoryForUser(userId);
             return ResponseEntity.ok(history);
@@ -59,7 +60,8 @@ public class OrderController {
     @PutMapping("/{orderId}/cancel")
     public ResponseEntity<?> cancelOrder(@PathVariable Long orderId, Authentication authentication) {
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-            Long userId = userDetails.getUserId();
+        assert userDetails != null;
+        Long userId = userDetails.getUserId();
             OrderResponse orderResponse = orderService.cancelOrder(userId,orderId);
             return ResponseEntity.ok(orderResponse);
     }

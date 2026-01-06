@@ -60,7 +60,7 @@ public class JwtUtil {
     }
 
     private Claims extractAllClaims(String token){
-               return (Claims) Jwts.parser()
+               return Jwts.parser()
                        .verifyWith(getSigningKey())
                        .build()
                        .parseSignedClaims(token)

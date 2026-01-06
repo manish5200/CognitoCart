@@ -2,7 +2,6 @@ package com.manish.smartcart.service;
 
 import com.manish.smartcart.dto.feedback.ReviewRequestDTO;
 import com.manish.smartcart.enums.OrderStatus;
-import com.manish.smartcart.mapper.OrderMapper;
 import com.manish.smartcart.mapper.ReviewMapper;
 import com.manish.smartcart.model.feedback.Review;
 import com.manish.smartcart.model.product.Product;
@@ -12,12 +11,14 @@ import com.manish.smartcart.repository.ProductRepository;
 import com.manish.smartcart.repository.ReviewRepository;
 import com.manish.smartcart.repository.UsersRepository;
 import jakarta.transaction.Transactional;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
 import java.util.Optional;
 
 @Service
+@AllArgsConstructor
 public class ReviewService {
 
     private final ReviewRepository reviewRepository;
@@ -25,19 +26,6 @@ public class ReviewService {
     private final OrderRepository orderRepository;
     private final UsersRepository usersRepository;
     private final ReviewMapper reviewMapper;
-
-    public ReviewService(
-            ReviewRepository reviewRepository,
-            ProductRepository productRepository,
-            OrderRepository orderRepository,
-            UsersRepository usersRepository,
-            ReviewMapper reviewMapper) {
-        this.reviewRepository = reviewRepository;
-        this.productRepository = productRepository;
-        this.orderRepository = orderRepository;
-        this.usersRepository = usersRepository;
-        this.reviewMapper = reviewMapper;
-    }
 
     @Transactional
     public Map<String,Object> addOrUpdateReview(Long userId, Long productId, ReviewRequestDTO  reviewRequestDTO) {
