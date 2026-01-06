@@ -1,4 +1,4 @@
-# 🛒 CognitoCart API: Enterprise E-Commerce Backend
+# 🛒 CognitoCart API: Enterprise E-Commerce Backend (Ongoing....)
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]() [![Stack](https://img.shields.io/badge/stack-Spring%20Boot%20%7C%20Java%2017-blue)]() [![Database](https://img.shields.io/badge/database-PostgreSQL-blue)]() [![License](https://img.shields.io/badge/license-MIT-green)]()
 
