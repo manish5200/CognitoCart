@@ -36,7 +36,7 @@ public class OrderCleanupScheduler{
         LocalDateTime threshold = LocalDateTime.now().minusHours(24);
 
         // 2. Fetch stale orders
-        List<Order> staleOrders = orderRepository.findByOrderStatusAndOrderDateBefore(
+        List<Order> staleOrders = orderRepository.findByOrderStatusAndOrderDateBeforeWithItems(
                         OrderStatus.PAYMENT_PENDING, threshold);
 
         if (staleOrders.isEmpty()) {

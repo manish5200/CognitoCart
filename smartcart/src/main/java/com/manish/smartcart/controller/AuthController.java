@@ -37,7 +37,7 @@ public class AuthController {
     @ApiResponse(responseCode = "201", description = "Seller registered successfully")
     @ApiResponse(responseCode = "400", description = "Invalid input or seller already exists")
     @PostMapping("/register/seller")
-    public ResponseEntity<?>registerCustomer(@RequestBody SellerAuthRequest authRequest){
+    public ResponseEntity<?>registerSeller(@RequestBody SellerAuthRequest authRequest){
         return authService.registerSeller(authRequest);
     }
 

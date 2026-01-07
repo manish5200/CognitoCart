@@ -1,31 +1,31 @@
 package com.manish.smartcart.model.product;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.manish.smartcart.model.base.BaseEntity;
 import com.manish.smartcart.model.feedback.Review;
 import com.manish.smartcart.util.AppConstants;
 import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
+import lombok.*;
+import org.hibernate.annotations.*;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-@Data
-@NoArgsConstructor
+
+@Setter
+@Getter
 @AllArgsConstructor
+@NoArgsConstructor
 @Entity
 @Table(name="products")
-public class Product {
+@SoftDelete(columnName = "is_deleted") // <--- That's it! No @SQLDelete or @SQLRestriction needed.
+public class Product extends BaseEntity{
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -90,16 +90,6 @@ public class Product {
     )
     @Column(name = "image_url")
     private List<String> imageUrls = new ArrayList<>();
-
-
-    @Version
-    private Long version;
-
-    @CreationTimestamp
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
 
     // Smart: Helper to update ratings when a new review is added
     public void addReview(Review review) {

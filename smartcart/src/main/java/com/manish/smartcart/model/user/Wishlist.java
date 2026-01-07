@@ -22,7 +22,7 @@ public class Wishlist {
     @JoinColumn(name = "user_id")
     private Users user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "product_id")
     private Product product;
 
