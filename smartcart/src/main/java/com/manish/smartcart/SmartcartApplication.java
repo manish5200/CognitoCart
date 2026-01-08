@@ -6,11 +6,13 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @Slf4j
 @SpringBootApplication
+@EnableRetry // <--- Enable the retry engine
 @EnableScheduling
 @EnableJpaAuditing
 @EnableAsync // This allows @Async methods to run in a separate thread

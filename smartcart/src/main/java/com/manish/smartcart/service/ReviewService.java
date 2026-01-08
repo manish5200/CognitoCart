@@ -12,6 +12,9 @@ import com.manish.smartcart.repository.ReviewRepository;
 import com.manish.smartcart.repository.UsersRepository;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -27,14 +30,26 @@ public class ReviewService {
     private final UsersRepository usersRepository;
     private final ReviewMapper reviewMapper;
 
+
+    @Recover
+    public Map<String,Object>recover(org.springframework.orm.ObjectOptimisticLockingFailureException e){
+        // This runs if all 3 attempts fail
+        throw new RuntimeException("Server is too busy to process your review. Please try again in a moment.");
+    }
+
     @Transactional
+    @Retryable(
+            retryFor = {org.springframework.orm.ObjectOptimisticLockingFailureException.class},
+            maxAttempts = 3,
+            backoff = @Backoff(delay =  500)// Wait 500ms before trying again
+    )
     public Map<String,Object> addOrUpdateReview(Long userId, Long productId, ReviewRequestDTO  reviewRequestDTO) {
         // 1. Verify the product exists
         Product product = productRepository
                 .findById(productId)
                 .orElseThrow(()-> new RuntimeException("Product not found"));
 
-        // 2. VERIFIED PURCHASE CHECK (Real-World Rule)
+        // 2.🛡️ VERIFIED PURCHASE CHECK
         // Ensure user has an order with this product that is 'DELIVERED'
         boolean hasPurchased = orderRepository
                 .existsByUserIdAndOrderItems_Product_IdAndOrderStatus(
@@ -76,15 +91,23 @@ public class ReviewService {
         return Map.of("message",statusMessage,"review",reviewMapper.toReviewResponseDTO(finalReview));
     }
 
+    /**
+     * Updates the denormalized rating when a review is edited.
+     * CONCEPT: Rolling Average Modification
+     */
     private void updateProductRatingOnEdit(Product product, Integer oldRating, Integer newRating) {
         if (product.getTotalReviews() == 0) return; // Defensive check
 
         double currentTotalScore = product.getAverageRating()*product.getTotalReviews();
-        double newAverageRating = (currentTotalScore + newRating - oldRating) / product.getTotalReviews();
+        double newAverageRating = (currentTotalScore + (double)newRating - (double)oldRating) / product.getTotalReviews();
         // Consistent rounding for the UI
         product.setAverageRating(Math.round(newAverageRating * 10.0) / 10.0);
         productRepository.save(product);
     }
+
+    /**
+     * Updates the denormalized rating for a brand new review.
+     */
 
     private void updateProductRatingOnNew(Product product, Integer newRating) {
           int newTotalReview = product.getTotalReviews() + 1;
@@ -97,4 +120,29 @@ public class ReviewService {
          productRepository.save(product);
     }
 
+    /**
+     * NEW FEATURE: Logic for removing a review and correcting the rating.
+     */
+    @Transactional
+    public void deleteReview(Long reviewId){
+          Review review = reviewRepository.findById(reviewId)
+                  .orElseThrow(()-> new RuntimeException("Review not found"));
+
+          Product product = review.getProduct();
+          int oldTotal = product.getTotalReviews();
+
+          if(oldTotal > 1){
+              double oldAverageRating = product.getAverageRating();
+              double newAverage = ((oldAverageRating*oldTotal) - review.getRating())/(oldTotal-1);
+              product.setAverageRating(Math.round(newAverage*10.0) / 10.0);
+              product.setTotalReviews(oldTotal-1);
+          }else{
+              // Reset to defaults if it was the only review
+              product.setTotalReviews(0);
+              product.setAverageRating(0.0);
+          }
+          productRepository.save(product);
+          reviewRepository.delete(review);
+
+    }
 }

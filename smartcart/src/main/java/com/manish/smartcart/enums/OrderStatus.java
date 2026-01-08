@@ -4,7 +4,7 @@ public enum OrderStatus {
     PAYMENT_PENDING,      // Waiting for payment
     PAID,                 // Payment success event received
     CONFIRMED,            // Seller/system confirmed
-    PACKING,              // Warehouse processing
+    PACKED,              // Warehouse processing
     SHIPPED,              // Handed to courier
     DELIVERED,            // Completed
     CANCELLED,            // Cancelled before shipping
