@@ -1,9 +1,13 @@
 package com.manish.smartcart.dto.auth;
 
+import com.manish.smartcart.enums.Gender;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.*;
+
+import java.time.LocalDate;
 
 @Setter
 @Getter
@@ -24,7 +28,16 @@ public class CustomerAuthRequest {
 
     private String role;
 
+    @NotBlank(message = "Phone number is required")
+    @Pattern(
+            regexp = "^\\+?[1-9]\\d{7,14}$",
+            message = "Invalid phone number format"
+    )
     private String phone;
+
+    private LocalDate dateOfBirth;
+
+    private String gender;
 
     private String shippingAdder;
 

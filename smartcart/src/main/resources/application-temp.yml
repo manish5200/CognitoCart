@@ -19,11 +19,6 @@ application:
       expiration: 900000 #15 mins
 
 
-
-
-
-
-
 # DATASOURCE - POSTGRESQL
   datasource:
     url: jdbc:postgresql://localhost:5432/cognitocart
@@ -52,3 +47,10 @@ springdoc:
     enabled: true
   swagger-ui:
     enabled: true
+
+#Data Initialization
+admin:
+  email: admin@smartcart.com
+  password: Admin@123
+  name: SmartCart Admin
+  phone: 9999999999

@@ -2,12 +2,16 @@ package com.manish.smartcart.service;
 
 import com.manish.smartcart.config.jwt.JwtUtil;
 import com.manish.smartcart.dto.auth.*;
+import com.manish.smartcart.enums.ErrorCode;
+import com.manish.smartcart.enums.Gender;
 import com.manish.smartcart.enums.Role;
 import com.manish.smartcart.model.user.CustomerProfile;
 import com.manish.smartcart.model.user.SellerProfile;
 import com.manish.smartcart.model.user.Users;
 import com.manish.smartcart.repository.UsersRepository;
+import com.manish.smartcart.util.PhoneUtil;
 import lombok.AllArgsConstructor;
+import org.apache.coyote.BadRequestException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -49,6 +53,9 @@ public class AuthService {
     }
 
 
+    // -----------------------------------------
+    // REGISTER CUSTOMER
+    // -----------------------------------------
 
    public ResponseEntity<?>registerCustomer(CustomerAuthRequest request){
      try{
@@ -67,8 +74,15 @@ public class AuthService {
          user.setPassword(passwordEncoder.encode(request.getPassword()));
          user.setRole(Role.CUSTOMER);
          user.setFullName(request.getName()); // Hoisted
-         user.setPhone(request.getPhone());    // Hoisted
 
+         String normalizedPhone = PhoneUtil.normalize(request.getPhone(), "+91");
+         if(usersRepository.existsByPhone(normalizedPhone)){
+             throw new RuntimeException(String.valueOf(ErrorCode.PHONE_ALREADY_EXISTS));
+         }
+         user.setPhone(normalizedPhone);
+         user.setActive(true);
+         user.setDateOfBirth(request.getDateOfBirth());
+         user.setGender(Gender.valueOf(request.getGender()));
          // 2. Create Lean Customer Profile
          CustomerProfile profile = new CustomerProfile();
          profile.setUser(user);
