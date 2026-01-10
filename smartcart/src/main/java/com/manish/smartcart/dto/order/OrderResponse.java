@@ -1,7 +1,7 @@
 package com.manish.smartcart.dto.order;
 
 import com.manish.smartcart.enums.OrderStatus;
-import com.manish.smartcart.model.order.Address;
+import com.manish.smartcart.model.user.Address;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -19,7 +19,7 @@ public class OrderResponse {
     private LocalDateTime orderDate;
     private BigDecimal totalAmount;
     private OrderStatus status;
-    private Address shippingAddress; // Essential for the receipt
+    private String shippingAddress;
     //List of the items we ordered
     private List<OrderItemDTO> items;
 

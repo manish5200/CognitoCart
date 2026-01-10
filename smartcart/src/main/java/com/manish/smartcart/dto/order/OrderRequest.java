@@ -1,6 +1,6 @@
 package com.manish.smartcart.dto.order;
 
-import com.manish.smartcart.model.order.Address;
+import com.manish.smartcart.model.user.Address;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;

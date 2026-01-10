@@ -36,11 +36,11 @@ public interface OrderRepository extends JpaRepository<Order,Long> {
                                                                  OrderStatus orderStatus);
 
     //ADMIN DASHBOARD
-    @Query("SELECT SUM(o.total) FROM Order o WHERE o.orderStatus = 'DELIVERED'")
+    @Query("SELECT SUM(o.totalAmount) FROM Order o WHERE o.orderStatus = 'DELIVERED'")
     BigDecimal calculateRevenue();
 
     // Sum total spent by a specific user (DELIVERED ONLY)
-    @Query("SELECT SUM(o.total) FROM " +
+    @Query("SELECT SUM(o.totalAmount) FROM " +
             "Order o WHERE" +
             " o.user.id = :userId " +
             "AND o.orderStatus = 'DELIVERED'")

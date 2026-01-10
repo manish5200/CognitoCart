@@ -36,9 +36,9 @@ public class CartResponse {
         for(CartItem item : updatedCart.getItems()){
             ItemDTO newItem = new ItemDTO(
                     item.getProduct().getProductName(),
-                    item.getPrice(),
+                    item.getPriceAtAdding(),
                     item.getQuantity(),
-                    item.getPrice().multiply(new BigDecimal(item.getQuantity()))
+                    item.getPriceAtAdding().multiply(new BigDecimal(item.getQuantity()))
             );
             items.add(newItem);
         }

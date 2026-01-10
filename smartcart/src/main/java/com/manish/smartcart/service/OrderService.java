@@ -9,6 +9,7 @@ import com.manish.smartcart.model.cart.CartItem;
 import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.model.order.OrderItem;
 import com.manish.smartcart.model.product.Product;
+import com.manish.smartcart.model.user.Address;
 import com.manish.smartcart.repository.OrderRepository;
 import com.manish.smartcart.repository.ProductRepository;
 import com.manish.smartcart.service.notifications.OrderNotificationService;
@@ -47,8 +48,21 @@ public class OrderService {
         order.setUser(cart.getUser());
         order.setOrderDate(LocalDateTime.now());
         order.setOrderStatus(OrderStatus.CREATED);
-        order.setShippingAddress(orderRequest.getShippingAddress());
-        order.setTotal(cart.getTotalAmount());
+        order.setTotalAmount(cart.getTotalAmount());
+
+        // --- RECTIFIED: ADDRESS SNAPSHOTTING ---
+        // Instead of linking to the entity, we freeze the values in time
+        Address shippingAddr = cart.getUser().getPrimaryAddress();
+        if (shippingAddr == null) {
+            throw new RuntimeException("No primary shipping address found for user.");
+        }
+        order.setShippingFullName(shippingAddr.getFullName());
+        order.setShippingPhone(shippingAddr.getPhoneNumber());
+        order.setShippingStreetAddress(shippingAddr.getStreetAddress());
+        order.setShippingCity(shippingAddr.getCity());
+        order.setShippingState(shippingAddr.getState());
+        order.setShippingZipCode(shippingAddr.getZipCode());
+        order.setShippingCountry(shippingAddr.getCountry());
 
         // 3. Convert CartItems to OrderItems (The Snapshot)
         List<OrderItem> orderItems = new ArrayList<>();
@@ -68,7 +82,7 @@ public class OrderService {
             orderItem.setOrder(order); // Link back to parent
             orderItem.setProduct(product);
             orderItem.setQuantity(cartItem.getQuantity());
-            orderItem.setPriceAtPurchase(cartItem.getPrice()); // Freeze the price!
+            orderItem.setPriceAtPurchase(cartItem.getPriceAtAdding()); // Freeze the price!
             orderItems.add(orderItem);
         }
         order.setOrderItems(orderItems);
@@ -77,8 +91,7 @@ public class OrderService {
         cartService.clearTheCart(userId);
         OrderResponse orderResponse =  orderMapper.toOrderResponse(savedOrder);
 
-        // 5. RECTIFIED: Send mail ONLY after successful DB Commit
-
+        // 5. RECTIFIED: Send mail ONLY after successful DB Commit : Post-Commit Notification
         if(TransactionSynchronizationManager.isActualTransactionActive()){
             TransactionSynchronizationManager.registerSynchronization(
                     new TransactionSynchronization() {

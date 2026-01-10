@@ -1,24 +1,25 @@
 package com.manish.smartcart.model.user;
 
+import com.manish.smartcart.enums.Gender;
 import com.manish.smartcart.enums.Role;
+import com.manish.smartcart.model.base.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
 @Table(name="users")
-public class Users {
+public class Users extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -31,6 +32,18 @@ public class Users {
     @Size(min=4)
     private String password;
 
+    // --- PHASE 1: HOISTED IDENTITY FIELDS ---
+    @NotBlank
+    private String fullName;
+
+    @Pattern(regexp = "^\\d{10}$", message = "Invalid phone number")
+    private String phone;
+
+    private LocalDate dateOfBirth;
+
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
@@ -38,19 +51,10 @@ public class Users {
     @Column(nullable = false)
     private Boolean active = true;
 
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
-
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
-
-    @Version
-    private Long version;
+    // --- PHASE 1: LOGISTICS SHORTCUT ---
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "primary_address_id")
+    private Address primaryAddress;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private CustomerProfile customerProfile;

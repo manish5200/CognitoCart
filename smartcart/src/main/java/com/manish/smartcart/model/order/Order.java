@@ -1,23 +1,25 @@
 package com.manish.smartcart.model.order;
 
 import com.manish.smartcart.enums.OrderStatus;
+import com.manish.smartcart.model.base.BaseEntity;
 import com.manish.smartcart.model.user.Users;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+
 @Entity
 @Table(name = "orders")
-public class Order {
+@NoArgsConstructor
+@AllArgsConstructor
+@Setter
+@Getter
+@Builder
+public class Order extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,11 +33,18 @@ public class Order {
     private List<OrderItem>orderItems = new ArrayList<OrderItem>();
 
     private LocalDateTime orderDate;
-    private BigDecimal total;
+    private BigDecimal totalAmount;
 
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus; // PENDING, CONFIRMED, SHIPPED, DELIVERED
 
-    @Embedded
-    private Address shippingAddress;
+    // --- PHASE 1: SHIPPING SNAPSHOT (IMMUTABLE) ---
+    // These fields "freeze" the data at the moment of checkout
+    private String shippingFullName;
+    private String shippingPhone;
+    private String shippingStreetAddress;
+    private String shippingCity;
+    private String shippingState;
+    private String shippingZipCode;
+    private String shippingCountry;
 }

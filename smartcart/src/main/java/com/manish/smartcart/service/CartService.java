@@ -57,7 +57,7 @@ public class CartService {
         if(cartItem.getId() == null){
             cartItem.setCart(cart);
             cartItem.setProduct(product);
-            cartItem.setPrice(product.getPrice());
+            cartItem.setPriceAtAdding(product.getPrice());
             cartItem.setQuantity(quantity);
             //Final add to the list of the cart
             cart.addCartItem(cartItem); // Using helper
@@ -85,7 +85,7 @@ public class CartService {
                 //thinks like cartItems on conveyor belt
                 .stream()
                 //Transform into single quantity by multiplying
-                .map(item -> item.getPrice().multiply(new BigDecimal(item.getQuantity())))
+                .map(item -> item.getPriceAtAdding().multiply(new BigDecimal(item.getQuantity())))
                 //This is the "Sum" function for BigDecimal.
                 // It starts at zero and adds every item's subtotal one by one.
                 .reduce(BigDecimal.ZERO, BigDecimal::add);

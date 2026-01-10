@@ -21,15 +21,10 @@ public class CustomerProfile {
     @JoinColumn(name = "user_id", foreignKey = @ForeignKey(name = "fk_customer_profile_user"))
     private Users user;
 
-    @Column(nullable = false)
-    private String name;
+    // Role-specific data
+    private Integer loyaltyPoints = 0; // For reward systems
 
-    private String phone;
-
-    @Size(max = 255)
-    private String defaultShippingAddress;
-
-    @Size(max = 255)
-    private String defaultBillingAddress;
+    @Size(max = 500)
+    private String preferences;
 
 }

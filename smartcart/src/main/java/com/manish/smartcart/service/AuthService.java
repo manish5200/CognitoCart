@@ -7,6 +7,7 @@ import com.manish.smartcart.model.user.CustomerProfile;
 import com.manish.smartcart.model.user.SellerProfile;
 import com.manish.smartcart.model.user.Users;
 import com.manish.smartcart.repository.UsersRepository;
+import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -19,21 +20,13 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Service
+@AllArgsConstructor
 public class AuthService {
 
     private final UsersRepository usersRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtService;
-    public AuthService(UsersRepository usersRepository,
-               PasswordEncoder passwordEncoder,
-               AuthenticationManager authenticationManager,
-               JwtUtil jwtService) {
-    this.usersRepository = usersRepository;
-    this.passwordEncoder = passwordEncoder;
-    this.authenticationManager = authenticationManager;
-    this.jwtService = jwtService;
-    }
 
 
     //Login
@@ -57,10 +50,10 @@ public class AuthService {
 
 
 
-   public ResponseEntity<?>registerCustomer(CustomerAuthRequest customerAuthRequest){
+   public ResponseEntity<?>registerCustomer(CustomerAuthRequest request){
      try{
          // 1. Validate email and role
-         String email = customerAuthRequest.getEmail() == null ? null : customerAuthRequest.getEmail();
+         String email = request.getEmail() == null ? null : request.getEmail();
          if(email == null){
              return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "email is required"));
          }
@@ -68,41 +61,30 @@ public class AuthService {
              return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "email already exists"));
          }
 
-         String roleString = customerAuthRequest.getRole();
-         Role role = roleString == null ||
-                 roleString.isBlank() ? Role.CUSTOMER : Role.valueOf(roleString);
+         // 1. Create User with Hoisted Identity Fields
+         Users user = new Users();
+         user.setEmail(request.getEmail());
+         user.setPassword(passwordEncoder.encode(request.getPassword()));
+         user.setRole(Role.CUSTOMER);
+         user.setFullName(request.getName()); // Hoisted
+         user.setPhone(request.getPhone());    // Hoisted
 
-         if(role != Role.CUSTOMER){
-             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Invalid role"));
-         }
-
-         String hashedPassword = passwordEncoder.encode(customerAuthRequest.getPassword());
-
-         // 2. Create User
-         Users user = new Users(email,hashedPassword,role);
-
-         // 3. Create Customer Profile
-         CustomerProfile customerProfile = new CustomerProfile();
-         customerProfile.setName(customerAuthRequest.getName());
-         customerProfile.setPhone(customerAuthRequest.getPhone());
-         customerProfile.setDefaultShippingAddress(customerAuthRequest.getShippingAdder());
-         customerProfile.setDefaultBillingAddress(customerAuthRequest.getBillingAdder());
-
-         // 4. Link both sides (VERY IMPORTANT)
-         user.setCustomerProfile(customerProfile);
-
-         // 5. Save only user (cascade persists profile)
+         // 2. Create Lean Customer Profile
+         CustomerProfile profile = new CustomerProfile();
+         profile.setUser(user);
+         // 3. Link both sides (VERY IMPORTANT)
+         user.setCustomerProfile(profile);
+         // 4. Save User (Cascade persists profile)
          Users savedUser = usersRepository.save(user);
-
 
          //don't expose hashed password
          Map<String,Object> body = new LinkedHashMap<>();
-         body.put("id", customerProfile.getId());
-         body.put("name", customerProfile.getName());
+         body.put("id", profile.getId());
+         body.put("name", savedUser.getFullName());
          body.put("email", savedUser.getEmail());
          body.put("role", savedUser.getRole());
          body.put("createdAt", savedUser.getCreatedAt());
-         body.put("phone" , customerProfile.getPhone());
+         body.put("phone" , savedUser.getPhone());
          return ResponseEntity.status(HttpStatus.OK).body(Map.of("Customer registered successfully.✅",body));
 
      }catch(Exception e){
@@ -113,58 +95,54 @@ public class AuthService {
 
 
 //Register Seller
-    public ResponseEntity<?>registerSeller(SellerAuthRequest sellerAuthRequest){
-            try{
-            // 1. Validate email
-            String email = sellerAuthRequest.getEmail() == null ? null : sellerAuthRequest.getEmail();
-            if(email == null){
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "email is required"));
-            }
-            if(usersRepository.existsByEmail(email)){
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "email already exists"));
-            }
+public ResponseEntity<?>registerSeller(SellerAuthRequest request){
+        try{
+        // 1. Validate email
+        String email = request.getEmail() == null ? null : request.getEmail();
+        if(email == null){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "email is required"));
+        }
+        if(usersRepository.existsByEmail(email)){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "email already exists"));
+        }
 
-            String roleString = sellerAuthRequest.getRole();
-            Role role = roleString == null ||
-                    roleString.isBlank() ? Role.SELLER : Role.valueOf(roleString);
+        // 2. Create User with Hoisted Identity Fields
+        Users user = new Users();
+        user.setEmail(email);
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setRole(Role.SELLER);
+        user.setFullName(request.getStoreName());
 
-            if(role != Role.SELLER){
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Invalid role"));
-            }
+        // 3. Create Seller Profile
+        SellerProfile profile = new SellerProfile();
+        profile.setStoreName(request.getStoreName());
+        profile.setBusinessAddress(request.getBusinessAdder());
+        profile.setGstin(request.getGstin());
+        profile.setPanCard(request.getPanCard());
 
-            String hashedPassword = passwordEncoder.encode(sellerAuthRequest.getPassword());
+        // 4. Link both sides (VERY IMPORTANT)
+        profile.setUser(user);
+        user.setSellerProfile(profile);
 
-            // 2. Create User
-            Users user = new Users(email,hashedPassword,role);
-
-            // 3. Create Customer Profile
-            SellerProfile sellerProfile = new SellerProfile();
-            sellerProfile.setStoreName(sellerAuthRequest.getStoreName());
-            sellerProfile.setBusinessAddress(sellerAuthRequest.getBusinessAdder());
-            sellerProfile.setGstin(sellerAuthRequest.getGstin());
-            sellerProfile.setPanCard(sellerAuthRequest.getPanCard());
-            // 4. Link both sides (VERY IMPORTANT)
-            user.setSellerProfile(sellerProfile);
-
-            // 5. Save only user (cascade persists profile)
-            Users savedUser = usersRepository.save(user);
+        // 5. Save only user (cascade persists profile)
+        Users savedUser = usersRepository.save(user);
 
 
-            //don't expose hashed password
-            Map<String,Object> body = new LinkedHashMap<>();
-            body.put("id", sellerProfile.getId());
-            body.put("name", sellerProfile.getStoreName());
-            body.put("Business Address", sellerProfile.getBusinessAddress());
-            body.put("GST IN", sellerProfile.getGstin());
-            body.put("PAN CARD" , sellerProfile.getPanCard());
-            body.put("email", savedUser.getEmail());
-            body.put("role", savedUser.getRole());
-            body.put("createdAt", savedUser.getCreatedAt());
-            return ResponseEntity.status(HttpStatus.OK).body(Map.of("Seller registered successfully.✅",body));
+        //don't expose hashed password
+        Map<String,Object> body = new LinkedHashMap<>();
+        body.put("id", profile.getId());
+        body.put("name", profile.getStoreName());
+        body.put("Business Address", profile.getBusinessAddress());
+        body.put("GST IN", profile.getGstin());
+        body.put("PAN CARD" , profile.getPanCard());
+        body.put("email", savedUser.getEmail());
+        body.put("role", savedUser.getRole());
+        body.put("createdAt", savedUser.getCreatedAt());
+        return ResponseEntity.status(HttpStatus.OK).body(Map.of("Seller registered successfully.✅",body));
 
-            }catch(Exception e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("Error in registering seller.❌", e.getMessage()));
-            }
-            }
+        }catch(Exception e){
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("Error in registering seller.❌", e.getMessage()));
+        }
+        }
 
 }

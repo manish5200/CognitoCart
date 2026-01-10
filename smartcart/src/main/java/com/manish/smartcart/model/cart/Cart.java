@@ -2,6 +2,7 @@ package com.manish.smartcart.model.cart;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.manish.smartcart.model.base.BaseEntity;
 import com.manish.smartcart.model.user.Users;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -20,7 +21,7 @@ import java.util.List;
 @AllArgsConstructor
 @Entity
 @Table(name = "carts")
-public class Cart {
+public class Cart extends BaseEntity{ // Added BaseEntity for Versioning
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,7 +31,7 @@ public class Cart {
     @JoinColumn(name = "user_id")
     private Users user;
 
-    @JsonIgnoreProperties("cart") // Prevents CartItem from reaching back to this Cart
+    @JsonIgnoreProperties("cart") //Prevents CartItem from reaching back to this Cart
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CartItem> items = new ArrayList<CartItem>();
 
@@ -46,4 +47,5 @@ public class Cart {
         items.remove(item);
         item.setCart(null);
     }
+
 }

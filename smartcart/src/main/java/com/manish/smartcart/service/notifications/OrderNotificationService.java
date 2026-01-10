@@ -1,7 +1,6 @@
 package com.manish.smartcart.service.notifications;
 
 import com.manish.smartcart.dto.order.OrderResponse;
-import com.manish.smartcart.model.order.Address;
 import com.manish.smartcart.service.EmailService;
 import com.manish.smartcart.util.AppConstants;
 import lombok.extern.slf4j.Slf4j;
@@ -57,30 +56,8 @@ public class OrderNotificationService {
                 .replace("{{ORDER_DATE}}",orderResponse.getOrderDate().toString())
                 .replace("{{PAYMENT_METHOD}}","CASH BY DEFAULT - Will implement later")
                 .replace("{{TOTAL_AMOUNT}}",orderResponse.getTotalAmount().toString())
-                .replace("{{SHIPPING_ADDRESS}}",formatAddress(orderResponse.getShippingAddress()))
+                .replace("{{SHIPPING_ADDRESS}}",orderResponse.getShippingAddress())
                 .replace("{{SUPPORT_EMAIL}}","manishneelambar@gmail.com");
-    }
-
-
-    //Address Helper  -> took help of AI
-    private String formatAddress(Address address) {
-        return """
-        <p>
-            <b>%s</b><br>
-            📞 %s<br>
-            %s<br>
-            %s, %s<br>
-            %s - %s
-        </p>
-        """.formatted(
-                address.getRecipientName(),
-                address.getPhone(),
-                address.getStreet(),
-                address.getCity(),
-                address.getState(),
-                address.getCountry(),
-                address.getPostalCode()
-        );
     }
 
 }

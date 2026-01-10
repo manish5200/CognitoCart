@@ -1,12 +1,8 @@
 package com.manish.smartcart.model.cart;
-
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.manish.smartcart.model.base.BaseEntity;
 import com.manish.smartcart.model.product.Product;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 
@@ -15,12 +11,13 @@ import java.math.BigDecimal;
 * It links a Product to a Cart and stores the quantity.
 * */
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Entity
 @Table(name = "cart_items")
-public class CartItem {
+@NoArgsConstructor
+@AllArgsConstructor
+@Setter
+@Getter
+public class CartItem extends BaseEntity{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,11 +29,10 @@ public class CartItem {
 
     private Integer quantity;
 
-    private BigDecimal price; // Price at the time of adding to cart
+    private BigDecimal priceAtAdding; // Renamed for clarity
 
     @ManyToOne(fetch =  FetchType.LAZY)
     @JoinColumn(name = "cart_id") //act as foreign key to link with Cart
-    @JsonIgnore // Keep this here as well
     private Cart cart;
 
 }
