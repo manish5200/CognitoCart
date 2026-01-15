@@ -49,6 +49,7 @@ public class Users extends BaseEntity {
     private Role role;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean active = true;
 
     // --- PHASE 1: LOGISTICS SHORTCUT ---

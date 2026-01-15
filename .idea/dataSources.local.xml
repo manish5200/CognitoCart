@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="dataSourceStorageLocal" created-in="IU-252.26830.84">
+    <data-source name="cognitocart@localhost" uuid="33544177-a038-4f3e-ba4b-96560c6dfd7e">
+      <database-info product="" version="" jdbc-version="" driver-name="" driver-version="" dbms="POSTGRES" />
+      <user-name>cognitocart</user-name>
+      <schema-mapping />
+    </data-source>
+  </component>
+</project>

@@ -47,6 +47,7 @@ public class Address extends BaseEntity{
     private String country;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean isDefault = false; // Flag for UI "Default" selection
 
     @ManyToOne(fetch = FetchType.LAZY)

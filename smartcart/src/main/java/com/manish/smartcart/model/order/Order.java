@@ -29,11 +29,14 @@ public class Order extends BaseEntity {
     @JoinColumn(name = "user_id")
     private Users user;
 
+    @Builder.Default
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     private List<OrderItem>orderItems = new ArrayList<OrderItem>();
 
     private LocalDateTime orderDate;
-    private BigDecimal totalAmount;
+
+    @Builder.Default
+    private BigDecimal totalAmount = BigDecimal.ZERO;
 
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus; // PENDING, CONFIRMED, SHIPPED, DELIVERED

@@ -1,18 +1,21 @@
 package com.manish.smartcart.model.user;
 
+import com.manish.smartcart.model.base.BaseEntity;
 import com.manish.smartcart.model.product.Product;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Data
 @NoArgsConstructor
+@AllArgsConstructor
+@Setter
+@Getter
+@Builder
 @Table(name = "user_wishlist")
-public class Wishlist {
+public class Wishlist extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,8 +28,5 @@ public class Wishlist {
     @ManyToOne
     @JoinColumn(name = "product_id")
     private Product product;
-
-    @CreationTimestamp
-    private LocalDateTime addedAt;
 
 }

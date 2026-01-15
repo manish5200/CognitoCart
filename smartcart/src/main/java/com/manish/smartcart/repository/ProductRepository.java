@@ -16,7 +16,7 @@ import java.util.Optional;
 public interface   ProductRepository extends JpaRepository<Product,Long>, JpaSpecificationExecutor<Product>{
     // JpaSpecificationExecutor adds the .findAll(Specification, Pageable) method!
 
-    List<Product> findByCategoryId(Long categoryId);
+    List<Product> findByCategory_Id(Long categoryId);
 
     Optional<Product> findBySlug(String slug);
 

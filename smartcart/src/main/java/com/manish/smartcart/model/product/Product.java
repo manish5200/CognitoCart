@@ -4,11 +4,15 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.manish.smartcart.model.base.BaseEntity;
 import com.manish.smartcart.model.feedback.Review;
 import com.manish.smartcart.util.AppConstants;
+// Use Jakarta for these standard ones
 import jakarta.persistence.*;
-import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.ForeignKey;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.persistence.CascadeType;
 import lombok.*;
 import org.hibernate.annotations.*;
 import java.math.BigDecimal;
