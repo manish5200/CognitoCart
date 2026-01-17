@@ -14,6 +14,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.persistence.CascadeType;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.*;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -27,13 +28,10 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
+@SuperBuilder
 @Table(name="products")
 @SoftDelete(columnName = "is_deleted") // <--- That's it! No @SQLDelete or @SQLRestriction needed.
 public class Product extends BaseEntity{
-
-    @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    private Long id;
 
     @NotBlank
     private String productName;

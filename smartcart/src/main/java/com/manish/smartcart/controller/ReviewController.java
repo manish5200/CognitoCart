@@ -33,7 +33,7 @@ public class ReviewController {
             Authentication authentication) {
             CustomUserDetails  customUserDetails = (CustomUserDetails) authentication.getPrincipal();
         assert customUserDetails != null;
-        Long userId = customUserDetails.getUserId();
+        Long userId = customUserDetails.getUser().getId();
             return ResponseEntity
                     .ok(reviewService.addOrUpdateReview(
                             userId,

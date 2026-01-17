@@ -72,7 +72,7 @@ public class ProductController {
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         assert userDetails != null;
         ProductResponse createdProduct = productService
-                    .createProduct(productRequest,userDetails.getUserId());
+                    .createProduct(productRequest,userDetails.getUser().getId());
             return ResponseEntity.status(HttpStatus.CREATED).body(createdProduct);
     }
 
@@ -112,7 +112,7 @@ public class ProductController {
         boolean isAdmin = userDetails.getAuthorities()
                     .stream()
                     .anyMatch(a-> Objects.equals(a.getAuthority(), "ROLE_ADMIN"));
-            productService.toggleAvailability(id,userDetails.getUserId(),isAdmin);
+            productService.toggleAvailability(id,userDetails.getUser().getId(),isAdmin);
             return ResponseEntity.ok(Map.of("message", "Visibility updated successfully."));
     }
 
@@ -129,7 +129,7 @@ public class ProductController {
                      .anyMatch(a -> Objects.equals(a
                              .getAuthority(), "ROLE_ADMIN"));
 
-             productService.deleteProduct(id,userDetails.getUserId(),isAdmin);
+             productService.deleteProduct(id,userDetails.getUser().getId(),isAdmin);
              return ResponseEntity.ok(Map.of("message", "Product deleted successfully."));
     }
 

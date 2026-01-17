@@ -37,7 +37,7 @@ public class CustomerController {
                                                  @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) Integer PageSize) {
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         assert userDetails != null;
-        Long userId = userDetails.getUserId();
+        Long userId = userDetails.getUser().getId();
             CustomerDashboardDTO customerStats = customerService.getCustomerDashboard(userId, pageNumber, PageSize);
             return new ResponseEntity<>(customerStats, HttpStatus.OK);
 

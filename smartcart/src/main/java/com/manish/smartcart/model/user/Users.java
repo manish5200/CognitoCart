@@ -9,6 +9,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
 
@@ -18,12 +19,8 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @Setter
 @Getter
-@Builder
+@SuperBuilder
 public class Users extends BaseEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
     @Column(nullable = false, unique = true, length = 180)
     @Email @NotBlank
     private String email;

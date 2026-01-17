@@ -3,6 +3,7 @@ import com.manish.smartcart.model.base.BaseEntity;
 import com.manish.smartcart.model.product.Product;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
 
@@ -11,17 +12,14 @@ import java.math.BigDecimal;
 * It links a Product to a Cart and stores the quantity.
 * */
 
-@Entity
-@Table(name = "cart_items")
 @NoArgsConstructor
 @AllArgsConstructor
 @Setter
 @Getter
+@SuperBuilder
+@Entity
+@Table(name = "cart_items")
 public class CartItem extends BaseEntity{
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
     @ManyToOne
     @JoinColumn(name = "product_id")  // act as foreign key to link with product

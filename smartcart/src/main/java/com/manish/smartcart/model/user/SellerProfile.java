@@ -1,24 +1,23 @@
 package com.manish.smartcart.model.user;
 
 import com.manish.smartcart.enums.KycStatus;
+import com.manish.smartcart.model.base.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Entity
 @Table(name = "seller_profiles")
-public class SellerProfile {
-
-    @Id
-    private Long id;
+@NoArgsConstructor
+@AllArgsConstructor
+@Setter
+@Getter
+@SuperBuilder
+public class SellerProfile extends BaseEntity {
 
     @OneToOne(fetch = FetchType.LAZY)
-    @MapsId
+    @MapsId // User ID becomes the Profile ID
     @JoinColumn(name = "user_id", foreignKey = @ForeignKey(name = "fk_seller_profile_user"))
     private Users user;
 

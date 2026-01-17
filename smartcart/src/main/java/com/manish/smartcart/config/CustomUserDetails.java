@@ -11,20 +11,20 @@ import java.util.List;
 
 public class CustomUserDetails implements UserDetails {
 
+    /**
+     * The "Real-World" Approach:
+     * Keep the entire entity here so AuthService can access any field
+     * without hitting the database again.
+     */
+
     // Getter for the ID so the Controller can access it
     @Getter
-    private final Long userId;
-    private final String email; //will be used as username
-    private final String password;
+    private final Users user;
     private final List<GrantedAuthority>authorities;
 
     public CustomUserDetails(Users users) {
-        this.userId = users.getId();
-        this.email = users.getEmail();
-        this.password = users.getPassword();
-        String role = users.getRole().name();
-        String prefixedRole = "ROLE_" + role;
-        this.authorities = List.of(new SimpleGrantedAuthority(prefixedRole));
+        this.user = users;
+        this.authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
     }
 
     @Override
@@ -34,12 +34,12 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public @Nullable String getPassword() {
-        return password;
+        return user.getPassword();
     }
 
     @Override
     public String getUsername() {
-        return email;
+        return user.getEmail();
     }
 
     @Override

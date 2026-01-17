@@ -38,7 +38,7 @@ public class CartController {
               CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         assert userDetails != null;
         Cart updatedCart = cartService.addItemToCart(
-                      userDetails.getUserId(),
+                      userDetails.getUser().getId(),
                       cartRequest.getProductId(),
                       cartRequest.getQuantity()
               );
@@ -53,7 +53,7 @@ public class CartController {
     public ResponseEntity<?> getCartSummary(Authentication authentication){
            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         assert userDetails != null;
-        Cart cart = cartService.getCartForUser(userDetails.getUserId());
+        Cart cart = cartService.getCartForUser(userDetails.getUser().getId());
             CartResponse cartResponse = new CartResponse().getCartResponse(cart);
             return ResponseEntity.ok().body(cartResponse);
 
@@ -65,7 +65,7 @@ public class CartController {
     public ResponseEntity<?> clearCart(Authentication authentication){
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         assert userDetails != null;
-        Long userId = userDetails.getUserId();
+        Long userId = userDetails.getUser().getId();
             cartService.clearTheCart(userId);
             return  ResponseEntity.ok().body(Map.of("message","Cart cleared successfully✅"));
     }
@@ -79,7 +79,7 @@ public class CartController {
 
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         assert userDetails != null;
-        Long userId = userDetails.getUserId();
+        Long userId = userDetails.getUser().getId();
             Cart cart = cartService.applyCoupon(userId, percentage);
 
             CartResponse cartResponse = new CartResponse().getCartResponse(cart);
@@ -93,7 +93,7 @@ public class CartController {
     public ResponseEntity<?> deleteItemFromCart(@PathVariable("productId") Long productId, Authentication auth){
             CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
         assert userDetails != null;
-        Long userId = userDetails.getUserId();
+        Long userId = userDetails.getUser().getId();
             Cart cart = cartService.removeItemFromCart(userId, productId);
             CartResponse cartResponse = new CartResponse().getCartResponse(cart);
             return ResponseEntity.ok().body(cartResponse);

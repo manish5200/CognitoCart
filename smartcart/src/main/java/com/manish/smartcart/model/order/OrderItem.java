@@ -1,25 +1,22 @@
 package com.manish.smartcart.model.order;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.manish.smartcart.model.base.BaseEntity;
 import com.manish.smartcart.model.product.Product;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
 
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Setter
+@Getter
+@SuperBuilder
 @Entity
 @Table(name = "order_items")
-public class OrderItem {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
+public class OrderItem extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "order_id") // creates a column(order_id) in order_items table acting as FK for orders table
     @JsonBackReference //Prevents infinite recursion in JSON

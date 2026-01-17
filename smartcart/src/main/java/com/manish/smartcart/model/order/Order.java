@@ -5,6 +5,7 @@ import com.manish.smartcart.model.base.BaseEntity;
 import com.manish.smartcart.model.user.Users;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -12,18 +13,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-@Entity
-@Table(name = "orders")
 @NoArgsConstructor
 @AllArgsConstructor
 @Setter
 @Getter
-@Builder
+@SuperBuilder
+@Entity
+@Table(name = "orders")
 public class Order extends BaseEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

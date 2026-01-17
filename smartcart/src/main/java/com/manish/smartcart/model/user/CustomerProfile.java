@@ -1,20 +1,19 @@
 package com.manish.smartcart.model.user;
 
+import com.manish.smartcart.model.base.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Entity
-@Data
+@Table(name="customer_profiles")
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name="customer_profiles")
-public class CustomerProfile {
-
-    @Id
-    private Long id;
+@Setter
+@Getter
+@SuperBuilder
+public class CustomerProfile extends BaseEntity{
 
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId

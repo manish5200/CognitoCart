@@ -1,16 +1,15 @@
 package com.manish.smartcart.model.base;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.MappedSuperclass;
-import jakarta.persistence.Version;
+import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
@@ -22,8 +21,13 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @MappedSuperclass
+@SuperBuilder // Required so child builders can see these fields
 @EntityListeners(AuditingEntityListener.class)// The "Sensor" for timestamps
-public abstract class BaseEntity {
+public abstract class BaseEntity implements Serializable {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id; // Now unified for the entire system
 
     @CreatedDate
     @Column(name = "created_at", updatable = false, nullable = false)
@@ -38,7 +42,7 @@ public abstract class BaseEntity {
     private String createdBy;
 
     @LastModifiedBy
-    @Column(name = "modified_by", updatable = false)
+    @Column(name = "modified_by")
     private String modifiedBy;
 
     @Version

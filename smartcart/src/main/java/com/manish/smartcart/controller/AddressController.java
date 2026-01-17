@@ -46,6 +46,6 @@ public class AddressController {
         assert authentication != null;
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
         assert customUserDetails != null;
-        return customUserDetails.getUserId();
+        return customUserDetails.getUser().getId();
     }
 }

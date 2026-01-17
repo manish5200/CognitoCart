@@ -182,6 +182,8 @@ CREATE TABLE product_tags (
                               tag VARCHAR(255)
 );
 
+
+
 -- Circular logic resolution
 ALTER TABLE users ADD CONSTRAINT fk_user_primary_address
     FOREIGN KEY (primary_address_id) REFERENCES user_addresses(id);

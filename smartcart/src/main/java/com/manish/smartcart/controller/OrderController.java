@@ -37,7 +37,7 @@ public class OrderController {
                                         Authentication authentication){
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         assert userDetails != null;
-        Long userId = userDetails.getUserId();
+        Long userId = userDetails.getUser().getId();
             OrderResponse orderResponse = orderService.placeOrder(userId,orderRequest);
             return ResponseEntity.status(HttpStatus.OK).body(orderResponse);
     }
@@ -49,7 +49,7 @@ public class OrderController {
     public ResponseEntity<?> getOrderHistory(Authentication authentication) {
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         assert userDetails != null;
-        Long userId = userDetails.getUserId();
+        Long userId = userDetails.getUser().getId();
 
             List<OrderResponse> history = orderService.getOrderHistoryForUser(userId);
             return ResponseEntity.ok(history);
@@ -61,7 +61,7 @@ public class OrderController {
     public ResponseEntity<?> cancelOrder(@PathVariable Long orderId, Authentication authentication) {
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         assert userDetails != null;
-        Long userId = userDetails.getUserId();
+        Long userId = userDetails.getUser().getId();
             OrderResponse orderResponse = orderService.cancelOrder(userId,orderId);
             return ResponseEntity.ok(orderResponse);
     }

@@ -2,5 +2,6 @@
 <project version="4">
   <component name="SqlDialectMappings">
     <file url="file://$PROJECT_DIR$/smartcart/src/main/java/com/manish/smartcart/model/product/Product.java" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/smartcart/src/main/resources/db/migration/V2__security_and_profiles.sql" dialect="GenericSQL" />
   </component>
 </project>

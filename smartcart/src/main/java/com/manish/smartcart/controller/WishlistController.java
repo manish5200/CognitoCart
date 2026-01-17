@@ -41,7 +41,7 @@ public class WishlistController {
                                             Authentication authentication){
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
         assert customUserDetails != null;
-        Long userId = customUserDetails.getUserId();
+        Long userId = customUserDetails.getUser().getId();
         String message = wishlistService.toggleWishlist(userId, productId);
         return ResponseEntity.ok().body(Map.of("Status", message));
     }
@@ -52,7 +52,7 @@ public class WishlistController {
     public ResponseEntity<List<ProductResponse>> getMyWishlist(Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         assert userDetails != null;
-        List<ProductResponse> wishlist = wishlistService.getWishlistForUser(userDetails.getUserId());
+        List<ProductResponse> wishlist = wishlistService.getWishlistForUser(userDetails.getUser().getId());
         return ResponseEntity.ok(wishlist);
     }
 
@@ -65,7 +65,7 @@ public class WishlistController {
             Authentication authentication){
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
         assert customUserDetails != null;
-        Long userId = customUserDetails.getUserId();
+        Long userId = customUserDetails.getUser().getId();
         CartResponse cartResponse = wishlistService.wishlistToCart(userId, productId, quantity);
         return ResponseEntity.ok(Map.of("Item moved to cart successfully",cartResponse));
     }
@@ -76,7 +76,7 @@ public class WishlistController {
     public ResponseEntity<?>getWishlistSummary(Authentication authentication){
          CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
         assert customUserDetails != null;
-        Long userId = customUserDetails.getUserId();
+        Long userId = customUserDetails.getUser().getId();
         WishlistSummaryDTO wishlistSummaryDTO = wishlistService.getWishlistSummary(userId);
         return ResponseEntity.ok(Map.of("Wishlist Summary", wishlistSummaryDTO));
     }

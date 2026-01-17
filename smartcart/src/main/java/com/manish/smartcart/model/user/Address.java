@@ -5,21 +5,18 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.SoftDelete;
 
-@Entity
-@Table(name = "user_addresses")
-@SoftDelete(columnName = "is_deleted") // Preserves order history records
 @NoArgsConstructor
 @AllArgsConstructor
 @Setter
 @Getter
-@Builder
+@SoftDelete(columnName = "is_deleted") // Preserves order history records
+@SuperBuilder
+@Entity
+@Table(name = "user_addresses")
 public class Address extends BaseEntity{
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
     @NotBlank(message = "Recipient name is required")
     private String fullName; // Name of the person receiving the package
