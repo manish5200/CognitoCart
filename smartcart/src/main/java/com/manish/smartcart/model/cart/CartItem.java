@@ -27,10 +27,9 @@ public class CartItem extends BaseEntity{
 
     private Integer quantity;
 
-    private BigDecimal priceAtAdding; // Renamed for clarity
-
     @ManyToOne(fetch =  FetchType.LAZY)
     @JoinColumn(name = "cart_id") //act as foreign key to link with Cart
     private Cart cart;
 
+    private BigDecimal priceAtAdding; // Renamed for clarity
 }

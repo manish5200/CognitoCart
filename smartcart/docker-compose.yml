@@ -1,0 +1,45 @@
+services:
+  # 1. Database Service (PostgreSQL)
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: cognitocart-db
+    environment:
+      - POSTGRES_DB=cognitocart
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d smartcart -h localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 2. Application Service (CognitoCart API)
+  cognitocart-app:
+    build: .
+    container_name: cognitocart-api
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres-db:
+        condition: service_healthy # App waits until DB is fully ready
+    environment:
+      # Database & JWT
+      - SPRING_DATASOURCE_URL=${DB_URL}
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+
+      # Mail Configuration (Fixes the PlaceholderResolutionException)
+      - MAIL_HOST=${MAIL_HOST}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+    restart: always
+
+# Required for data persistence
+volumes:
+  pgdata:
