@@ -111,13 +111,12 @@ smartcart/
 │   ├── enums/                   # Role, OrderStatus, PaymentStatus, KycStatus etc.
 │   └── util/                    # AppConstants, PhoneUtil, FileValidator
 ├── src/main/resources/
-│   ├── application.yml          # Shared config (all env vars, mail, JWT, admin seed)
-│   ├── application-dev.yml      # Dev profile (DB, logging, Swagger)
-│   └── db/migration/            # Flyway SQL migration scripts
-├── .env.example                 # ← Copy this to .env and fill in your values
-├── .env                         # ← Your local secrets (gitignored)
-├── Dockerfile                   # Multi-stage Docker build
-└── docker-compose.yml           # App + PostgreSQL for future deployment
+│   ├── application-demo.yml     # ← Reference config with fake values (safe to commit)
+│   ├── application.yml          # ← Your real config (gitignored — never committed)
+│   ├── application-dev.yml      # ← Your dev config (gitignored — never committed)
+│   └── db/migration/            # Flyway SQL migration scripts (V1, V2, V3...)
+├── Dockerfile                   # Multi-stage Docker build (gitignored — WIP)
+└── docker-compose.yml           # App + PostgreSQL (gitignored — WIP)
 ```
 
 ---
@@ -195,43 +194,36 @@ Then open **`application.yml`** and **`application-dev.yml`** and fill in your r
 
 | Group | Base Path | Access |
 |-------|-----------|--------|
-| Auth | `/api/auth/**` | Public |
-| Products (browse) | `GET /api/products` | Public |
-| Products (manage) | `/api/products/**` | SELLER / ADMIN |
-| Categories | `/api/categories/**` | ADMIN (write), Public (read) |
-| Cart | `/api/cart/**` | CUSTOMER |
-| Wishlist | `/api/wishlist/**` | CUSTOMER |
-| Orders | `/api/orders/**` | CUSTOMER / ADMIN |
-| Reviews | `/api/reviews/**` | CUSTOMER (write), Public (read) |
-| Addresses | `/api/addresses/**` | CUSTOMER |
-| Customer | `/api/customers/**` | CUSTOMER |
-| Admin | `/api/admin/**` | ADMIN |
+| Auth | `/api/v1/auth/**` | Public |
+| Products (browse) | `GET /api/v1/products` | Public |
+| Products (manage) | `/api/v1/products/**` | SELLER / ADMIN |
+| Categories | `/api/v1/categories/**` | ADMIN (write), Public (read) |
+| Cart | `/api/v1/cart/**` | CUSTOMER |
+| Wishlist | `/api/v1/wishlist/**` | CUSTOMER |
+| Orders | `/api/v1/orders/**` | CUSTOMER / ADMIN |
+| Reviews | `/api/v1/reviews/**` | CUSTOMER (write), Public (read) |
+| Addresses | `/api/v1/addresses/**` | CUSTOMER |
+| Customer | `/api/v1/customers/**` | CUSTOMER |
+| Admin | `/api/v1/admin/**` | ADMIN |
 
 > Full interactive documentation at **[Swagger UI](http://localhost:8080/swagger-ui.html)** when running locally.
 
 ---
 
-## 🐋 Docker (For Deployment)
+## 🐋 Docker (Coming Soon)
 
-> Docker is **not used during local development** (hot-reload works better natively). Use Docker for staging/production or CI/CD.
-
-```bash
-# Make sure your .env is filled in, then:
-docker-compose up --build
-```
-
-This spins up:
-1. **PostgreSQL 15** container (with health check)
-2. **CognitoCart API** container (waits for DB to be healthy)
+> Docker support is **work in progress** — `Dockerfile` and `docker-compose.yml` are excluded from the repository until the deployment phase is ready.
+>
+> For now, run the app natively using Maven for the fastest development loop (hot-reload via `spring-boot-devtools`).
 
 ---
 
 ## 🔐 Security Notes
 
-- `.env` is **gitignored** — never commit real secrets
-- JWT secrets must be at least **256-bit** (32 bytes), encoded as BASE64URL
-- Use **Gmail App Passwords** — never your real Gmail password
-- Admin seed credentials should be changed after first login in production
+- `application.yml` and `application-dev.yml` are **gitignored** — only `application-demo.yml` (fake values) is committed
+- JWT secrets must be at least **256-bit** (32 bytes), encoded as BASE64URL — generate with `openssl rand -base64 32`
+- Use **Gmail App Passwords** — never your real account password
+- Admin seed credentials should be changed after the first login in production
 
 ---
 
