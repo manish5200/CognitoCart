@@ -7,13 +7,13 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 @Entity
-@Table(name="customer_profiles")
+@Table(name = "customer_profiles")
 @NoArgsConstructor
 @AllArgsConstructor
 @Setter
 @Getter
 @SuperBuilder
-public class CustomerProfile extends BaseEntity{
+public class CustomerProfile extends BaseEntity {
 
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId
@@ -21,6 +21,7 @@ public class CustomerProfile extends BaseEntity{
     private Users user;
 
     // Role-specific data
+    @Builder.Default
     private Integer loyaltyPoints = 0; // For reward systems
 
     @Size(max = 500)

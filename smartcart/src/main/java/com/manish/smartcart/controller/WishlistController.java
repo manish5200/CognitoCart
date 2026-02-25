@@ -19,65 +19,59 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/wishlist")
+@RequestMapping("/api/v1/wishlist")
 @Tag(name = "9. Wishlist Management", description = "Endpoints for saving and managing favorite products")
 @SecurityRequirement(name = "bearerAuth")
 public class WishlistController {
 
-    private final WishlistService  wishlistService;
-    public  WishlistController(WishlistService wishlistService) {
-        this.wishlistService = wishlistService;
-    }
+        private final WishlistService wishlistService;
 
-    @Operation(
-            summary = "Toggle Wishlist Item",
-            description = "Adds a product to the wishlist if it's not present, or removes it if it already exists."
-    )
-    @ApiResponse(responseCode = "200",
-            description = "Wishlist updated successfully")
-    @PostMapping("/toggle/{productId}")
-    @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<?> toggleWishlist(@PathVariable("productId") Long productId,
-                                            Authentication authentication){
-        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
-        assert customUserDetails != null;
-        Long userId = customUserDetails.getUser().getId();
-        String message = wishlistService.toggleWishlist(userId, productId);
-        return ResponseEntity.ok().body(Map.of("Status", message));
-    }
+        public WishlistController(WishlistService wishlistService) {
+                this.wishlistService = wishlistService;
+        }
 
-    @Operation(summary = "Get My Wishlist",
-            description = "Retrieves all products currently saved in the user's wishlist.")
-    @GetMapping
-    public ResponseEntity<List<ProductResponse>> getMyWishlist(Authentication authentication) {
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        assert userDetails != null;
-        List<ProductResponse> wishlist = wishlistService.getWishlistForUser(userDetails.getUser().getId());
-        return ResponseEntity.ok(wishlist);
-    }
+        @Operation(summary = "Toggle Wishlist Item", description = "Adds a product to the wishlist if it's not present, or removes it if it already exists.")
+        @ApiResponse(responseCode = "200", description = "Wishlist updated successfully")
+        @PostMapping("/toggle/{productId}")
+        @PreAuthorize("hasRole('CUSTOMER')")
+        public ResponseEntity<?> toggleWishlist(@PathVariable("productId") Long productId,
+                        Authentication authentication) {
+                CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+                assert customUserDetails != null;
+                Long userId = customUserDetails.getUser().getId();
+                String message = wishlistService.toggleWishlist(userId, productId);
+                return ResponseEntity.ok().body(Map.of("Status", message));
+        }
 
-    @Operation(summary = "Move Item to Cart",
-            description = "Adds a wishlisted product to the cart and removes it from the wishlist.")
-    @PostMapping("/move-to-cart/{productId}")
-    public ResponseEntity<?>moveToCart(
-            @PathVariable("productId") Long productId,
-            @RequestParam(defaultValue = AppConstants.PRODUCT_QUANTITY) Integer quantity,
-            Authentication authentication){
-        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
-        assert customUserDetails != null;
-        Long userId = customUserDetails.getUser().getId();
-        CartResponse cartResponse = wishlistService.wishlistToCart(userId, productId, quantity);
-        return ResponseEntity.ok(Map.of("Item moved to cart successfully",cartResponse));
-    }
+        @Operation(summary = "Get My Wishlist", description = "Retrieves all products currently saved in the user's wishlist.")
+        @GetMapping
+        public ResponseEntity<List<ProductResponse>> getMyWishlist(Authentication authentication) {
+                CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+                assert userDetails != null;
+                List<ProductResponse> wishlist = wishlistService.getWishlistForUser(userDetails.getUser().getId());
+                return ResponseEntity.ok(wishlist);
+        }
 
-    @Operation(summary = "Get Wishlist Summary",
-            description = "Returns all wishlisted items with a calculated total value.")
-    @GetMapping("/summary")
-    public ResponseEntity<?>getWishlistSummary(Authentication authentication){
-         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
-        assert customUserDetails != null;
-        Long userId = customUserDetails.getUser().getId();
-        WishlistSummaryDTO wishlistSummaryDTO = wishlistService.getWishlistSummary(userId);
-        return ResponseEntity.ok(Map.of("Wishlist Summary", wishlistSummaryDTO));
-    }
+        @Operation(summary = "Move Item to Cart", description = "Adds a wishlisted product to the cart and removes it from the wishlist.")
+        @PostMapping("/move-to-cart/{productId}")
+        public ResponseEntity<?> moveToCart(
+                        @PathVariable("productId") Long productId,
+                        @RequestParam(defaultValue = AppConstants.PRODUCT_QUANTITY) Integer quantity,
+                        Authentication authentication) {
+                CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+                assert customUserDetails != null;
+                Long userId = customUserDetails.getUser().getId();
+                CartResponse cartResponse = wishlistService.wishlistToCart(userId, productId, quantity);
+                return ResponseEntity.ok(Map.of("Item moved to cart successfully", cartResponse));
+        }
+
+        @Operation(summary = "Get Wishlist Summary", description = "Returns all wishlisted items with a calculated total value.")
+        @GetMapping("/summary")
+        public ResponseEntity<?> getWishlistSummary(Authentication authentication) {
+                CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+                assert customUserDetails != null;
+                Long userId = customUserDetails.getUser().getId();
+                WishlistSummaryDTO wishlistSummaryDTO = wishlistService.getWishlistSummary(userId);
+                return ResponseEntity.ok(Map.of("Wishlist Summary", wishlistSummaryDTO));
+        }
 }

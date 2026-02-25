@@ -6,7 +6,6 @@ import com.manish.smartcart.model.base.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -14,7 +13,7 @@ import lombok.experimental.SuperBuilder;
 import java.time.LocalDate;
 
 @Entity
-@Table(name="users")
+@Table(name = "users")
 @AllArgsConstructor
 @NoArgsConstructor
 @Setter
@@ -22,11 +21,12 @@ import java.time.LocalDate;
 @SuperBuilder
 public class Users extends BaseEntity {
     @Column(nullable = false, unique = true, length = 180)
-    @Email @NotBlank
+    @Email
+    @NotBlank
     private String email;
 
     @Column(nullable = false)
-    @Size(min=4)
+    @Size(min = 4)
     private String password;
 
     // --- PHASE 1: HOISTED IDENTITY FIELDS ---
@@ -61,8 +61,8 @@ public class Users extends BaseEntity {
     private SellerProfile sellerProfile;
 
     public Users(String email, String password, Role role) {
-         this.email = email;
-         this.password = password;
-         this.role = role;
+        this.email = email;
+        this.password = password;
+        this.role = role;
     }
 }

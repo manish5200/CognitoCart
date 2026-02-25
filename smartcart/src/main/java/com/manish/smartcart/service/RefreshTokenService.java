@@ -1,6 +1,5 @@
 package com.manish.smartcart.service;
 
-import com.manish.smartcart.dto.auth.TokenRefreshResponse;
 import com.manish.smartcart.model.RefreshToken;
 import com.manish.smartcart.model.user.Users;
 import com.manish.smartcart.repository.RefreshTokenRepository;
@@ -43,7 +42,7 @@ public class RefreshTokenService {
     }
 
     public RefreshToken verifyExpiration(RefreshToken refreshToken) {
-        if(refreshToken.getExpiryDate().compareTo(Instant.now()) < 0){
+        if (refreshToken.getExpiryDate().compareTo(Instant.now()) < 0) {
             refreshTokenRepository.delete(refreshToken);
             throw new RuntimeException("Refresh token expired. Please sign in again.");
         }
@@ -51,6 +50,6 @@ public class RefreshTokenService {
     }
 
     public Optional<RefreshToken> findByToken(@NotBlank(message = "Refresh token is missing") String refreshToken) {
-         return refreshTokenRepository.findByToken(refreshToken);
+        return refreshTokenRepository.findByToken(refreshToken);
     }
 }

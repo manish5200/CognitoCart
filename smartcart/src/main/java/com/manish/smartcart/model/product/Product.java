@@ -22,16 +22,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-
 @Setter
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
 @SuperBuilder
-@Table(name="products")
+@Table(name = "products")
 @SoftDelete(columnName = "is_deleted") // <--- That's it! No @SQLDelete or @SQLRestriction needed.
-public class Product extends BaseEntity{
+public class Product extends BaseEntity {
 
     @NotBlank
     private String productName;
@@ -53,27 +52,31 @@ public class Product extends BaseEntity{
     @Min(0)
     private Integer stockQuantity;
 
+    @Builder.Default
     private Boolean isAvailable = true; // Default to true so new products show up immediately
 
     // --- Discovery & Social Proof ---
     @ElementCollection
     @CollectionTable(name = "product_tags", joinColumns = @JoinColumn(name = "product_id"))
     @Column(name = "tag")
+    @Builder.Default
     private Set<String> tags = new HashSet<>(); // Smart: For "Similar Products" search
 
+    @Builder.Default
     private Double averageRating = AppConstants.INITIAL_RATING; // Denormalized for performance
+    @Builder.Default
     private Integer totalReviews = AppConstants.INITIAL_REVIEW_COUNT;
 
     @Column(name = "seller_id", nullable = false)
     private Long sellerId; // Loose coupling for microservices
 
-    // This prevents "HttpMessageNotWritableException" when returning a Product in JSON.
+    // This prevents "HttpMessageNotWritableException" when returning a Product in
+    // JSON.
     // It stops Jackson from trying to load Hibernate's internal proxy fields
     // after the database session is closed.
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id",
-    foreignKey = @ForeignKey(name = "fk_product_category"))
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @JoinColumn(name = "category_id", foreignKey = @ForeignKey(name = "fk_product_category"))
+    @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
     private Category category;
 
     // Inside your Product class
@@ -81,16 +84,15 @@ public class Product extends BaseEntity{
     private Long categoryId; // Used only for mapping the incoming JSON ID
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<Review> reviews = new ArrayList<>();
 
-    //Hibernate will automatically create a secondary table called product_images.
-    //It will have two columns: product_id and image_url.
+    // Hibernate will automatically create a secondary table called product_images.
+    // It will have two columns: product_id and image_url.
     @ElementCollection
-    @CollectionTable(
-            name = "product_images",
-            joinColumns = @JoinColumn(name = "product_id")
-    )
+    @CollectionTable(name = "product_images", joinColumns = @JoinColumn(name = "product_id"))
     @Column(name = "image_url")
+    @Builder.Default
     private List<String> imageUrls = new ArrayList<>();
 
     // Smart: Helper to update ratings when a new review is added

@@ -34,5 +34,6 @@ public class SellerProfile extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Builder.Default
     private KycStatus kycStatus = KycStatus.PENDING;
 }

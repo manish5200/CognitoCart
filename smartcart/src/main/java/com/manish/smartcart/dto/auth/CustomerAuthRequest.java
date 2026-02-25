@@ -12,7 +12,7 @@ import java.time.LocalDate;
 @Setter
 @Getter
 @AllArgsConstructor
-@RequiredArgsConstructor
+@NoArgsConstructor
 public class CustomerAuthRequest {
 
     @NotBlank(message = "Name is required")
@@ -23,23 +23,17 @@ public class CustomerAuthRequest {
     private String email;
 
     @NotBlank(message = "Password is required")
-    @Size(message = "Password must me at least 4 characters")
+    @Size(min = 8, message = "Password must be at least 8 characters")
     private String password;
 
-    private String role;
-
     @NotBlank(message = "Phone number is required")
-    @Pattern(
-            regexp = "^\\+?[1-9]\\d{7,14}$",
-            message = "Invalid phone number format"
-    )
+    @Pattern(regexp = "^\\+?[1-9]\\d{7,14}$", message = "Invalid phone number format")
     private String phone;
 
+    // Optional fields
     private LocalDate dateOfBirth;
 
-    private String gender;
-
-    private String shippingAdder;
-
-    private String billingAdder;
+    // Jackson auto-deserialises the string value to this enum.
+    // Invalid values produce a clean 400 validation error automatically.
+    private Gender gender;
 }

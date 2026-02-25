@@ -13,11 +13,11 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/categories")
+@RequestMapping("/api/v1/categories")
 @Tag(name = "7. Category Management", description = "Manage and browse product categories")
-public class CategoryController{
+public class CategoryController {
 
-    private final CategoryService  categoryService;
+    private final CategoryService categoryService;
 
     public CategoryController(CategoryService categoryService) {
         this.categoryService = categoryService;
@@ -30,10 +30,11 @@ public class CategoryController{
     @SecurityRequirement(name = "bearerAuth")
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?>addCategory(@RequestBody Category category) {
+    public ResponseEntity<?> addCategory(@RequestBody Category category) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                      .body(categoryService.createCategory(category));
+                .body(categoryService.createCategory(category));
     }
+
     /**
      * POST: Only Admins can create new categories in bulk
      */
@@ -41,9 +42,9 @@ public class CategoryController{
     @SecurityRequirement(name = "bearerAuth")
     @PostMapping("/bulk")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?>addCategoryBulk(@RequestBody List<Category> categories) {
+    public ResponseEntity<?> addCategoryBulk(@RequestBody List<Category> categories) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(categoryService.createCategoriesBulk(categories));
+                .body(categoryService.createCategoriesBulk(categories));
     }
 
     /**

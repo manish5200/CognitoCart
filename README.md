@@ -1,90 +1,237 @@
-# 🛒 CognitoCart API: Enterprise E-Commerce Backend (Ongoing....)
+# 🛒 CognitoCart — AI-Driven E-Commerce Backend API
 
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]() [![Stack](https://img.shields.io/badge/stack-Spring%20Boot%20%7C%20Java%2017-blue)]() [![Database](https://img.shields.io/badge/database-PostgreSQL-blue)]() [![License](https://img.shields.io/badge/license-MIT-green)]()
+[![Build](https://img.shields.io/badge/build-passing-brightgreen)]()
+[![Java](https://img.shields.io/badge/Java-17-orange?logo=openjdk)]()
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.1-brightgreen?logo=springboot)]()
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue?logo=postgresql)]()
+[![Flyway](https://img.shields.io/badge/Flyway-migrations-red?logo=flyway)]()
+[![Swagger](https://img.shields.io/badge/Swagger-OpenAPI%203-green?logo=swagger)]()
+[![License](https://img.shields.io/badge/license-MIT-green)]()
 
-> **An enterprise-grade e-commerce backend built with Java & Spring Boot, focusing on performance optimization, transactional integrity, and secure design patterns.**
-
----
-
-## 📖 Project Overview
-
-**CognitoCart** is a scalable, real-world e-commerce platform simulation. It handles the complete shopping lifecycle—from product discovery and social proof to secure checkout and inventory management—while adhering to industry best practices.
-
-The core philosophy is **"Performance by Design."** We don't just query the database; we optimize how data flows to ensure the system scales with millions of users.
+> **An enterprise-grade e-commerce REST API built with Java & Spring Boot — designed for performance, security, and real-world scalability.**
 
 ---
 
-## 🏗️ Key Architectural Concepts
+## 📖 Overview
 
-### 1. 🚀 O(1) Performance for Social Proof (Review Math)
-Standard `SELECT AVG(rating)` queries become a bottleneck as datasets grow.
-**The CognitoCart Solution:** We implement an **Incremental Moving Average** algorithm. By denormalizing the `Product` entity to store aggregate stats, we update ratings in **constant time O(1)** using math, bypassing expensive database scans.
+**CognitoCart** is a full-featured e-commerce backend that handles the complete shopping lifecycle: product discovery, cart management, wishlist, order processing, reviews, seller management, and admin operations — all secured with JWT authentication and RBAC.
 
+The core philosophy is **"Production by Design"** — every decision is made with scalability, security, and maintainability in mind.
 
+---
 
-### 2. 🛡️ Hardened Security (JWT & RBAC)
-* **JWT (JSON Web Token):** Stateless authentication using a secure, **256-bit BASE64URL encoded secret key**.
-* **RBAC:** Role-Based Access Control distinguishing `ADMIN` and `CUSTOMER` privileges.
-* **Security Whitelisting:** Strategic permit-all access for Swagger documentation and public discovery endpoints.
+## ✨ Features
 
-### 3. 🔄 Transactional Integrity & Inventory Management
-We use Spring's `@Transactional` to ensure **Atomicity** in business-critical flows:
-* **Wishlist to Cart:** Items move between tables as a single atomic unit.
-* **Place Order:** Real-time stock deduction during checkout. If inventory is insufficient, the transaction rolls back, preventing data corruption.
+| Domain | Capabilities |
+|--------|-------------|
+| 🔐 **Auth** | JWT access tokens, refresh tokens, role-based access (ADMIN / SELLER / CUSTOMER) |
+| 📦 **Products** | CRUD, image upload, soft delete, slug-based URLs, full-text search |
+| 🗂️ **Categories** | Infinite-depth recursive tree (Electronics → Audio → Headphones) |
+| 🛒 **Cart** | Add/update/remove items, total auto-calculation, atomic wishlist-to-cart transfer |
+| ❤️ **Wishlist** | Add/remove products, move to cart as a single transaction |
+| 📋 **Orders** | Place order with real-time stock deduction, status management (PLACED → SHIPPED → DELIVERED) |
+| ⭐ **Reviews** | Submit review, O(1) rating recalculation via incremental moving average |
+| 📍 **Addresses** | Add/update/delete delivery addresses per user |
+| 👤 **Customer** | Customer profile, loyalty points, dashboard |
+| 🏪 **Seller** | Seller profile, KYC status, product management |
+| 🛠️ **Admin** | Dashboard analytics, low stock alerts, top products, user/order management |
+| 📧 **Email** | Async SMTP email service (order notifications, welcome emails) |
 
+---
 
+## 🏗️ Architecture & Key Concepts
 
-### 4. 🛠️ Enterprise Design Patterns
-* **Global Exception Handling:** Centralized `@RestControllerAdvice` for standardized JSON error responses.
-* **AppConstants:** Single source of truth for all "magic strings" and default values.
-* **DTO Mapping:** Clean separation between Database Entities and API Response objects.
+### 1. ⚡ O(1) Rating Math (Incremental Moving Average)
+Instead of `SELECT AVG(rating)` on every request (which gets slower as reviews grow), we store `averageRating` and `totalReviews` directly on the `Product` entity and update them using math on each new review — **constant time, zero full-table scans**.
+
+### 2. 🔒 Hardened Security
+- **Stateless JWT** — 256-bit BASE64URL secret, short-lived access tokens (15 min) + long-lived refresh tokens (1 hr)
+- **RBAC** — `ADMIN`, `SELLER`, `CUSTOMER` roles enforced via `@PreAuthorize`
+- **Non-root Docker** — container runs as unprivileged `spring` user
+
+### 3. 🔄 Transactional Integrity
+`@Transactional` guarantees atomicity across critical flows:
+- **Place Order** → stock deducted + order record created as one atomic unit; rolls back if stock is insufficient
+- **Wishlist → Cart** → items moved across tables without orphaned data
+
+### 4. 🗃️ Schema-First with Flyway
+All database schema changes are versioned SQL migrations via **Flyway**. Hibernate is set to `validate` only — it never auto-creates or modifies tables. This ensures safe production deployments and a reproducible schema.
+
+### 5. 🏛️ Clean Layered Architecture
+```
+Controller → Service → Repository → Database
+     ↕              ↕
+   DTO           Domain Model
+```
+- **DTOs** for all request/response — entities never leak to the API layer
+- **`AppConstants`** — single source of truth for magic strings and thresholds
+- **`@RestControllerAdvice`** — centralized, standardized JSON error responses
+- **`@Async` Email** — email sending is non-blocking, runs in a separate thread pool
 
 ---
 
 ## 💻 Technology Stack
 
-* **Core:** Java 17, Spring Boot 3.x
-* **Database:** PostgreSQL (Production), H2 (Testing)
-* **Security:** Spring Security, JJWT (Java JWT)
-* **Documentation:** SpringDoc OpenAPI 3 (Swagger UI)
-* **Persistence:** Spring Data JPA / Hibernate
+| Layer | Technology |
+|-------|-----------|
+| Language | Java 17 |
+| Framework | Spring Boot 3.4.1 |
+| Security | Spring Security + JJWT 0.12.6 |
+| Database | PostgreSQL 15 |
+| ORM | Spring Data JPA / Hibernate |
+| Migrations | Flyway |
+| Validation | Jakarta Bean Validation |
+| Documentation | SpringDoc OpenAPI 3 / Swagger UI |
+| Email | Spring Mail (Jakarta Mail / SMTP) |
+| Build | Maven |
+| Utilities | Lombok, Spring Retry, Spring AOP |
+| Observability | Spring Actuator |
 
 ---
 
-## 🔌 API Documentation (Swagger)
+## 📁 Project Structure
 
-The API is fully documented and interactive. Once the application is running, access the UI at:
-👉 **`http://localhost:8080/swagger-ui/index.html`**
-
-
+```
+smartcart/
+├── src/main/java/com/manish/smartcart/
+│   ├── config/                  # Security, JWT, Web, Swagger, Data Initializer
+│   │   ├── jwt/                 # JwtUtil, JwtFilter
+│   │   └── initializer/         # AdminProperties, DataInitializer
+│   ├── controller/              # REST endpoints (10 controllers)
+│   ├── service/                 # Business logic (13 services)
+│   ├── repository/              # Spring Data JPA repositories
+│   ├── model/                   # JPA entities
+│   │   ├── base/                # BaseEntity (id, timestamps, auditing)
+│   │   ├── user/                # Users, CustomerProfile, SellerProfile, Address
+│   │   ├── product/             # Product, Category
+│   │   ├── cart/                # Cart, CartItem
+│   │   ├── order/               # Order, OrderItem
+│   │   └── feedback/            # Review
+│   ├── dto/                     # Request/Response DTOs
+│   ├── enums/                   # Role, OrderStatus, PaymentStatus, KycStatus etc.
+│   └── util/                    # AppConstants, PhoneUtil, FileValidator
+├── src/main/resources/
+│   ├── application.yml          # Shared config (all env vars, mail, JWT, admin seed)
+│   ├── application-dev.yml      # Dev profile (DB, logging, Swagger)
+│   └── db/migration/            # Flyway SQL migration scripts
+├── .env.example                 # ← Copy this to .env and fill in your values
+├── .env                         # ← Your local secrets (gitignored)
+├── Dockerfile                   # Multi-stage Docker build
+└── docker-compose.yml           # App + PostgreSQL for future deployment
+```
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Getting Started (Local Development)
 
 ### Prerequisites
-* Java JDK 17+
-* Maven 3.8+
-* PostgreSQL
+- **Java 17+** (Eclipse Temurin / OpenJDK)
+- **Maven 3.8+** (or use the included `mvnw` wrapper)
+- **PostgreSQL 15+** running locally
 
-### Installation
-
-1. **Clone & Configure**
-   ```bash
-   git clone [https://github.com/yourusername/cognitocart.git](https://github.com/yourusername/cognitocart.git)
-
-```
-
-2. **Update application.properties**
-Set your PostgreSQL credentials and a secure 256-bit `jwt.secret`.
-3. **Build and Run**
+### 1. Clone the Repository
 ```bash
-mvn clean install
-mvn spring-boot:run
-
+git clone https://github.com/manish5200/CognitoCart.git
+cd CognitoCart/smartcart
 ```
 
+### 2. Set Up the Database
+```sql
+-- Run in psql or pgAdmin
+CREATE DATABASE cognitocart;
+CREATE USER cognitocart WITH PASSWORD 'cognitocart';
+GRANT ALL PRIVILEGES ON DATABASE cognitocart TO cognitocart;
+```
 
+### 3. Create Your Local Config Files
+
+The repository ships with **`application-demo.yml`** (fake placeholder values — safe for Git).  
+The real config files (`application.yml`, `application-dev.yml`) are **gitignored** and contain your actual credentials.
+
+```bash
+# Create real config files by copying the demo template
+# Windows
+copy src\main\resources\application-demo.yml src\main\resources\application.yml
+copy src\main\resources\application-demo.yml src\main\resources\application-dev.yml
+
+# macOS / Linux
+cp src/main/resources/application-demo.yml src/main/resources/application.yml
+cp src/main/resources/application-demo.yml src/main/resources/application-dev.yml
+```
+
+Then open **`application.yml`** and **`application-dev.yml`** and fill in your real values:
+
+| Config Key | What to put |
+|------------|-------------|
+| `spring.datasource.url` | `jdbc:postgresql://localhost:5432/cognitocart` |
+| `spring.datasource.username` | Your PostgreSQL username |
+| `spring.datasource.password` | Your PostgreSQL password |
+| `application.security.jwt.secret-key` | 256-bit BASE64URL key — generate: `openssl rand -base64 32` |
+| `spring.mail.username` | Your Gmail address |
+| `spring.mail.password` | Gmail **App Password** → [generate here](https://myaccount.google.com/apppasswords) |
+| `admin.email` | Seed admin email (auto-created on first startup) |
+| `admin.password` | Seed admin password |
+
+> ⚠️ **Never commit** `application.yml` or `application-dev.yml` — they are gitignored to protect your secrets.
+
+### 4. Run the Application
+```bash
+# Using Maven wrapper (recommended)
+.\mvnw spring-boot:run -Dspring-boot.run.profiles=dev   # Windows
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev   # macOS/Linux
+```
+
+### 5. Verify
+| URL | What to expect |
+|-----|---------------|
+| `http://localhost:8080/swagger-ui.html` | Interactive API documentation |
+| `http://localhost:8080/actuator/health` | `{"status":"UP"}` |
+
+> On first startup, Flyway runs all migrations and the admin account is auto-seeded.
+
+---
+
+## 📬 API Endpoints Overview
+
+| Group | Base Path | Access |
+|-------|-----------|--------|
+| Auth | `/api/auth/**` | Public |
+| Products (browse) | `GET /api/products` | Public |
+| Products (manage) | `/api/products/**` | SELLER / ADMIN |
+| Categories | `/api/categories/**` | ADMIN (write), Public (read) |
+| Cart | `/api/cart/**` | CUSTOMER |
+| Wishlist | `/api/wishlist/**` | CUSTOMER |
+| Orders | `/api/orders/**` | CUSTOMER / ADMIN |
+| Reviews | `/api/reviews/**` | CUSTOMER (write), Public (read) |
+| Addresses | `/api/addresses/**` | CUSTOMER |
+| Customer | `/api/customers/**` | CUSTOMER |
+| Admin | `/api/admin/**` | ADMIN |
+
+> Full interactive documentation at **[Swagger UI](http://localhost:8080/swagger-ui.html)** when running locally.
+
+---
+
+## 🐋 Docker (For Deployment)
+
+> Docker is **not used during local development** (hot-reload works better natively). Use Docker for staging/production or CI/CD.
+
+```bash
+# Make sure your .env is filled in, then:
+docker-compose up --build
+```
+
+This spins up:
+1. **PostgreSQL 15** container (with health check)
+2. **CognitoCart API** container (waits for DB to be healthy)
+
+---
+
+## 🔐 Security Notes
+
+- `.env` is **gitignored** — never commit real secrets
+- JWT secrets must be at least **256-bit** (32 bytes), encoded as BASE64URL
+- Use **Gmail App Passwords** — never your real Gmail password
+- Admin seed credentials should be changed after first login in production
 
 ---
 
@@ -92,8 +239,6 @@ mvn spring-boot:run
 
 **Manish Kumar Singh**
 
-* [![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/maniish5200/)
-   
-Built with ☕ and code during the 100 Days of Code challenge.
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/maniish5200/)
 
-```
+> Built with ☕ during the **#100DaysOfCode** challenge — aiming for production-grade quality from day one.

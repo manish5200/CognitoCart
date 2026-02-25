@@ -11,17 +11,16 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-
 @RestController
 @Tag(name = "8. Feedback & Reviews", description = "Product rating and review system")
-@RequestMapping("/api/reviews")
+@RequestMapping("/api/v1/reviews")
 public class ReviewController {
 
     private final ReviewService reviewService;
+
     public ReviewController(ReviewService reviewService) {
         this.reviewService = reviewService;
     }
-
 
     @Operation(summary = "Post or update review", description = "Customer only. Submits a star rating and comment for a product.")
     @SecurityRequirement(name = "bearerAuth")
@@ -29,15 +28,15 @@ public class ReviewController {
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<?> postReview(
             @PathVariable Long productId,
-            @RequestBody ReviewRequestDTO  reviewRequestDTO,
+            @RequestBody ReviewRequestDTO reviewRequestDTO,
             Authentication authentication) {
-            CustomUserDetails  customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
         assert customUserDetails != null;
         Long userId = customUserDetails.getUser().getId();
-            return ResponseEntity
-                    .ok(reviewService.addOrUpdateReview(
-                            userId,
-                            productId,
-                            reviewRequestDTO));
+        return ResponseEntity
+                .ok(reviewService.addOrUpdateReview(
+                        userId,
+                        productId,
+                        reviewRequestDTO));
     }
 }

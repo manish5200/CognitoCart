@@ -32,5 +32,19 @@ build/
 ### VS Code ###
 .vscode/
 ## Ignore Spring Boot config
-
 .env
+
+### Project-specific ###
+# User-uploaded files (generated at runtime)
+uploads/
+
+### Docker (WIP — excluded until deployment phase) ###
+Dockerfile
+docker-compose.yml
+
+### Secret Configuration Files ###
+# Real config files with DB/JWT/Mail credentials — NEVER commit these.
+# Only application-demo.yml (fake placeholder data) is safe to push.
+src/main/resources/application.yml
+src/main/resources/application-dev.yml
+src/main/resources/application-temp.yml

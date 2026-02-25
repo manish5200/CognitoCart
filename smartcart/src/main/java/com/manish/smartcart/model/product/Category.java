@@ -25,7 +25,7 @@ import java.util.List;
 @Table(name = "categories")
 // Add this at the top of the class to skip any weird unknown JSON fields
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Category extends BaseEntity{
+public class Category extends BaseEntity {
 
     @NotBlank
     private String name;
@@ -39,10 +39,11 @@ public class Category extends BaseEntity{
     // Hibernate's lazy-loading proxies.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
     private Category parentCategory; //// The "Parent" node
 
     @JsonIgnore
     @OneToMany(mappedBy = "parentCategory", cascade = CascadeType.ALL)
+    @Builder.Default
     private List<Category> subCategories = new ArrayList<>();
 }
