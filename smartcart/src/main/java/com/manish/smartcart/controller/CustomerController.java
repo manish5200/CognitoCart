@@ -32,12 +32,12 @@ public class CustomerController {
     @Operation(summary = "Get customer dashboard", description = "Retrieves personalized stats, recent orders, and recommendations for the logged-in customer.")
     @GetMapping("/dashboard")
     public ResponseEntity<?> getCustomerDashboard(Authentication authentication,
-            @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) Integer pageNumber,
-            @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) Integer PageSize) {
+            @RequestParam(name = "pageNumber", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) Integer pageNumber,
+            @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE) Integer pageSize) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         assert userDetails != null;
         Long userId = userDetails.getUser().getId();
-        CustomerDashboardDTO customerStats = customerService.getCustomerDashboard(userId, pageNumber, PageSize);
+        CustomerDashboardDTO customerStats = customerService.getCustomerDashboard(userId, pageNumber, pageSize);
         return new ResponseEntity<>(customerStats, HttpStatus.OK);
 
     }

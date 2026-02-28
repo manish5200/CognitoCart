@@ -37,11 +37,11 @@ public class OrderService {
     private final OrderNotificationService orderNotificationService;
 
     @Transactional
-    public OrderResponse placeOrder(Long userId, OrderRequest orderRequest){
+    public OrderResponse placeOrder(Long userId, OrderRequest orderRequest) {
         // 1. Get the user's cart
         Cart cart = cartService.getCartForUser(userId);
-        if(cart == null || cart.getItems().isEmpty()){
-            throw  new RuntimeException("Cannot place order with an empty cart");
+        if (cart == null || cart.getItems().isEmpty()) {
+            throw new RuntimeException("Cannot place order with an empty cart");
         }
         // 2. Create the Order "Header"
         Order order = new Order();
@@ -50,12 +50,23 @@ public class OrderService {
         order.setOrderStatus(OrderStatus.CREATED);
         order.setTotalAmount(cart.getTotalAmount());
 
-        // --- RECTIFIED: ADDRESS SNAPSHOTTING ---
-        // Instead of linking to the entity, we freeze the values in time
-        Address shippingAddr = cart.getUser().getPrimaryAddress();
-        if (shippingAddr == null) {
-            throw new RuntimeException("No primary shipping address found for user.");
+        // --- ADDRESS SNAPSHOTTING ---
+        // Priority 1: Use the address provided in the checkout request body
+        // Priority 2: Fall back to the user's saved primary address
+        Address shippingAddr = null;
+
+        if (orderRequest != null && orderRequest.getShippingAddress() != null) {
+            // Use the address sent in the request (most common checkout flow)
+            shippingAddr = orderRequest.getShippingAddress();
+        } else {
+            // Fall back to saved primary address
+            shippingAddr = cart.getUser().getPrimaryAddress();
         }
+
+        if (shippingAddr == null) {
+            throw new RuntimeException("Please provide a shipping address or save one in your profile.");
+        }
+
         order.setShippingFullName(shippingAddr.getFullName());
         order.setShippingPhone(shippingAddr.getPhoneNumber());
         order.setShippingStreetAddress(shippingAddr.getStreetAddress());
@@ -66,14 +77,14 @@ public class OrderService {
 
         // 3. Convert CartItems to OrderItems (The Snapshot)
         List<OrderItem> orderItems = new ArrayList<>();
-        for(CartItem cartItem : cart.getItems()){
+        for (CartItem cartItem : cart.getItems()) {
             Product product = cartItem.getProduct();
 
             // CRITICAL: Re-Check stock before confirming
-            if(product.getStockQuantity() < cartItem.getQuantity()){
+            if (product.getStockQuantity() < cartItem.getQuantity()) {
                 throw new RuntimeException("Insufficient stock for: " + product.getProductName());
             }
-            //Deduct stock
+            // Deduct stock
             product.setStockQuantity(product.getStockQuantity() - cartItem.getQuantity());
             productRepository.save(product);
 
@@ -89,20 +100,22 @@ public class OrderService {
         // 4. Save Order and Clear the Cart
         Order savedOrder = orderRepository.save(order);
         cartService.clearTheCart(userId);
-        OrderResponse orderResponse =  orderMapper.toOrderResponse(savedOrder);
+        OrderResponse orderResponse = orderMapper.toOrderResponse(savedOrder);
 
-        // 5. RECTIFIED: Send mail ONLY after successful DB Commit : Post-Commit Notification
-        if(TransactionSynchronizationManager.isActualTransactionActive()){
+        // 5. RECTIFIED: Send mail ONLY after successful DB Commit : Post-Commit
+        // Notification
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
             TransactionSynchronizationManager.registerSynchronization(
                     new TransactionSynchronization() {
                         @Override
                         public void afterCommit() {
-                            log.debug("Transaction committed. Triggering email for {}", orderResponse.getCustomerName());
+                            log.debug("Transaction committed. Triggering email for {}",
+                                    orderResponse.getCustomerName());
                             orderNotificationService.sendEmailNotification(orderResponse);
                             TransactionSynchronization.super.afterCommit();
                         }
                     });
-        }else{
+        } else {
             // Fallback for non-transactional calls (e.g., during testing)
             orderNotificationService.sendEmailNotification(orderResponse);
         }
@@ -111,58 +124,59 @@ public class OrderService {
         return orderResponse;
     }
 
-
-    //Order History feature.
-    public List<OrderResponse>getOrderHistoryForUser(Long userId) {
-        List<Order>orders = orderRepository.findByUserIdAndOrderItems(userId);
-        // Map each Entity to a DTO to prevent infinite loops and hide internal DB details
+    // Order History feature.
+    public List<OrderResponse> getOrderHistoryForUser(Long userId) {
+        List<Order> orders = orderRepository.findByUserIdAndOrderItems(userId);
+        // Map each Entity to a DTO to prevent infinite loops and hide internal DB
+        // details
         return orders.stream()
                 .map(orderMapper::toOrderResponse)
                 .collect(Collectors.toList());
     }
 
-    //Cancellation of the order if the order is still pending -> stock will be back to product
+    // Cancellation of the order if the order is still pending -> stock will be back
+    // to product
     @Transactional
     public OrderResponse cancelOrder(Long userId, Long orderId) {
-       // 1. Find the order and verify ownership
+        // 1. Find the order and verify ownership
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Cannot find order with orderId: " + orderId));
 
-        //It does not make sense but still but if by chance, lets B get oderId of A
-        //So to prevent B from cancelling A's order
-        if(!order.getUser().getId().equals(userId)){
+        // It does not make sense but still but if by chance, lets B get oderId of A
+        // So to prevent B from cancelling A's order
+        if (!order.getUser().getId().equals(userId)) {
             throw new RuntimeException("Access Denied: You do not own this order.");
         }
 
-       // 2. Security Check: DELIVERED orders cannot be cancelled
-       if(order.getOrderStatus() == OrderStatus.DELIVERED){
-           throw new RuntimeException("Order cannot be cancelled❌❌. Current status: " + order.getOrderStatus());
-       }
+        // 2. Security Check: DELIVERED orders cannot be cancelled
+        if (order.getOrderStatus() == OrderStatus.DELIVERED) {
+            throw new RuntimeException("Order cannot be cancelled❌❌. Current status: " + order.getOrderStatus());
+        }
         // 3. Inventory Restoration: Return stock to Product table - every product
         // RESTORE STOCK: Loop through items and update products
-       for(OrderItem orderItem : order.getOrderItems()) {
-           Product product = orderItem.getProduct();
+        for (OrderItem orderItem : order.getOrderItems()) {
+            Product product = orderItem.getProduct();
 
-           // Add the quantity back to the warehouse
-           int updatedStock = product.getStockQuantity() + orderItem.getQuantity();
-           product.setStockQuantity(updatedStock);
-           // saveAndFlush pushes the update to the DB immediately
-           productRepository.saveAndFlush(product);
-       }
-       // 4. Update Status
-       order.setOrderStatus(OrderStatus.CANCELLED);
-       Order savedOrder = orderRepository.save(order);
-       return orderMapper.toOrderResponse(savedOrder);
+            // Add the quantity back to the warehouse
+            int updatedStock = product.getStockQuantity() + orderItem.getQuantity();
+            product.setStockQuantity(updatedStock);
+            // saveAndFlush pushes the update to the DB immediately
+            productRepository.saveAndFlush(product);
+        }
+        // 4. Update Status
+        order.setOrderStatus(OrderStatus.CANCELLED);
+        Order savedOrder = orderRepository.save(order);
+        return orderMapper.toOrderResponse(savedOrder);
     }
 
-    //OrderProcessing: Abandoning the stale orders
+    // OrderProcessing: Abandoning the stale orders
 
     @Transactional
-    public void cancelAndReleaseStock(Order order){
-         log.info("Releasing stock for abandoned order ID: {}", order.getId());
+    public void cancelAndReleaseStock(Order order) {
+        log.info("Releasing stock for abandoned order ID: {}", order.getId());
 
         // 1. Restore stock to the products
-        for(OrderItem orderItem : order.getOrderItems()) {
+        for (OrderItem orderItem : order.getOrderItems()) {
             Product product = orderItem.getProduct();
             int updatedStock = product.getStockQuantity() + orderItem.getQuantity();
             product.setStockQuantity(updatedStock);

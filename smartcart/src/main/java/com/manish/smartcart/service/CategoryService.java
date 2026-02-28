@@ -3,6 +3,8 @@ package com.manish.smartcart.service;
 import com.manish.smartcart.model.product.Category;
 import com.manish.smartcart.repository.CategoryRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -20,27 +22,32 @@ public class CategoryService {
     }
 
     @Transactional
-    public Category createCategory(Category category){
-        // If a parent ID is provided in the JSON, we link it here
-        if (categoryRepository.findBySlug(category.getSlug()).isPresent()) {
-            throw new RuntimeException("Category slug already exists!");
-        }
-        if(category.getParentCategory() != null && category.getParentCategory().getId() != null){
-               Category parent = categoryRepository.findById(category.getParentCategory().getId())
-                       .orElseThrow(()-> new RuntimeException("Parent Category Not Found"));
-               category.setParentCategory(parent);
+    @CacheEvict(value = "categories", allEntries = true)
+    public Category createCategory(Category category) {
+        // Auto-generate slug from name — no slug needed in request JSON
+        category.setSlug(generateUniqueSlug(category.getName()));
+
+        if (category.getParentCategory() != null && category.getParentCategory().getId() != null) {
+            Category parent = categoryRepository.findById(category.getParentCategory().getId())
+                    .orElseThrow(() -> new RuntimeException("Parent Category Not Found"));
+            category.setParentCategory(parent);
         }
         return categoryRepository.save(category);
     }
-  //Add in bulk
+
     @Transactional
+    @CacheEvict(value = "categories", allEntries = true)
     public List<Category> createCategoriesBulk(List<Category> categories) {
         List<Category> savedCategories = new ArrayList<>();
         for (Category category : categories) {
-            // Resolve parent if ID is provided
+            // Auto-generate slug from name
+            category.setSlug(generateUniqueSlug(category.getName()));
+
+            // Resolve parent if provided
             if (category.getParentCategory() != null && category.getParentCategory().getId() != null) {
                 Category parent = categoryRepository.findById(category.getParentCategory().getId())
-                        .orElseThrow(() -> new RuntimeException("Parent ID " + category.getParentCategory().getId() + " not found"));
+                        .orElseThrow(() -> new RuntimeException(
+                                "Parent ID " + category.getParentCategory().getId() + " not found"));
                 category.setParentCategory(parent);
             }
             savedCategories.add(categoryRepository.save(category));
@@ -48,41 +55,46 @@ public class CategoryService {
         return savedCategories;
     }
 
-    //List all categories
+    /*
+     * Converts category name to a URL-safe, unique slug.
+     * "Men's Clothing" -> "mens-clothing"
+     * "Home & Kitchen" -> "home-kitchen"
+     * Duplicate handling: "electronics", "electronics-2", "electronics-3" ...
+     */
+    private String generateUniqueSlug(String name) {
+        String baseSlug = name.toLowerCase()
+                .replaceAll("'", "") // remove apostrophes
+                .replaceAll("[^a-z0-9]+", "-") // non-alphanum → hyphen
+                .replaceAll("^-|-$", ""); // trim leading/trailing hyphens
 
-    public List<Category> getAllCategories(){
+        String slug = baseSlug;
+        int counter = 2;
+        while (categoryRepository.findBySlug(slug).isPresent()) {
+            slug = baseSlug + "-" + counter;
+            counter++;
+        }
+        return slug;
+    }
+
+    @Cacheable(value = "categories", key = "'all'")
+    public List<Category> getAllCategories() {
         return categoryRepository.findAll();
     }
 
-    // Recursive method to get all child IDs
-    public List<Long> getAllChildCategoryIds(Long parentId){
-        // Start recursion with an empty 'visited' set to prevent loops
-         return getAllChildCategoryIdsRecursive(parentId,new HashSet<>());
+    public List<Long> getAllChildCategoryIds(Long parentId) {
+        return getAllChildCategoryIdsRecursive(parentId, new HashSet<>());
     }
 
-    //Recursive helper
-
-    public List<Long>getAllChildCategoryIdsRecursive(Long currentId,Set<Long>visited){
-        List<Long>allIds=new ArrayList<>();
-
-        // 1. BASE CASE / SAFETY CHECK
-        // If we have already processed this ID in the current chain, STOP.
-        if (visited.contains(currentId)) {
+    public List<Long> getAllChildCategoryIdsRecursive(Long currentId, Set<Long> visited) {
+        List<Long> allIds = new ArrayList<>();
+        if (visited.contains(currentId))
             return allIds;
-        }
-        // 2. MARK AS VISITED
         visited.add(currentId);
         allIds.add(currentId);
-
-        //3. RECURSIVE STEP
-        // Fetch direct children
         List<Category> children = categoryRepository.findByParentCategoryId(currentId);
         for (Category child : children) {
-            // Pass the 'visited' set down to child calls
             allIds.addAll(getAllChildCategoryIdsRecursive(child.getId(), visited));
         }
         return allIds;
-
     }
-
 }

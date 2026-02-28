@@ -14,19 +14,18 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
-
 @Service
 public class CartService {
 
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final ProductRepository productRepository;
-    private final UsersRepository  usersRepository;
+    private final UsersRepository usersRepository;
 
     public CartService(CartRepository cartRepository,
-                       CartItemRepository cartItemRepository,
-                       ProductRepository productRepository,
-                       UsersRepository usersRepository) {
+            CartItemRepository cartItemRepository,
+            ProductRepository productRepository,
+            UsersRepository usersRepository) {
         this.cartRepository = cartRepository;
         this.cartItemRepository = cartItemRepository;
         this.productRepository = productRepository;
@@ -37,31 +36,32 @@ public class CartService {
     public Cart addItemToCart(Long userId, Long productId, Integer quantity) {
         // 1. Get or Create Cart for User
         Cart cart = cartRepository.findByUserId(userId)
-                .orElseGet(()-> creatNewCart(userId));
+                .orElseGet(() -> creatNewCart(userId));
 
         // 2. Find Product & Check stock
         Product product = productRepository.findById(productId)
-                .orElseThrow(()-> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new RuntimeException("Product not found"));
 
         // 3. Update existing item or add new one
-        CartItem cartItem = cartItemRepository.findByCartIdAndProductId(cart.getId(),productId)
+        CartItem cartItem = cartItemRepository.findByCartIdAndProductId(cart.getId(), productId)
                 .orElse(new CartItem());
 
-        // RECTIFICATION: Validate against TOTAL quantity (Current in Cart + New Request)
+        // RECTIFICATION: Validate against TOTAL quantity (Current in Cart + New
+        // Request)
         int requestedQuantity = (cartItem.getId() == null) ? quantity : cartItem.getQuantity() + quantity;
-        if(requestedQuantity > product.getStockQuantity()){
+        if (requestedQuantity > product.getStockQuantity()) {
             throw new RuntimeException("Insufficient stock. Available: " + product.getStockQuantity());
         }
 
-        //4. check if are getting else add to the new one
-        if(cartItem.getId() == null){
+        // 4. check if are getting else add to the new one
+        if (cartItem.getId() == null) {
             cartItem.setCart(cart);
             cartItem.setProduct(product);
             cartItem.setPriceAtAdding(product.getPrice());
             cartItem.setQuantity(quantity);
-            //Final add to the list of the cart
+            // Final add to the list of the cart
             cart.addCartItem(cartItem); // Using helper
-        }else{
+        } else {
             cartItem.setQuantity(cartItem.getQuantity() + quantity);
         }
 
@@ -71,7 +71,7 @@ public class CartService {
         return cartRepository.save(cart);
     }
 
-    //Helper method to create a cart
+    // Helper method to create a cart
     private Cart creatNewCart(Long userId) {
         Users user = usersRepository.getReferenceById(userId);
         Cart cart = new Cart();
@@ -82,33 +82,35 @@ public class CartService {
 
     private void updateCartTotal(Cart cart) {
         BigDecimal total = cart.getItems()
-                //thinks like cartItems on conveyor belt
+                // thinks like cartItems on conveyor belt
                 .stream()
-                //Transform into single quantity by multiplying
+                // Transform into single quantity by multiplying
                 .map(item -> item.getPriceAtAdding().multiply(new BigDecimal(item.getQuantity())))
-                //This is the "Sum" function for BigDecimal.
+                // This is the "Sum" function for BigDecimal.
                 // It starts at zero and adds every item's subtotal one by one.
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         cart.setTotalAmount(total);
 
-        //Simpler version
-        /*BigDecimal total = BigDecimal.ZERO;
-          for (CartItem item : cart.getItems()) {
-            BigDecimal subtotal = item.getPrice().multiply(new BigDecimal(item.getQuantity()));
-            total = total.add(subtotal); // Note: total = total.add(), BigDecimal is immutable!
-        }*/
+        // Simpler version
+        /*
+         * BigDecimal total = BigDecimal.ZERO;
+         * for (CartItem item : cart.getItems()) {
+         * BigDecimal subtotal = item.getPrice().multiply(new
+         * BigDecimal(item.getQuantity()));
+         * total = total.add(subtotal); // Note: total = total.add(), BigDecimal is
+         * immutable!
+         * }
+         */
     }
 
-
-    //View cart
-    public Cart getCartForUser(Long userId){
-        return cartRepository.findByUserId(userId)
-                .orElseThrow(()-> new RuntimeException("Cart not found"));
-    }
-
-    //clear cart
     @Transactional
-    public void clearTheCart(Long userId){
+    public Cart getCartForUser(Long userId) {
+        return cartRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Cart not found"));
+    }
+
+    @Transactional
+    public void clearTheCart(Long userId) {
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Cart not found"));
         // 1. Clear the list (JPA orphanRemoval deletes the rows in DB)
@@ -118,15 +120,14 @@ public class CartService {
         cartRepository.save(cart);
     }
 
-
-    //Include coupon percentage
+    // Include coupon percentage
     @Transactional
-    public Cart applyCoupon(Long userId, Double discountPercentage){
+    public Cart applyCoupon(Long userId, Double discountPercentage) {
         Cart cart = cartRepository.findByUserId(userId)
-                .orElseThrow(() ->  new RuntimeException("Cart not found"));
+                .orElseThrow(() -> new RuntimeException("Cart not found"));
 
         BigDecimal originalTotal = cart.getTotalAmount();
-        BigDecimal discount =  new BigDecimal(discountPercentage)
+        BigDecimal discount = new BigDecimal(discountPercentage)
                 .divide(new BigDecimal(100));
 
         // Formula: Total = Total - (Total * Discount)
@@ -138,18 +139,16 @@ public class CartService {
         return cartRepository.save(cart);
     }
 
-
-
-    //Remove a specific item from the cart
+    // Remove a specific item from the cart
     @Transactional
-    public Cart removeItemFromCart(Long userId, Long productId){
+    public Cart removeItemFromCart(Long userId, Long productId) {
         Cart cart = cartRepository.findByUserId(userId)
-                .orElseThrow(()-> new RuntimeException("Cart not found"));
+                .orElseThrow(() -> new RuntimeException("Cart not found"));
 
         CartItem itemToRemove = cart.getItems().stream()
                 .filter(item -> item.getProduct().getId().equals(productId))
                 .findFirst()
-                .orElseThrow(()-> new RuntimeException("Item not in the cart"));
+                .orElseThrow(() -> new RuntimeException("Item not in the cart"));
 
         cart.removeCartItem(itemToRemove);
         updateCartTotal(cart);

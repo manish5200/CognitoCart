@@ -1,5 +1,6 @@
 package com.manish.smartcart.model.product;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.manish.smartcart.model.base.BaseEntity;
 import com.manish.smartcart.model.feedback.Review;
@@ -56,11 +57,11 @@ public class Product extends BaseEntity {
     private Boolean isAvailable = true; // Default to true so new products show up immediately
 
     // --- Discovery & Social Proof ---
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "product_tags", joinColumns = @JoinColumn(name = "product_id"))
     @Column(name = "tag")
     @Builder.Default
-    private Set<String> tags = new HashSet<>(); // Smart: For "Similar Products" search
+    private Set<String> tags = new HashSet<>();
 
     @Builder.Default
     private Double averageRating = AppConstants.INITIAL_RATING; // Denormalized for performance
@@ -74,22 +75,24 @@ public class Product extends BaseEntity {
     // JSON.
     // It stops Jackson from trying to load Hibernate's internal proxy fields
     // after the database session is closed.
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "category_id", foreignKey = @ForeignKey(name = "fk_product_category"))
-    @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
+    @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler", "parentCategory", "subCategories" })
     private Category category;
 
     // Inside your Product class
+    @JsonIgnore
     @Transient
     private Long categoryId; // Used only for mapping the incoming JSON ID
 
+    @JsonIgnore
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Review> reviews = new ArrayList<>();
 
     // Hibernate will automatically create a secondary table called product_images.
     // It will have two columns: product_id and image_url.
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "product_images", joinColumns = @JoinColumn(name = "product_id"))
     @Column(name = "image_url")
     @Builder.Default

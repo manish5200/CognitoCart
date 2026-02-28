@@ -39,9 +39,10 @@ public class AdminController {
     @ApiResponse(responseCode = "403", description = "Access Denied: Admin role required", content = @Content)
     @GetMapping("/stats")
     public ResponseEntity<?> getStats(
-            @RequestParam(defaultValue = AppConstants.LOW_STOCK_THRESHOLD + "") int stockThreshold,
-            @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNumber,
-            @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int pageSize) {
+            @RequestParam(name = "stockThreshold", defaultValue = AppConstants.LOW_STOCK_THRESHOLD
+                    + "") int stockThreshold,
+            @RequestParam(name = "pageNumber", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNumber,
+            @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int pageSize) {
         // threshold: items with stock less than this
         // page/size: pagination for the Top Sellers list
         DashboardResponse adminStats = adminService.getAdminStats(stockThreshold, pageNumber, pageSize);
@@ -57,7 +58,8 @@ public class AdminController {
     @ApiResponse(responseCode = "200", description = "Order status updated successfully")
     @ApiResponse(responseCode = "404", description = "Order ID not found", content = @Content)
     @PatchMapping("/{orderId}/status")
-    public ResponseEntity<?> changeOrderStatus(@PathVariable Long orderId, @RequestBody StatusChangeRequest request) {
+    public ResponseEntity<?> changeOrderStatus(@PathVariable("orderId") Long orderId,
+            @RequestBody StatusChangeRequest request) {
         request.setOrderId(orderId);
         Order order = adminService.changeTheStatusOfOrders(request);
         return ResponseEntity.ok(orderMapper.toOrderResponse(order));

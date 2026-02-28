@@ -71,7 +71,7 @@ public class CartController {
         @Operation(summary = "Apply discount coupon", description = "Applies a percentage-based discount to the cart total.")
         @PostMapping("/apply-coupon")
         public ResponseEntity<?> applyCoupon(
-                        @RequestParam @Min(value = (long) AppConstants.MINIMUM_COUPON_DISCOUNT) @Max(value = (long) AppConstants.MAXIMUM_COUPON_DISCOUNT) Double percentage,
+                        @RequestParam("percentage") @Min(value = (long) AppConstants.MINIMUM_COUPON_DISCOUNT) @Max(value = (long) AppConstants.MAXIMUM_COUPON_DISCOUNT) Double percentage,
                         Authentication authentication) {
 
                 CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();

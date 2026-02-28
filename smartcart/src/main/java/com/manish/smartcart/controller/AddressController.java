@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/v1/addresses")// Versioned API
+@RequestMapping("/api/v1/addresses") // Versioned API
 @RequiredArgsConstructor
 public class AddressController {
 
@@ -25,7 +25,7 @@ public class AddressController {
         // In a real app, extract userId from the JWT token
         Long userId = getAuthenticatedUserId();
         Address address = addressService.addAddress(userId, addressRequest);
-        return ResponseEntity.ok(Map.of("message", "Successfully added address","Address", address));
+        return ResponseEntity.ok(Map.of("message", "Successfully added address", "Address", address));
     }
 
     @GetMapping
@@ -35,14 +35,14 @@ public class AddressController {
     }
 
     @PatchMapping("/{addressId}/default")
-    public ResponseEntity<String> setPrimaryAddress(@PathVariable Long addressId) {
+    public ResponseEntity<?> setPrimaryAddress(@PathVariable("addressId") Long addressId) {
         Long userId = getAuthenticatedUserId();
         addressService.setAsDefault(userId, addressId);
-        return ResponseEntity.ok("Primary address updated successfully");
+        return ResponseEntity.ok(Map.of("message", "Primary address updated successfully"));
     }
 
     private Long getAuthenticatedUserId() {
-        Authentication  authentication = SecurityContextHolder.getContext().getAuthentication();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         assert authentication != null;
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
         assert customUserDetails != null;

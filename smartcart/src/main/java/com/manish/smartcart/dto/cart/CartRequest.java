@@ -10,7 +10,7 @@ import lombok.*;
 public class CartRequest {
 
     private Long productId;
-    @Min(value = 0)
+    @Min(value = 1, message = "Quantity must be at least 1")
     private Integer quantity;
 
 }

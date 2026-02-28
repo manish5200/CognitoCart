@@ -27,7 +27,7 @@ public class ReviewController {
     @PostMapping("/{productId}")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<?> postReview(
-            @PathVariable Long productId,
+            @PathVariable("productId") Long productId,
             @RequestBody ReviewRequestDTO reviewRequestDTO,
             Authentication authentication) {
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();

@@ -31,6 +31,26 @@ spring:
     open-in-view: false
     show-sql: false
 
+  # ================================
+  # REDIS CACHE (Upstash)
+  # Sign up free at https://upstash.com → create DB → copy URL
+  # Format: rediss://default:PASSWORD@HOST.upstash.io:6379
+  # "rediss" (double s) = TLS, required by Upstash
+  # ================================
+  data:
+    redis:
+      url: rediss://default:YOUR_UPSTASH_PASSWORD@YOUR_UPSTASH_HOST.upstash.io:6379
+      ssl:
+        enabled: true
+
+  cache:
+    type: redis
+    redis:
+      key-prefix: "cognitocart::"
+      use-key-prefix: true
+      cache-null-values: false
+
+
   mail:
     host: smtp.gmail.com
     port: 587

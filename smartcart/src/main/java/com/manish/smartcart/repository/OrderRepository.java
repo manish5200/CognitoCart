@@ -15,43 +15,39 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface OrderRepository extends JpaRepository<Order,Long> {
+public interface OrderRepository extends JpaRepository<Order, Long> {
 
-    // Allows us to show a specific user their historical orders
-     List<Order> findByUserId(Long userId);
+        // Order has @ManyToOne to Users, so use o.user.id in JPQL
+        @Query("SELECT o FROM Order o WHERE o.user.id = :userId")
+        List<Order> findByUserId(@Param("userId") Long userId);
 
-    Long countByOrderStatus(OrderStatus status);
+        Long countByOrderStatus(OrderStatus status);
 
-    //CUSTOMER DASHBOARD
-    // Get the most recent order for a user
-    Optional<Order> findFirstByUserIdOrderByOrderDateDesc(Long userId);
+        @Query("SELECT o FROM Order o WHERE o.user.id = :userId ORDER BY o.orderDate DESC")
+        Optional<Order> findFirstByUserIdOrderByOrderDateDesc(@Param("userId") Long userId);
 
+        @Query("SELECT o FROM Order o WHERE o.user.id = :userId")
+        Page<Order> findByUserId(@Param("userId") Long userId, Pageable pageable);
 
-    // Get paginated history for a user
-    Page<Order> findByUserId(Long userId, Pageable pageable);
+        @Query("SELECT COUNT(o) > 0 FROM Order o JOIN o.orderItems oi " +
+                        "WHERE o.user.id = :userId AND oi.product.id = :productId AND o.orderStatus = :status")
+        boolean existsByUserIdAndOrderItems_Product_IdAndOrderStatus(
+                        @Param("userId") Long userId,
+                        @Param("productId") Long productId,
+                        @Param("status") OrderStatus orderStatus);
 
+        @Query("SELECT SUM(o.totalAmount) FROM Order o WHERE o.orderStatus = 'DELIVERED'")
+        BigDecimal calculateRevenue();
 
-    boolean existsByUserIdAndOrderItems_Product_IdAndOrderStatus(Long userId,
-                                                                 Long productId,
-                                                                 OrderStatus orderStatus);
+        @Query("SELECT SUM(o.totalAmount) FROM Order o WHERE o.user.id = :userId AND o.orderStatus = 'DELIVERED'")
+        BigDecimal calculateTotalSpentByUser(@Param("userId") Long userId);
 
-    //ADMIN DASHBOARD
-    @Query("SELECT SUM(o.totalAmount) FROM Order o WHERE o.orderStatus = 'DELIVERED'")
-    BigDecimal calculateRevenue();
+        @Query("SELECT o FROM Order o LEFT JOIN FETCH o.orderItems WHERE o.user.id = :userId ORDER BY o.orderDate DESC")
+        List<Order> findByUserIdAndOrderItems(@Param("userId") Long userId);
 
-    // Sum total spent by a specific user (DELIVERED ONLY)
-    @Query("SELECT SUM(o.totalAmount) FROM " +
-            "Order o WHERE" +
-            " o.user.id = :userId " +
-            "AND o.orderStatus = 'DELIVERED'")
-    BigDecimal calculateTotalSpentByUser(@Param("userId") Long userId);
-
-    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.orderItems " +
-            "WHERE o.user.id=:userId ORDER BY o.orderDate DESC")
-    List<Order>findByUserIdAndOrderItems(@Param("userId") Long userId);
-
-    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.orderItems " +
-            "WHERE o.orderStatus = :status AND o.orderDate < :threshold")
-    List<Order> findByOrderStatusAndOrderDateBeforeWithItems(@Param("status") OrderStatus orderStatus,
-                                                             @Param("threshold") LocalDateTime orderDateBefore);
+        @Query("SELECT o FROM Order o LEFT JOIN FETCH o.orderItems " +
+                        "WHERE o.orderStatus = :status AND o.orderDate < :threshold")
+        List<Order> findByOrderStatusAndOrderDateBeforeWithItems(
+                        @Param("status") OrderStatus orderStatus,
+                        @Param("threshold") LocalDateTime orderDateBefore);
 }

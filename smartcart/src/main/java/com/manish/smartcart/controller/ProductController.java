@@ -27,7 +27,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -82,7 +81,7 @@ public class ProductController {
          * GET: Product Detail by Slug (Public)
          */
         @GetMapping("/{slug}")
-        public ResponseEntity<?> getProductBySlug(@PathVariable String slug) {
+        public ResponseEntity<?> getProductBySlug(@PathVariable("slug") String slug) {
                 return ResponseEntity.status(HttpStatus.OK)
                                 .body(productService.getProductBySlug(slug));
 
@@ -93,9 +92,9 @@ public class ProductController {
          * Finds products in the category and all its sub-categories recursively.
          */
         @GetMapping("/category/{categoryId}")
-        public ResponseEntity<?> getProductByCategoryId(@PathVariable Long categoryId) {
+        public ResponseEntity<?> getProductByCategoryId(@PathVariable("categoryId") Long categoryId) {
                 List<Long> allCategoryIds = categoryService.getAllChildCategoryIds(categoryId);
-                List<Product> products = productService.getProductsByCategoryIds(allCategoryIds);
+                List<ProductResponse> products = productService.getProductsByCategoryIds(allCategoryIds);
 
                 // Return 200 OK with empty list if no products,
                 // OR handle the case where the parent category ID itself doesn't exist.
@@ -107,7 +106,7 @@ public class ProductController {
          */
         @PatchMapping("/{id}/toggle")
         @PreAuthorize("hasAnyRole('SELLER','ADMIN')")
-        public ResponseEntity<?> toggleVisibility(@PathVariable Long id, Authentication authentication) {
+        public ResponseEntity<?> toggleVisibility(@PathVariable("id") Long id, Authentication authentication) {
                 CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
                 assert userDetails != null;
                 boolean isAdmin = userDetails.getAuthorities()
@@ -122,7 +121,7 @@ public class ProductController {
          */
         @DeleteMapping("/{id}")
         @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
-        public ResponseEntity<?> deleteProduct(@PathVariable Long id, Authentication authentication) {
+        public ResponseEntity<?> deleteProduct(@PathVariable("id") Long id, Authentication authentication) {
                 CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
                 assert userDetails != null;
                 boolean isAdmin = userDetails.getAuthorities()
@@ -144,10 +143,10 @@ public class ProductController {
         @GetMapping("/search")
         public ResponseEntity<?> searchProduct(
                         @Valid ProductSearchDTO searchDTO,
-                        @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int page,
-                        @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size,
-                        @RequestParam(defaultValue = AppConstants.DEFAULT_SORT_BY) String sortBy,
-                        @RequestParam(defaultValue = AppConstants.DEFAULT_SORT_DIRECTION) String direction) {
+                        @RequestParam(name = "page", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int page,
+                        @RequestParam(name = "size", defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size,
+                        @RequestParam(name = "sortBy", defaultValue = AppConstants.DEFAULT_SORT_BY) String sortBy,
+                        @RequestParam(name = "direction", defaultValue = AppConstants.DEFAULT_SORT_DIRECTION) String direction) {
                 Sort sort = direction.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending()
                                 : Sort.by(sortBy).ascending();
 
@@ -162,7 +161,7 @@ public class ProductController {
         @PostMapping("/{productId}/upload-image")
         @PreAuthorize("hasRole('SELLER')")
         public ResponseEntity<?> uploadProductImage(
-                        @PathVariable Long productId,
+                        @PathVariable("productId") Long productId,
                         @RequestParam("file") MultipartFile file) throws IOException {
 
                 // 1. Validate the file (Security First!)
@@ -175,7 +174,12 @@ public class ProductController {
                 Product product = productRepository.findById(productId)
                                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-                product.setImageUrls(Collections.singletonList(fileName));
+                // Append new image URL to existing list (do NOT overwrite)
+                List<String> existingUrls = product.getImageUrls() != null
+                                ? new java.util.ArrayList<>(product.getImageUrls())
+                                : new java.util.ArrayList<>();
+                existingUrls.add(fileName);
+                product.setImageUrls(existingUrls);
                 productRepository.save(product);
                 return ResponseEntity.ok(Map.of(
                                 "message", "Image verified and uploaded successfully",

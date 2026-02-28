@@ -55,7 +55,7 @@ public class OrderController {
 
         @Operation(summary = "Cancel order", description = "Allows a user to cancel an order if it has not yet been processed for shipping.")
         @PutMapping("/{orderId}/cancel")
-        public ResponseEntity<?> cancelOrder(@PathVariable Long orderId, Authentication authentication) {
+        public ResponseEntity<?> cancelOrder(@PathVariable("orderId") Long orderId, Authentication authentication) {
                 CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
                 assert userDetails != null;
                 Long userId = userDetails.getUser().getId();

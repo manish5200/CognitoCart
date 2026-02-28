@@ -56,7 +56,7 @@ public class WishlistController {
         @PostMapping("/move-to-cart/{productId}")
         public ResponseEntity<?> moveToCart(
                         @PathVariable("productId") Long productId,
-                        @RequestParam(defaultValue = AppConstants.PRODUCT_QUANTITY) Integer quantity,
+                        @RequestParam(name = "quantity", defaultValue = AppConstants.PRODUCT_QUANTITY) Integer quantity,
                         Authentication authentication) {
                 CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
                 assert customUserDetails != null;

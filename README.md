@@ -1,9 +1,10 @@
 # 🛒 CognitoCart — AI-Driven E-Commerce Backend API
 
 [![Build](https://img.shields.io/badge/build-passing-brightgreen)]()
-[![Java](https://img.shields.io/badge/Java-17-orange?logo=openjdk)]()
+[![Java](https://img.shields.io/badge/Java-21-orange?logo=openjdk)]()
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.1-brightgreen?logo=springboot)]()
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue?logo=postgresql)]()
+[![Redis](https://img.shields.io/badge/Redis-Upstash-red?logo=redis)]()
 [![Flyway](https://img.shields.io/badge/Flyway-migrations-red?logo=flyway)]()
 [![Swagger](https://img.shields.io/badge/Swagger-OpenAPI%203-green?logo=swagger)]()
 [![License](https://img.shields.io/badge/license-MIT-green)]()
@@ -36,6 +37,7 @@ The core philosophy is **"Production by Design"** — every decision is made wit
 | 🏪 **Seller** | Seller profile, KYC status, product management |
 | 🛠️ **Admin** | Dashboard analytics, low stock alerts, top products, user/order management |
 | 📧 **Email** | Async SMTP email service (order notifications, welcome emails) |
+| ⚡ **Redis Cache** | Cache-aside pattern via Upstash — products, categories, recommendations cached with TTL |
 
 ---
 
@@ -57,7 +59,135 @@ Instead of `SELECT AVG(rating)` on every request (which gets slower as reviews g
 ### 4. 🗃️ Schema-First with Flyway
 All database schema changes are versioned SQL migrations via **Flyway**. Hibernate is set to `validate` only — it never auto-creates or modifies tables. This ensures safe production deployments and a reproducible schema.
 
-### 5. 🏛️ Clean Layered Architecture
+### 5. ⚡ Redis Caching (Upstash) — Cache-Aside Pattern
+
+Every high-traffic read endpoint is cached in **Redis** (hosted on [Upstash](https://upstash.com) — serverless, free tier). The implementation uses Spring's declarative caching abstraction (`@Cacheable` / `@CacheEvict`) wired to a custom `RedisCacheManager` with per-cache TTLs and JSON serialization.
+
+#### 🗂️ What Gets Cached
+
+| Cache Name | Method | TTL | Invalidated When |
+|---|---|---|---|
+| `products` | `getAllProducts()` | 10 min | Product created / deleted / toggled |
+| `products` | `getProductsByCategoryIds(ids)` | 10 min | Product created / deleted / toggled |
+| `product-slug` | `getProductBySlug(slug)` | 10 min | Product updated / deleted |
+| `categories` | `getAllCategories()` | 60 min | Category created (bulk or single) |
+| `product-recommendations` | *(future AI feature)* | 60 min | Pre-registered, ready to use |
+
+#### 🔄 How It Works — Cache-Aside Pattern
+
+```
+📥 Incoming Request
+        │
+        ▼
+  ┌─────────────┐
+  │ Redis Cache │◄──── key exists? ────► ✅ Cache HIT → Return instantly (< 1ms)
+  └─────────────┘
+        │
+      MISS
+        │
+        ▼
+  ┌─────────────┐
+  │ PostgreSQL  │──── fetch data ────► 💾 Store in Redis with TTL
+  └─────────────┘
+        │
+        ▼
+   Return Response
+
+🔥 On Write (Create / Update / Delete)
+        │
+        ▼
+  Update Database → 🗑️ Evict Redis entries → Next read re-populates cache
+```
+
+#### 📟 Real-Time Cache Console Logging
+
+Every cache operation is logged to the console via a custom **`LoggingCacheManager`** decorator — a transparent wrapper around `RedisCacheManager` that intercepts every `get`, `put`, `evict`, and `clear` call.
+
+> No annotation or service code changes needed — the logging layer is entirely in the infrastructure.
+
+**First request (cache MISS → DB query → stored in Redis):**
+```log
+🔴 CACHE MISS → [products] :: key='all' | Querying database...
+💾 CACHE PUT  → [products] :: key='all' | Storing result in Redis
+```
+
+**Second request (cache HIT → served from Redis, zero DB query):**
+```log
+✅ CACHE HIT  → [products] :: key='all'
+```
+
+**When a product is created or deleted (cache eviction):**
+```log
+🗑️  CACHE CLEAR → [products] :: All entries evicted
+🗑️  CACHE CLEAR → [product-slug] :: All entries evicted
+```
+
+**Category cache (60 min TTL — rarely invalidated):**
+```log
+🔴 CACHE MISS → [categories] :: key='all' | Querying database...
+💾 CACHE PUT  → [categories] :: key='all' | Storing result in Redis
+✅ CACHE HIT  → [categories] :: key='all'   ← all subsequent requests
+```
+
+#### 🛠️ Implementation Architecture
+
+```
+ RedisConfig.java
+       │
+       ├── redisObjectMapper()          → Jackson: LocalDateTime + type-info support
+       ├── defaultCacheConfig()         → String keys + JSON values + no null caching  
+       └── cacheManager() [@Primary]    → RedisCacheManager wrapped in LoggingCacheManager
+
+ LoggingCacheManager.java (Decorator Pattern)
+       │
+       └── LoggingCache (inner class)   → Intercepts get/put/evict, logs with emoji prefix
+
+ ProductService.java
+       ├── @Cacheable  getAllProducts()              → cache: products  key: 'all'
+       ├── @Cacheable  getProductBySlug(slug)        → cache: product-slug  key: #slug
+       ├── @Cacheable  getProductsByCategoryIds(ids) → cache: products  key: hashCode
+       ├── @CacheEvict createProduct()              → evicts: products + product-slug
+       ├── @CacheEvict toggleAvailability()         → evicts: products + product-slug
+       └── @CacheEvict deleteProduct()              → evicts: products + product-slug
+
+ CategoryService.java
+       ├── @Cacheable  getAllCategories()            → cache: categories  key: 'all'
+       ├── @CacheEvict createCategory()             → evicts: categories
+       └── @CacheEvict createCategoriesBulk()       → evicts: categories
+```
+
+#### ⚙️ Redis Configuration (Upstash Setup)
+
+1. Sign up at **[upstash.com](https://upstash.com)** (free, no credit card)
+2. Create a database → Region: `ap-south-1` (Mumbai)
+3. Copy your `REDIS_URL` from the **Details** tab
+4. Add to `application-demo.yml`:
+
+```yaml
+spring:
+  data:
+    redis:
+      url: rediss://default:PASSWORD@HOST.upstash.io:6379
+      ssl:
+        enabled: true
+  cache:
+    type: redis
+    redis:
+      key-prefix: "cognitocart::"
+      use-key-prefix: true
+      cache-null-values: false
+```
+
+> **Key design decisions:**
+> - `rediss://` (double `s`) = TLS connection required by Upstash
+> - `key-prefix: cognitocart::` — namespaces all keys in the shared Redis DB (e.g. `cognitocart::products::all`)
+> - `cache-null-values: false` — never waste Redis memory on null results
+> - JSON serialization (not Java binary) — keys are human-readable in **Upstash Data Browser**
+> - `ProductMapper` copies `tags` and `imageUrls` to plain `HashSet`/`ArrayList` before caching — Hibernate `PersistentSet` is session-bound and cannot be serialized after the session closes
+
+---
+
+### 6. 🏛️ Clean Layered Architecture
 ```
 Controller → Service → Repository → Database
      ↕              ↕
@@ -74,11 +204,12 @@ Controller → Service → Repository → Database
 
 | Layer | Technology |
 |-------|-----------|
-| Language | Java 17 |
+| Language | Java 21 |
 | Framework | Spring Boot 3.4.1 |
 | Security | Spring Security + JJWT 0.12.6 |
 | Database | PostgreSQL 15 |
 | ORM | Spring Data JPA / Hibernate |
+| Cache | Redis (Upstash) + Spring Cache |
 | Migrations | Flyway |
 | Validation | Jakarta Bean Validation |
 | Documentation | SpringDoc OpenAPI 3 / Swagger UI |
