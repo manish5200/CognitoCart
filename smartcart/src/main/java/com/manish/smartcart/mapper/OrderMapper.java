@@ -17,6 +17,8 @@ public class OrderMapper {
         orderResponse.setCustomerName(order.getUser().getFullName()); // Uses hoisted name
         orderResponse.setOrderDate(order.getOrderDate());
         orderResponse.setTotalAmount(order.getTotalAmount());
+        orderResponse.setCouponCode(order.getCouponCode());
+        orderResponse.setDiscountAmount(order.getDiscountAmount());
         orderResponse.setStatus(order.getOrderStatus());
 
         // --- FIXED: Mapping the Snapshot Address ---

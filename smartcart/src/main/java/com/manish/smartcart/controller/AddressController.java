@@ -35,12 +35,13 @@ public class AddressController {
     }
 
     @PatchMapping("/{addressId}/default")
-    public ResponseEntity<?> setPrimaryAddress(@PathVariable("addressId") Long addressId) {
+    public ResponseEntity<?> setPrimaryAddress(@PathVariable Long addressId) {
         Long userId = getAuthenticatedUserId();
         addressService.setAsDefault(userId, addressId);
         return ResponseEntity.ok(Map.of("message", "Primary address updated successfully"));
     }
 
+    //Helper method
     private Long getAuthenticatedUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         assert authentication != null;

@@ -114,3 +114,11 @@ springdoc:
     enabled: true
   swagger-ui:
     enabled: true
+# ================================
+# RAZORPAY CONFIGURATION
+# Set these as environment variables in your run configuration
+# ================================
+razorpay:
+  key-id: ${RAZORPAY_KEY_ID:rzp_test_placeholder}
+  key-secret: ${RAZORPAY_KEY_SECRET:placeholder_secret}
+  webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:my_secure_webhook_secret_123}

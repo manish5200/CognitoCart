@@ -15,15 +15,15 @@ public class SwaggerConfig {
         public OpenAPI customOpenAPI() {
                 return new OpenAPI()
                                 .info(new Info()
-                                                .title("CognitoCart API")
-                                                .version("1.0")
-                                                .description("Enterprise-grade e-commerce REST API — JWT auth, RBAC, product catalog, cart, orders, reviews, and admin analytics."))
-                                .addSecurityItem(new SecurityRequirement().addList("bearerAuth")) // Apply globally
-                                .components(new Components()
-                                                .addSecuritySchemes("bearerAuth", new SecurityScheme()
-                                                                .name("bearerAuth")
-                                                                .type(SecurityScheme.Type.HTTP)
-                                                                .scheme("bearer")
-                                                                .bearerFormat("JWT"))); // Define JWT scheme
+                                        .title("CognitoCart API")
+                                        .version("1.0")
+                                        .description("Enterprise-grade e-commerce REST API — JWT auth, RBAC, product catalog, cart, orders, reviews, and admin analytics."))
+                        .addSecurityItem(new SecurityRequirement().addList("bearerAuth")) // Apply globally
+                        .components(new Components()
+                                .addSecuritySchemes("bearerAuth", new SecurityScheme()
+                                        .name("bearerAuth")
+                                        .type(SecurityScheme.Type.HTTP)
+                                        .scheme("bearer")
+                                        .bearerFormat("JWT"))); // Define JWT scheme
         }
 }

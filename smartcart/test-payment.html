@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CognitoCart — Payment Sandbox</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            padding: 24px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 520px;
+            padding: 40px;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 32px;
+        }
+
+        .brand-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .brand-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.3px;
+        }
+        .brand-sub {
+            font-size: 12px;
+            color: rgba(255,255,255,0.45);
+            font-weight: 400;
+            margin-top: 1px;
+        }
+
+        h1 {
+            font-size: 26px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 6px;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: rgba(255,255,255,0.50);
+            margin-bottom: 32px;
+            line-height: 1.5;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.6);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 8px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 15px;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        input[type="text"]::placeholder { color: rgba(255,255,255,0.25); }
+
+        input[type="text"]:focus {
+            border-color: rgba(102, 126, 234, 0.8);
+            background: rgba(255,255,255,0.12);
+        }
+
+        .tip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(102,126,234,0.12);
+            border: 1px solid rgba(102,126,234,0.3);
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-bottom: 24px;
+        }
+
+        .tip span { font-size: 13px; color: rgba(255,255,255,0.65); line-height: 1.4; }
+        .tip code {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #a78bfa;
+            background: rgba(167,139,250,0.12);
+            padding: 1px 5px;
+            border-radius: 4px;
+        }
+
+        .btn-pay {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            letter-spacing: 0.3px;
+            transition: opacity 0.2s, transform 0.1s;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-pay:hover { opacity: 0.92; transform: translateY(-1px); }
+        .btn-pay:active { transform: translateY(0); }
+
+        /* Result Box */
+        .result-box {
+            display: none;
+            margin-top: 28px;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .result-header {
+            padding: 16px 20px;
+            background: rgba(52, 211, 153, 0.15);
+            border-bottom: 1px solid rgba(52,211,153,0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .result-header.error {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: rgba(239,68,68,0.2);
+        }
+
+        .status-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: #34d399;
+            box-shadow: 0 0 8px #34d399;
+            flex-shrink: 0;
+        }
+
+        .status-dot.pulse { animation: pulse 1.5s infinite; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .status-dot.error { background: #ef4444; box-shadow: 0 0 8px #ef4444; animation: none; }
+
+        .result-header h3 {
+            font-size: 15px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .result-body { padding: 20px; background: rgba(0,0,0,0.2); }
+
+        .data-row {
+            margin-bottom: 14px;
+        }
+
+        .data-row:last-child { margin-bottom: 0; }
+
+        .data-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 4px;
+        }
+
+        .data-value {
+            font-size: 13px;
+            color: rgba(255,255,255,0.85);
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            background: rgba(255,255,255,0.06);
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .divider {
+            border: none;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            margin: 16px 0;
+        }
+
+        .api-status {
+            font-size: 13px;
+            color: rgba(255,255,255,0.7);
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            line-height: 1.5;
+        }
+
+        .api-status.loading { color: rgba(255,255,255,0.45); }
+        .api-status.success { color: #34d399; }
+        .api-status.fail { color: #f87171; }
+
+        .spinner {
+            width: 14px; height: 14px;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-top-color: #a78bfa;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .test-cards {
+            margin-top: 28px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .test-cards h4 {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: rgba(255,255,255,0.35);
+            margin-bottom: 14px;
+        }
+
+        .test-card-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .test-item {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px;
+            padding: 10px 12px;
+        }
+
+        .test-item-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: rgba(255,255,255,0.35);
+            margin-bottom: 3px;
+        }
+
+        .test-item-value {
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+            color: #a78bfa;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(52,211,153,0.15);
+            color: #34d399;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 20px;
+            border: 1px solid rgba(52,211,153,0.25);
+        }
+
+        .badge-fail {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(239,68,68,0.15);
+            color: #f87171;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 20px;
+            border: 1px solid rgba(239,68,68,0.25);
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="brand">
+        <div class="brand-icon">🛒</div>
+        <div>
+            <div class="brand-name">CognitoCart</div>
+            <div class="brand-sub">Developer Sandbox</div>
+        </div>
+    </div>
+
+    <h1>Payment Tester</h1>
+    <p class="subtitle">Simulate a Razorpay checkout and automatically verify the signature against your local Spring Boot instance.</p>
+
+    <div class="form-group">
+        <label>Razorpay Order ID</label>
+        <input type="text" id="orderId" placeholder="e.g. order_SPm3uLY8xztIDP">
+    </div>
+
+    <div class="tip">
+        <span>💡 Use UPI ID <code>success@razorpay</code> to instantly simulate a successful payment in test mode.</span>
+    </div>
+
+    <button class="btn-pay" id="rzp-button1">Pay with Razorpay ⚡</button>
+
+    <div class="result-box" id="resultBox">
+        <div class="result-header" id="resultHeader">
+            <div class="status-dot pulse" id="statusDot"></div>
+            <h3 id="resultTitle">Payment Captured</h3>
+        </div>
+        <div class="result-body">
+            <div class="data-row">
+                <div class="data-label">Mock Payment ID</div>
+                <div class="data-value" id="payId">—</div>
+            </div>
+            <div class="data-row">
+                <div class="data-label">Signature</div>
+                <div class="data-value" id="sign">—</div>
+            </div>
+            <hr class="divider">
+            <div class="data-label" style="margin-bottom: 8px;">Spring Boot /verify Response</div>
+            <div class="api-status loading" id="apiStatus">
+                <div class="spinner" id="spinner"></div>
+                <span id="apiText">Sending to localhost:8080…</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-cards">
+        <h4>Test Credentials</h4>
+        <div class="test-card-grid">
+            <div class="test-item">
+                <div class="test-item-label">UPI (Success)</div>
+                <div class="test-item-value">success@razorpay</div>
+            </div>
+            <div class="test-item">
+                <div class="test-item-label">UPI (Failure)</div>
+                <div class="test-item-value">failure@razorpay</div>
+            </div>
+            <div class="test-item">
+                <div class="test-item-label">Mastercard</div>
+                <div class="test-item-value">5267 3181 8797 5449</div>
+            </div>
+            <div class="test-item">
+                <div class="test-item-label">Visa (Indian)</div>
+                <div class="test-item-value">4012 8888 8888 1881</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+document.getElementById('rzp-button1').onclick = function(e) {
+    const orderId = document.getElementById('orderId').value.trim();
+    if (!orderId) {
+        alert('Please paste your Razorpay Order ID first.');
+        return;
+    }
+
+    var options = {
+        "key": "rzp_test_SMDYxt5JN5UoJg",
+        "amount": "100",
+        "currency": "INR",
+        "name": "CognitoCart",
+        "description": "Sandbox Payment Test",
+        "image": "",
+        "order_id": orderId,
+        "handler": function (response) {
+            const box = document.getElementById('resultBox');
+            box.style.display = 'block';
+
+            document.getElementById('payId').textContent = response.razorpay_payment_id;
+            document.getElementById('sign').textContent = response.razorpay_signature;
+
+            const apiStatus = document.getElementById('apiStatus');
+            const apiText   = document.getElementById('apiText');
+            const spinner   = document.getElementById('spinner');
+
+            apiStatus.className = 'api-status loading';
+            spinner.style.display = 'block';
+            apiText.textContent = 'Sending to localhost:8080…';
+
+            fetch('http://localhost:8080/api/v1/payments/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    razorpayOrderId:   response.razorpay_order_id,
+                    razorpayPaymentId: response.razorpay_payment_id,
+                    razorpaySignature: response.razorpay_signature
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                spinner.style.display = 'none';
+                const isSuccess = data.message && (
+                    data.message.toLowerCase().includes('success') ||
+                    data.message.toLowerCase().includes('verified') ||
+                    data.message.toLowerCase().includes('already')
+                );
+                apiStatus.className = isSuccess ? 'api-status success' : 'api-status fail';
+                apiText.innerHTML = isSuccess
+                    ? '<span class="badge-success">✓ PAID</span>&nbsp; ' + JSON.stringify(data, null, 2)
+                    : '<span class="badge-fail">✗ FAILED</span>&nbsp; ' + JSON.stringify(data, null, 2);
+            })
+            .catch(err => {
+                spinner.style.display = 'none';
+                apiStatus.className = 'api-status fail';
+                document.getElementById('statusDot').className = 'status-dot error';
+                document.getElementById('resultHeader').className = 'result-header error';
+                document.getElementById('resultTitle').textContent = 'Error';
+                apiText.innerHTML = '<span class="badge-fail">✗</span>&nbsp; ' + err.toString();
+            });
+        },
+        "prefill": { "name": "Test Customer", "email": "test@cognitocart.com", "contact": "9999999999" },
+        "theme": { "color": "#667eea" }
+    };
+
+    var rzp = new Razorpay(options);
+    rzp.on('payment.failed', function(response) {
+        document.getElementById('resultBox').style.display = 'block';
+        document.getElementById('statusDot').className = 'status-dot error';
+        document.getElementById('resultHeader').className = 'result-header error';
+        document.getElementById('resultTitle').textContent = 'Payment Failed';
+        document.getElementById('spinner').style.display = 'none';
+        const st = document.getElementById('apiStatus');
+        st.className = 'api-status fail';
+        document.getElementById('apiText').innerHTML =
+            '<span class="badge-fail">✗</span>&nbsp; ' + response.error.description;
+    });
+
+    rzp.open();
+    e.preventDefault();
+};
+</script>
+</body>
+</html>

@@ -13,10 +13,13 @@ import java.util.List;
 @AllArgsConstructor
 @RequiredArgsConstructor
 public class CartResponse {
-    private Long cartId;
-    private BigDecimal totalAmount;
-    private List<ItemDTO> items;
 
+    private Long cartId;
+    private BigDecimal totalAmount; // This will now represent the FINAL amount (including delivery)
+    private String couponCode;
+    private BigDecimal discountAmount;
+    private BigDecimal deliveryFee;  // <-- NEW FIELD HERE
+    private List<ItemDTO> items;
     // A simple Item DTO with NO link back to cart
     @Setter
     @Getter
@@ -27,24 +30,24 @@ public class CartResponse {
         private BigDecimal price;
         private Integer quantity;
         private BigDecimal subtotal;
-
     }
-
-    //Helper method
+    // Helper method
     public CartResponse getCartResponse(Cart updatedCart) {
-        List<ItemDTO>items = new ArrayList<>();
-        for(CartItem item : updatedCart.getItems()){
+        List<ItemDTO> items = new ArrayList<>();
+        for (CartItem item : updatedCart.getItems()) {
             ItemDTO newItem = new ItemDTO(
                     item.getProduct().getProductName(),
                     item.getPriceAtAdding(),
                     item.getQuantity(),
-                    item.getPriceAtAdding().multiply(new BigDecimal(item.getQuantity()))
-            );
+                    item.getPriceAtAdding().multiply(new BigDecimal(item.getQuantity())));
             items.add(newItem);
         }
         return new CartResponse(
                 updatedCart.getId(),
                 updatedCart.getTotalAmount(),
+                updatedCart.getCouponCode(),
+                updatedCart.getDiscountAmount(),
+                updatedCart.getDeliveryFee(), // <-- NEW FIELD HERE
                 items);
     }
 }

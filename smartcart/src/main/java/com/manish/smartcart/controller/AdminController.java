@@ -16,22 +16,33 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
+
+import com.manish.smartcart.dto.coupon.CouponRequest;
+import com.manish.smartcart.dto.coupon.CouponResponse;
+import com.manish.smartcart.service.CouponService;
+import com.manish.smartcart.service.notifications.OrderNotificationService;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/v1/admin")
 @PreAuthorize("hasRole('ADMIN')")
 @Tag(name = "2. Admin Controller", description = "Restricted administrative operations for system management")
 @SecurityRequirement(name = "bearerAuth") // Every method in this class requires a JWT
-
 public class AdminController {
 
     private final AdminService adminService;
     private final OrderMapper orderMapper;
+    private final CouponService couponService;
+    private final OrderNotificationService orderNotificationService;
 
-    public AdminController(AdminService adminService, OrderMapper orderMapper) {
+    public AdminController(AdminService adminService, OrderMapper orderMapper, CouponService couponService,
+            OrderNotificationService orderNotificationService) {
         this.adminService = adminService;
         this.orderMapper = orderMapper;
+        this.couponService = couponService;
+        this.orderNotificationService = orderNotificationService;
     }
 
     @Operation(summary = "Get Dashboard Stats", description = "Retrieves top-selling products and low-stock alerts. Access restricted to users with ROLE_ADMIN.")
@@ -58,10 +69,38 @@ public class AdminController {
     @ApiResponse(responseCode = "200", description = "Order status updated successfully")
     @ApiResponse(responseCode = "404", description = "Order ID not found", content = @Content)
     @PatchMapping("/{orderId}/status")
-    public ResponseEntity<?> changeOrderStatus(@PathVariable("orderId") Long orderId,
-            @RequestBody StatusChangeRequest request) {
+    public ResponseEntity<?> changeOrderStatus(@PathVariable Long orderId,
+                                               @RequestBody StatusChangeRequest request) {
         request.setOrderId(orderId);
         Order order = adminService.changeTheStatusOfOrders(request);
-        return ResponseEntity.ok(orderMapper.toOrderResponse(order));
+
+        // Map to response and send notification
+        var response = orderMapper.toOrderResponse(order);
+        orderNotificationService.sendStatusUpdateEmail(response);
+
+        return ResponseEntity.ok(response);
+    }
+
+    // --- COUPON MANAGEMENT ---
+
+    @PostMapping("/coupons")
+    @Operation(summary = "Create a new platform-wide discount coupon")
+    public ResponseEntity<CouponResponse> createCoupon(@Valid
+                                                           @RequestBody
+                                                           CouponRequest couponRequest) {
+        return ResponseEntity.ok(couponService.createCoupon(couponRequest));
+    }
+
+    @GetMapping("/coupons")
+    @Operation(summary = "View all global coupons")
+    public ResponseEntity<List<CouponResponse>> getAllCoupons() {
+        return ResponseEntity.ok(couponService.getAllCoupons());
+    }
+
+    @PatchMapping("/coupons/{couponId}/toggle")
+    @Operation(summary = "Activate or deactivate a coupon quickly")
+    public ResponseEntity<String> toggleCouponStatus(@PathVariable Long couponId) {
+        couponService.toggleActive(couponId);
+        return ResponseEntity.ok("Coupon status toggled successfully.");
     }
 }

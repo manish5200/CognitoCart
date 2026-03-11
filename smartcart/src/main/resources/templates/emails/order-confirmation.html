@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Order Confirmed — CognitoCart</title>
+</head>
+
+<body
+    style="margin:0;padding:0;background:#f0f4f8;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#1a202c;">
+
+    <table width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f0f4f8;padding:40px 0;">
+        <tr>
+            <td align="center">
+                <table width="600" cellspacing="0" cellpadding="0" border="0"
+                    style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+                    <!-- Brand Header -->
+                    <tr>
+                        <td style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:0;">
+                            <table width="100%" cellspacing="0" cellpadding="0" border="0">
+                                <tr>
+                                    <td style="padding:32px 40px 28px 40px;">
+                                        <p
+                                            style="margin:0;font-size:22px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;">
+                                            🛒 CognitoCart</p>
+                                        <p
+                                            style="margin:4px 0 0 0;font-size:13px;color:rgba(255,255,255,0.7);font-weight:400;">
+                                            Your trusted shopping companion</p>
+                                    </td>
+                                    <td align="right" style="padding:32px 40px 28px 40px;">
+                                        <div
+                                            style="background:rgba(255,255,255,0.18);border-radius:50px;padding:8px 18px;display:inline-block;">
+                                            <p style="margin:0;font-size:13px;font-weight:600;color:#fff;">✓ &nbsp;Order
+                                                Confirmed</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Green Success Banner -->
+                    <tr>
+                        <td
+                            style="background:#f0fff4;border-bottom:2px solid #c6f6d5;padding:24px 40px;text-align:center;">
+                            <p style="margin:0;font-size:36px;">🎉</p>
+                            <h1 style="margin:8px 0 4px 0;font-size:24px;font-weight:700;color:#22543d;">Your order is
+                                confirmed!</h1>
+                            <p style="margin:0;font-size:15px;color:#276749;">We're preparing your items for shipment.
+                                Here's a summary of what you ordered.</p>
+                        </td>
+                    </tr>
+
+                    <!-- Greeting -->
+                    <tr>
+                        <td style="padding:32px 40px 16px 40px;">
+                            <p style="margin:0;font-size:16px;color:#4a5568;">Hi <strong th:text="${customerName}"
+                                    style="color:#1a202c;">Customer</strong>,</p>
+                            <p style="margin:10px 0 0 0;font-size:15px;color:#718096;line-height:1.7;">
+                                Thank you for shopping with CognitoCart! Your payment has been received and your order
+                                is now being processed. You'll receive another email when your order ships.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Order Info Card -->
+                    <tr>
+                        <td style="padding:16px 40px;">
+                            <table width="100%" cellspacing="0" cellpadding="0" border="0"
+                                style="background:#f7fafc;border-radius:12px;border:1px solid #e2e8f0;">
+                                <tr>
+                                    <td style="padding:24px 28px;">
+                                        <table width="100%" cellspacing="0" cellpadding="0" border="0">
+                                            <tr>
+                                                <td width="50%" valign="top" style="padding-right:20px;">
+                                                    <p
+                                                        style="margin:0 0 4px 0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:#a0aec0;">
+                                                        Order Number</p>
+                                                    <p style="margin:0;font-size:18px;font-weight:700;color:#5a67d8;"
+                                                        th:text="${'#CC-' + orderId}">#CC-001</p>
+                                                </td>
+                                                <td width="50%" valign="top">
+                                                    <p
+                                                        style="margin:0 0 4px 0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:#a0aec0;">
+                                                        Order Date</p>
+                                                    <p style="margin:0;font-size:16px;font-weight:600;color:#2d3748;"
+                                                        th:text="${orderDate}">March 11, 2026</p>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="2"
+                                                    style="padding-top:20px;border-top:1px solid #e2e8f0;margin-top:16px;">
+                                                    <div style="display:block;height:1px;"></div>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="2" style="padding-top:4px;">
+                                                    <p
+                                                        style="margin:0 0 4px 0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:#a0aec0;">
+                                                        Shipping To</p>
+                                                    <p style="margin:0;font-size:14px;color:#4a5568;line-height:1.6;"
+                                                        th:text="${shippingAddress}">123 Main Street, Bangalore,
+                                                        Karnataka 560001, India</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Order Items -->
+                    <tr>
+                        <td style="padding:16px 40px 8px 40px;">
+                            <h3
+                                style="margin:0 0 16px 0;font-size:16px;font-weight:700;color:#2d3748;border-bottom:2px solid #edf2f7;padding-bottom:12px;">
+                                📦 Order Summary</h3>
+
+                            <table width="100%" cellspacing="0" cellpadding="0" border="0">
+                                <thead>
+                                    <tr style="background:#f7fafc;">
+                                        <th align="left"
+                                            style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:#a0aec0;padding:10px 0;">
+                                            Product</th>
+                                        <th align="center"
+                                            style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:#a0aec0;padding:10px 0;">
+                                            Qty</th>
+                                        <th align="right"
+                                            style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:#a0aec0;padding:10px 0;">
+                                            Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="item : ${items}" style="border-bottom:1px solid #edf2f7;">
+                                        <td style="font-size:14px;color:#2d3748;font-weight:500;padding:14px 0;"
+                                            th:text="${item.productName}">Product Name</td>
+                                        <td align="center" style="font-size:14px;color:#718096;padding:14px 0;">
+                                            <span
+                                                style="background:#edf2f7;color:#4a5568;font-size:13px;font-weight:600;padding:3px 10px;border-radius:20px;"
+                                                th:text="${item.quantity}">1</span>
+                                        </td>
+                                        <td align="right"
+                                            style="font-size:14px;font-weight:700;color:#2d3748;padding:14px 0;"
+                                            th:text="${'₹' + item.subtotal}">₹749.00</td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <!-- Coupon row — only shown when coupon applied -->
+                                    <tr th:if="${couponCode != null}">
+                                        <td colspan="2"
+                                            style="padding:14px 0 4px 0;font-size:14px;color:#48bb78;font-weight:500;">
+                                            🎟️ Coupon &nbsp;<strong th:text="${couponCode}">CODE</strong>
+                                        </td>
+                                        <td align="right"
+                                            style="padding:14px 0 4px 0;font-size:14px;font-weight:700;color:#48bb78;"
+                                            th:text="${'-₹' + discountAmount}">-₹100</td>
+                                    </tr>
+                                    <!-- Grand Total -->
+                                    <tr style="border-top:2px solid #edf2f7;">
+                                        <td colspan="2"
+                                            style="padding:16px 0 0 0;font-size:17px;font-weight:700;color:#1a202c;">
+                                            Grand Total</td>
+                                        <td align="right"
+                                            style="padding:16px 0 0 0;font-size:20px;font-weight:800;color:#5a67d8;"
+                                            th:text="${'₹' + totalAmount}">₹1,248.00</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- CTA -->
+                    <tr>
+                        <td style="padding:28px 40px 32px 40px;text-align:center;">
+                            <a href="https://cognitocart.com/orders"
+                                style="display:inline-block;background:linear-gradient(135deg,#667eea,#764ba2);color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 36px;border-radius:50px;letter-spacing:0.3px;box-shadow:0 4px 14px rgba(102,126,234,0.4);">
+                                Track Your Order →
+                            </a>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="background:#f7fafc;border-top:1px solid #e2e8f0;padding:28px 40px;text-align:center;">
+                            <p style="margin:0 0 6px 0;font-size:14px;color:#718096;">Need help? Reply to this email or
+                                visit our <a href="https://cognitocart.com/support"
+                                    style="color:#5a67d8;text-decoration:none;font-weight:500;">Support Centre</a>.</p>
+                            <p style="margin:0;font-size:12px;color:#a0aec0;">&copy; 2026 CognitoCart. All rights
+                                reserved. &nbsp;|&nbsp; Bangalore, India</p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+
+</body>
+
+</html>

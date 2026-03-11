@@ -34,8 +34,8 @@ public class WishlistController {
         @ApiResponse(responseCode = "200", description = "Wishlist updated successfully")
         @PostMapping("/toggle/{productId}")
         @PreAuthorize("hasRole('CUSTOMER')")
-        public ResponseEntity<?> toggleWishlist(@PathVariable("productId") Long productId,
-                        Authentication authentication) {
+        public ResponseEntity<?> toggleWishlist(@PathVariable Long productId,
+                                                Authentication authentication) {
                 CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
                 assert customUserDetails != null;
                 Long userId = customUserDetails.getUser().getId();
@@ -55,7 +55,7 @@ public class WishlistController {
         @Operation(summary = "Move Item to Cart", description = "Adds a wishlisted product to the cart and removes it from the wishlist.")
         @PostMapping("/move-to-cart/{productId}")
         public ResponseEntity<?> moveToCart(
-                        @PathVariable("productId") Long productId,
+                @PathVariable Long productId,
                         @RequestParam(name = "quantity", defaultValue = AppConstants.PRODUCT_QUANTITY) Integer quantity,
                         Authentication authentication) {
                 CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();

@@ -81,7 +81,7 @@ public class ProductController {
          * GET: Product Detail by Slug (Public)
          */
         @GetMapping("/{slug}")
-        public ResponseEntity<?> getProductBySlug(@PathVariable("slug") String slug) {
+        public ResponseEntity<?> getProductBySlug(@PathVariable String slug) {
                 return ResponseEntity.status(HttpStatus.OK)
                                 .body(productService.getProductBySlug(slug));
 
@@ -92,7 +92,7 @@ public class ProductController {
          * Finds products in the category and all its sub-categories recursively.
          */
         @GetMapping("/category/{categoryId}")
-        public ResponseEntity<?> getProductByCategoryId(@PathVariable("categoryId") Long categoryId) {
+        public ResponseEntity<?> getProductByCategoryId(@PathVariable Long categoryId) {
                 List<Long> allCategoryIds = categoryService.getAllChildCategoryIds(categoryId);
                 List<ProductResponse> products = productService.getProductsByCategoryIds(allCategoryIds);
 
@@ -106,7 +106,8 @@ public class ProductController {
          */
         @PatchMapping("/{id}/toggle")
         @PreAuthorize("hasAnyRole('SELLER','ADMIN')")
-        public ResponseEntity<?> toggleVisibility(@PathVariable("id") Long id, Authentication authentication) {
+        public ResponseEntity<?> toggleVisibility(@PathVariable Long id,
+                                                  Authentication authentication) {
                 CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
                 assert userDetails != null;
                 boolean isAdmin = userDetails.getAuthorities()
@@ -121,7 +122,8 @@ public class ProductController {
          */
         @DeleteMapping("/{id}")
         @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
-        public ResponseEntity<?> deleteProduct(@PathVariable("id") Long id, Authentication authentication) {
+        public ResponseEntity<?> deleteProduct(@PathVariable Long id,
+                                               Authentication authentication) {
                 CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
                 assert userDetails != null;
                 boolean isAdmin = userDetails.getAuthorities()
@@ -161,8 +163,8 @@ public class ProductController {
         @PostMapping("/{productId}/upload-image")
         @PreAuthorize("hasRole('SELLER')")
         public ResponseEntity<?> uploadProductImage(
-                        @PathVariable("productId") Long productId,
-                        @RequestParam("file") MultipartFile file) throws IOException {
+                @PathVariable Long productId,
+                @RequestParam("file") MultipartFile file) throws IOException {
 
                 // 1. Validate the file (Security First!)
                 FileValidator.validateImage(file);

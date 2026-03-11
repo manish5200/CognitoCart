@@ -59,13 +59,15 @@ public class ProductService {
             product.setCategory(category);
         }
 
-        // 4. Generate SEO-friendly slug: "Apple iPhone 15" -> "apple-iphone-15-uuid" ,
-        // "Gaming Mouse" -> "gaming-mouse-a1b2" , "Nike Air Max" ->
-        // "nike-air-max-a1b2c"
-        // This ensures SEO-friendly URLs and prevents duplicates across different
-        // sellers.
-        String slug = productRequest.getProductName().toLowerCase().replaceAll("[^a-z0-9]", "-");
-        product.setSlug(slug + "-" + UUID.randomUUID().toString().substring(0, 5));
+        // 4. Generate SEO-friendly slug: "Apple iPhone 15" -> "apple-iphone-15"
+        // Only a-z, 0-9 are kept; everything else becomes a dash.
+        // Trailing/leading dashes are stripped for clean URLs.
+        // Uniqueness is enforced by the DB @Column(unique=true) constraint.
+        String slug = productRequest.getProductName()
+                .toLowerCase()
+                .replaceAll("[^a-z0-9]+", "-") // collapse multiple specials into one dash
+                .replaceAll("^-+|-+$", ""); // strip leading/trailing dashes
+        product.setSlug(slug);
 
         // 5. Smart SKU Generation, if not provided
         // Warehouse-ready ID if the seller leaves it blank.
@@ -146,7 +148,7 @@ public class ProductService {
      * Returns DTOs (not raw entities) so Redis can serialize them safely.
      */
     @Transactional
-    @Cacheable(value = "products", key = "#categoryId.hashCode()")
+    @Cacheable(value = "products", key = "#p0.hashCode()")
     public List<ProductResponse> getProductsByCategoryIds(List<Long> categoryId) {
         return productRepository.findByCategoryIdIn(categoryId)
                 .stream()
@@ -160,7 +162,7 @@ public class ProductService {
      * session.
      */
     @Transactional
-    @Cacheable(value = "product-slug", key = "#slug")
+    @Cacheable(value = "product-slug", key = "#p0")
     public ProductResponse getProductBySlug(String slug) {
         Product product = productRepository.findBySlug(slug)
                 .orElseThrow(() -> new RuntimeException("Product not found"));

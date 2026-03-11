@@ -31,7 +31,6 @@ public class Cart extends BaseEntity { // Added BaseEntity for Versioning
     @OneToOne
     @JoinColumn(name = "user_id")
     private Users user;
-
     @JsonIgnoreProperties("cart") // Prevents CartItem from reaching back to this Cart
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
@@ -40,13 +39,26 @@ public class Cart extends BaseEntity { // Added BaseEntity for Versioning
     @Builder.Default
     private BigDecimal totalAmount = BigDecimal.ZERO;
 
-    // RECTIFICATION: Helper to sync bidirectional relationship
+    // --- COUPONS ---
+    private String couponCode;
+
+    @Builder.Default
+    private BigDecimal discountAmount = BigDecimal.ZERO;
+
+    // --- DELIVERY ---
+    // CONCEPT: The Delivery Fee is calculated *dynamically* inside the CartService
+    // anytime someone adds/removes an item. If their net total drops below 599, this becomes 50.
+    @Builder.Default
+    private BigDecimal deliveryFee = BigDecimal.ZERO;
+
+
+    //Helper to sync bidirectional relationship
     public void addCartItem(CartItem item) {
         items.add(item);
         item.setCart(this);
     }
 
-    // RECTIFICATION: Helper to safely remove and break link
+    //Helper to safely remove and break link
     public void removeCartItem(CartItem item) {
         items.remove(item);
         item.setCart(null);

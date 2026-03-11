@@ -10,14 +10,18 @@ import com.manish.smartcart.model.user.SellerProfile;
 import com.manish.smartcart.model.user.Users;
 import com.manish.smartcart.repository.UsersRepository;
 import com.manish.smartcart.util.PhoneUtil;
+import com.manish.smartcart.service.EmailService;
+import com.manish.smartcart.service.email.EmailTemplateBuilder;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -27,6 +31,8 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
     private final RefreshTokenService refreshTokenService;
+    private final EmailService emailService;
+    private final EmailTemplateBuilder emailTemplateBuilder;
 
     // -----------------------------------------
     // LOGIN
@@ -122,6 +128,14 @@ public class AuthService {
 
         // 4. Save user (cascade persists profile)
         usersRepository.save(user);
+
+        // 5. Send Welcome Email
+        try {
+            String body = emailTemplateBuilder.buildWelcomeEmail(user);
+            emailService.sendMail(user.getEmail(), "Welcome to CognitoCart! \uD83C\uDF89", body, "CognitoCart Team");
+        } catch (Exception e) {
+            log.warn("Failed to send welcome email to {}", user.getEmail(), e);
+        }
 
         return RegisterResponse.builder()
                 .message("Customer registered successfully. Welcome to CognitoCart! ✅")

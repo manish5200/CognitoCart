@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Seller Application Update — CognitoCart</title>
+</head>
+
+<body
+    style="margin:0;padding:0;background:#f0f4f8;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#1a202c;">
+
+    <table width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f0f4f8;padding:40px 0;">
+        <tr>
+            <td align="center">
+                <table width="600" cellspacing="0" cellpadding="0" border="0"
+                    style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+                    <!-- Dynamic Header based on approval -->
+                    <tr>
+                        <td th:style="${isApproved} ? 'background:linear-gradient(135deg,#38a169 0%,#276749 100%);padding:40px;text-align:center;'
+                                      : 'background:linear-gradient(135deg,#e53e3e 0%,#9b2c2c 100%);padding:40px;text-align:center;'"
+                            style="background:linear-gradient(135deg,#38a169,#276749);padding:40px;text-align:center;">
+                            <p style="margin:0 0 12px 0;font-size:48px;" th:text="${isApproved} ? '🎉' : '📋'">🎉</p>
+                            <h1 style="margin:0 0 8px 0;font-size:24px;font-weight:800;color:#fff;letter-spacing:-0.3px;"
+                                th:text="${isApproved} ? 'Congratulations! You\'re Approved!' : 'Application Update'">
+                                Congratulations! You're Approved!
+                            </h1>
+                            <p style="margin:0;font-size:15px;color:rgba(255,255,255,0.8);">
+                                CognitoCart Merchant Services
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Greeting + Summary -->
+                    <tr>
+                        <td style="padding:36px 40px 20px 40px;">
+                            <h2 style="margin:0 0 14px 0;font-size:20px;font-weight:700;color:#1a202c;">
+                                Dear <span th:text="${sellerName}">Seller</span>,
+                            </h2>
+                            <p style="margin:0;font-size:15px;color:#4a5568;line-height:1.8;">
+                                Thank you for applying to be a seller on CognitoCart. The admin team has reviewed your
+                                KYC application, and your application has been
+                                <strong th:text="${statusWord}"
+                                    th:style="${isApproved} ? 'color:#276749;' : 'color:#c53030;'"
+                                    style="font-size:16px;">
+                                    Approved
+                                </strong>.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Status Badge -->
+                    <tr>
+                        <td style="padding:0 40px 24px 40px;">
+                            <table width="100%" cellspacing="0" cellpadding="0" border="0"
+                                th:style="${isApproved} ? 'background:#f0fff4;border:1.5px solid #9ae6b4;border-radius:14px;text-align:center;'
+                                           : 'background:#fff5f5;border:1.5px solid #feb2b2;border-radius:14px;text-align:center;'"
+                                style="background:#f0fff4;border:1.5px solid #9ae6b4;border-radius:14px;text-align:center;">
+                                <tr>
+                                    <td style="padding:24px;">
+                                        <p
+                                            style="margin:0 0 6px 0;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:#a0aec0;">
+                                            Application Decision</p>
+                                        <p style="margin:0;font-size:26px;font-weight:800;"
+                                            th:style="${isApproved} ? 'color:#276749;' : 'color:#c53030;'"
+                                            th:text="${isApproved} ? 'APPROVED ✓' : 'REJECTED ✗'"
+                                            style="color:#276749;">APPROVED ✓</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Admin Comments -->
+                    <tr>
+                        <td style="padding:0 40px 24px 40px;">
+                            <table width="100%" cellspacing="0" cellpadding="20" border="0"
+                                style="background:#f7fafc;border-radius:12px;border-left:4px solid #5a67d8;">
+                                <tr>
+                                    <td>
+                                        <p
+                                            style="margin:0 0 8px 0;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#a0aec0;">
+                                            Admin Comments</p>
+                                        <p style="margin:0;font-size:15px;color:#2d3748;font-style:italic;line-height:1.7;"
+                                            th:text="${comments}">
+                                            "Everything looks perfect! Welcome aboard."
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Approved: Next Steps -->
+                    <tr th:if="${isApproved}">
+                        <td style="padding:0 40px 12px 40px;">
+                            <h3 style="margin:0 0 16px 0;font-size:16px;font-weight:700;color:#2d3748;">🚀 You can now:
+                            </h3>
+                            <table width="100%" cellspacing="0" cellpadding="0" border="0">
+                                <tr>
+                                    <td style="padding:8px 0;font-size:14px;color:#4a5568;">✅ &nbsp;Log in to your
+                                        <strong>Seller Dashboard</strong></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:8px 0;font-size:14px;color:#4a5568;">✅ &nbsp;Complete your
+                                        <strong>store profile</strong> and add your logo</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:8px 0;font-size:14px;color:#4a5568;">✅ &nbsp;Start
+                                        <strong>listing products</strong> for thousands of customers</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:8px 0;font-size:14px;color:#4a5568;">✅ &nbsp;Track orders,
+                                        revenue, and payouts from one place</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Rejected: What to do next -->
+                    <tr th:unless="${isApproved}">
+                        <td style="padding:0 40px 12px 40px;">
+                            <h3 style="margin:0 0 12px 0;font-size:16px;font-weight:700;color:#c53030;">What to do next
+                            </h3>
+                            <p style="margin:0;font-size:14px;color:#4a5568;line-height:1.8;">
+                                Please review the admin comments above carefully. Address the issues highlighted, update
+                                your KYC documents, and re-submit your application. Our team will review it again within
+                                2–3 business days.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- CTA -->
+                    <tr>
+                        <td style="padding:24px 40px 36px 40px;text-align:center;">
+                            <a th:href="${isApproved} ? 'https://cognitocart.com/seller/dashboard' : 'https://cognitocart.com/seller/kyc'"
+                                th:text="${isApproved} ? 'Go to Seller Dashboard →' : 'Update KYC &amp; Resubmit →'"
+                                href="https://cognitocart.com/seller/dashboard"
+                                style="display:inline-block;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 36px;border-radius:50px;letter-spacing:0.3px;box-shadow:0 4px 14px rgba(56,161,105,0.35);"
+                                th:style="${isApproved} ? 'background:linear-gradient(135deg,#38a169,#276749);display:inline-block;color:#fff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 36px;border-radius:50px;'
+                                       : 'background:linear-gradient(135deg,#e53e3e,#9b2c2c);display:inline-block;color:#fff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 36px;border-radius:50px;'">
+                                Go to Seller Dashboard →
+                            </a>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="background:#f7fafc;border-top:1px solid #e2e8f0;padding:24px 40px;text-align:center;">
+                            <p style="margin:0 0 6px 0;font-size:14px;color:#718096;">Questions? Contact our Merchant
+                                Support team at <a href="mailto:merchants@cognitocart.com"
+                                    style="color:#5a67d8;text-decoration:none;">merchants@cognitocart.com</a></p>
+                            <p style="margin:0;font-size:12px;color:#a0aec0;">&copy; 2026 CognitoCart Merchant Services.
+                                All rights reserved.</p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+
+</body>
+
+</html>

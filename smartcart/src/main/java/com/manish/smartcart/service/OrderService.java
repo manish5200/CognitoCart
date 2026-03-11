@@ -8,18 +8,17 @@ import com.manish.smartcart.model.cart.Cart;
 import com.manish.smartcart.model.cart.CartItem;
 import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.model.order.OrderItem;
+import com.manish.smartcart.model.order.UserCouponUsage;
 import com.manish.smartcart.model.product.Product;
-import com.manish.smartcart.model.user.Address;
 import com.manish.smartcart.repository.OrderRepository;
 import com.manish.smartcart.repository.ProductRepository;
+import com.manish.smartcart.repository.UserCouponUsageRepository;
 import com.manish.smartcart.service.notifications.OrderNotificationService;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
-
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +34,9 @@ public class OrderService {
     private final CartService cartService;
     private final OrderMapper orderMapper;
     private final OrderNotificationService orderNotificationService;
+    private final CouponService couponService;
+    private final PaymentService paymentService;
+    private final UserCouponUsageRepository userCouponUsageRepository;
 
     @Transactional
     public OrderResponse placeOrder(Long userId, OrderRequest orderRequest) {
@@ -47,36 +49,43 @@ public class OrderService {
         Order order = new Order();
         order.setUser(cart.getUser());
         order.setOrderDate(LocalDateTime.now());
-        order.setOrderStatus(OrderStatus.CREATED);
-        order.setTotalAmount(cart.getTotalAmount());
+        order.setOrderStatus(OrderStatus.PAYMENT_PENDING);
+
+        // --- NEW: Transfer Delivery Fee ---
+        order.setDeliveryFee(cart.getDeliveryFee());
 
         // --- ADDRESS SNAPSHOTTING ---
         // Priority 1: Use the address provided in the checkout request body
         // Priority 2: Fall back to the user's saved primary address
-        Address shippingAddr = null;
-
         if (orderRequest != null && orderRequest.getShippingAddress() != null) {
-            // Use the address sent in the request (most common checkout flow)
-            shippingAddr = orderRequest.getShippingAddress();
+            // Use the DTO address sent in the request (most common checkout flow)
+            var shippingAddr = orderRequest.getShippingAddress();
+            order.setShippingFullName(shippingAddr.getFullName());
+            order.setShippingPhone(shippingAddr.getPhoneNumber());
+            order.setShippingStreetAddress(shippingAddr.getStreetAddress());
+            order.setShippingCity(shippingAddr.getCity());
+            order.setShippingState(shippingAddr.getState());
+            order.setShippingZipCode(shippingAddr.getZipCode());
+            order.setShippingCountry(shippingAddr.getCountry());
         } else {
             // Fall back to saved primary address
-            shippingAddr = cart.getUser().getPrimaryAddress();
+            var shippingAddr = cart.getUser().getPrimaryAddress();
+            if (shippingAddr == null) {
+                throw new RuntimeException("Please provide a shipping address or save one in your profile.");
+            }
+            order.setShippingFullName(shippingAddr.getFullName());
+            order.setShippingPhone(shippingAddr.getPhoneNumber());
+            order.setShippingStreetAddress(shippingAddr.getStreetAddress());
+            order.setShippingCity(shippingAddr.getCity());
+            order.setShippingState(shippingAddr.getState());
+            order.setShippingZipCode(shippingAddr.getZipCode());
+            order.setShippingCountry(shippingAddr.getCountry());
         }
-
-        if (shippingAddr == null) {
-            throw new RuntimeException("Please provide a shipping address or save one in your profile.");
-        }
-
-        order.setShippingFullName(shippingAddr.getFullName());
-        order.setShippingPhone(shippingAddr.getPhoneNumber());
-        order.setShippingStreetAddress(shippingAddr.getStreetAddress());
-        order.setShippingCity(shippingAddr.getCity());
-        order.setShippingState(shippingAddr.getState());
-        order.setShippingZipCode(shippingAddr.getZipCode());
-        order.setShippingCountry(shippingAddr.getCountry());
 
         // 3. Convert CartItems to OrderItems (The Snapshot)
+        BigDecimal computedTotal = BigDecimal.ZERO;
         List<OrderItem> orderItems = new ArrayList<>();
+
         for (CartItem cartItem : cart.getItems()) {
             Product product = cartItem.getProduct();
 
@@ -95,32 +104,69 @@ public class OrderService {
             orderItem.setQuantity(cartItem.getQuantity());
             orderItem.setPriceAtPurchase(cartItem.getPriceAtAdding()); // Freeze the price!
             orderItems.add(orderItem);
+
+            BigDecimal subtotal = cartItem.getPriceAtAdding().multiply(new BigDecimal(cartItem.getQuantity()));
+            computedTotal = computedTotal.add(subtotal);
         }
         order.setOrderItems(orderItems);
-        // 4. Save Order and Clear the Cart
-        Order savedOrder = orderRepository.save(order);
-        cartService.clearTheCart(userId);
-        OrderResponse orderResponse = orderMapper.toOrderResponse(savedOrder);
 
-        // 5. RECTIFIED: Send mail ONLY after successful DB Commit : Post-Commit
-        // Notification
-        if (TransactionSynchronizationManager.isActualTransactionActive()) {
-            TransactionSynchronizationManager.registerSynchronization(
-                    new TransactionSynchronization() {
-                        @Override
-                        public void afterCommit() {
-                            log.debug("Transaction committed. Triggering email for {}",
-                                    orderResponse.getCustomerName());
-                            orderNotificationService.sendEmailNotification(orderResponse);
-                            TransactionSynchronization.super.afterCommit();
-                        }
-                    });
-        } else {
-            // Fallback for non-transactional calls (e.g., during testing)
-            orderNotificationService.sendEmailNotification(orderResponse);
+        // 4. Handle Coupons and their Usage Limits
+        if (cart.getCouponCode() != null) {
+            order.setCouponCode(cart.getCouponCode());
+            order.setDiscountAmount(cart.getDiscountAmount());
+
+            // Deduct from overall total
+            computedTotal = computedTotal.subtract(cart.getDiscountAmount());
+
+            // --- Increment the global usages of the coupon
+            couponService.incrementUsage(cart.getCouponCode());
+
+            // --- Track Per-User Usage Limit ---
+            // Fetch the Coupon entity - validation was already done when coupon was applied
+            // to cart
+            com.manish.smartcart.model.order.Coupon coupon = couponService.getCouponByCode(cart.getCouponCode());
+
+            // Check if they already have a usage record, otherwise create one
+            UserCouponUsage usage = userCouponUsageRepository.findByUserIdAndCouponId(userId, coupon.getId())
+                    .orElse(UserCouponUsage.builder().user(cart.getUser()).coupon(coupon).usage(0).build());
+
+            // Increment their personal usage count
+            usage.setUsage(usage.getUsage() + 1);
+            userCouponUsageRepository.save(usage);
         }
 
-        log.info("Order processed successfully for orderId {}", orderResponse.getOrderId());
+        // --- NEW: Add the Delivery Fee to the Final Total! ---
+        if (order.getDeliveryFee() != null) {
+            computedTotal = computedTotal.add(order.getDeliveryFee());
+        }
+
+        // Fail-safe
+        if (computedTotal.compareTo(BigDecimal.ZERO) < 0) {
+            computedTotal = BigDecimal.ZERO;
+        }
+
+        order.setTotalAmount(computedTotal);
+        Order savedOrder = orderRepository.save(order);
+
+        // --- PHASE 3: PAYMENT GATEWAY (RAZORPAY) ---
+        // 6. Connect to Razorpay to initialize the remote transaction
+        String razorpayOrderId = paymentService.createRazorpayOrder(savedOrder);
+        savedOrder.setRazorpayOrderId(razorpayOrderId);
+        savedOrder = orderRepository.save(savedOrder);
+
+        cartService.clearTheCart(userId);
+
+        OrderResponse orderResponse = orderMapper.toOrderResponse(savedOrder);
+        // Explicitly set the Razorpay Order ID for the frontend to use in checkout
+        // overlay
+        orderResponse.setRazorpayOrderId(razorpayOrderId);
+
+        // Note: The Order Confirmation Email has been MOVED to PaymentController
+        // because we only want to email the user AFTER the webhooks/callbacks verify
+        // the payment.
+
+        log.info("Order processed as PENDING for local orderId {} and razorpayId {}", orderResponse.getOrderId(),
+                razorpayOrderId);
         return orderResponse;
     }
 
@@ -148,7 +194,7 @@ public class OrderService {
             throw new RuntimeException("Access Denied: You do not own this order.");
         }
 
-        // 2. Security Check: DELIVERED orders cannot be cancelled
+        // 2. Security Check: DELIVERED orders cannot be canceled
         if (order.getOrderStatus() == OrderStatus.DELIVERED) {
             throw new RuntimeException("Order cannot be cancelled❌❌. Current status: " + order.getOrderStatus());
         }

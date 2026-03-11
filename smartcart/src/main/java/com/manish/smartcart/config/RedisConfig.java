@@ -30,7 +30,6 @@ public class RedisConfig {
      * - Registers JavaTimeModule so LocalDateTime serializes correctly.
      * - Enables type info so deserialization knows the concrete class.
      */
-    @Bean
     public ObjectMapper redisObjectMapper() {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());

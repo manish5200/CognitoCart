@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome to CognitoCart</title>
+</head>
+
+<body
+    style="margin:0;padding:0;background:#f0f4f8;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#1a202c;">
+
+    <table width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f0f4f8;padding:40px 0;">
+        <tr>
+            <td align="center">
+                <table width="600" cellspacing="0" cellpadding="0" border="0"
+                    style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+                    <!-- Hero Header -->
+                    <tr>
+                        <td
+                            style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:48px 40px;text-align:center;">
+                            <p style="margin:0 0 12px 0;font-size:48px;line-height:1;">🛒</p>
+                            <h1
+                                style="margin:0 0 8px 0;font-size:28px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">
+                                Welcome to CognitoCart</h1>
+                            <p style="margin:0;font-size:16px;color:rgba(255,255,255,0.75);font-weight:400;">Your
+                                next-generation shopping experience starts here.</p>
+                        </td>
+                    </tr>
+
+                    <!-- Greeting -->
+                    <tr>
+                        <td style="padding:36px 40px 20px 40px;">
+                            <h2 style="margin:0 0 14px 0;font-size:20px;font-weight:700;color:#1a202c;">
+                                Hello, <span th:text="${name}" style="color:#5a67d8;">there</span>! 👋
+                            </h2>
+                            <p style="margin:0 0 16px 0;font-size:15px;color:#4a5568;line-height:1.8;">
+                                We're so excited to have you on board! Your CognitoCart account is now active and ready
+                                to use.
+                                Your registered email is <strong th:text="${email}"
+                                    style="color:#2d3748;">user@email.com</strong>.
+                            </p>
+                            <p style="margin:0;font-size:15px;color:#4a5568;line-height:1.8;">
+                                Start exploring thousands of products across Electronics, Fashion, Books, Sports, and
+                                more — with AI-powered recommendations coming soon.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Feature Highlights -->
+                    <tr>
+                        <td style="padding:8px 40px 28px 40px;">
+                            <table width="100%" cellspacing="0" cellpadding="0" border="0">
+                                <tr>
+                                    <td width="33%" valign="top" style="padding:4px;">
+                                        <table width="100%" cellspacing="0" cellpadding="0" border="0"
+                                            style="background:#f7fafc;border:1px solid #e2e8f0;border-radius:12px;">
+                                            <tr>
+                                                <td style="padding:20px;text-align:center;">
+                                                    <p style="margin:0 0 8px 0;font-size:28px;">🛍️</p>
+                                                    <p style="margin:0;font-size:13px;font-weight:600;color:#2d3748;">
+                                                        Seamless Shopping</p>
+                                                    <p style="margin:4px 0 0 0;font-size:12px;color:#718096;">Cart,
+                                                        wishlist &amp; one-tap checkout</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                    <td width="33%" valign="top" style="padding:4px;">
+                                        <table width="100%" cellspacing="0" cellpadding="0" border="0"
+                                            style="background:#f7fafc;border:1px solid #e2e8f0;border-radius:12px;">
+                                            <tr>
+                                                <td style="padding:20px;text-align:center;">
+                                                    <p style="margin:0 0 8px 0;font-size:28px;">🔐</p>
+                                                    <p style="margin:0;font-size:13px;font-weight:600;color:#2d3748;">
+                                                        Secure Payments</p>
+                                                    <p style="margin:4px 0 0 0;font-size:12px;color:#718096;">Razorpay —
+                                                        UPI, cards &amp; more</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                    <td width="33%" valign="top" style="padding:4px;">
+                                        <table width="100%" cellspacing="0" cellpadding="0" border="0"
+                                            style="background:#f7fafc;border:1px solid #e2e8f0;border-radius:12px;">
+                                            <tr>
+                                                <td style="padding:20px;text-align:center;">
+                                                    <p style="margin:0 0 8px 0;font-size:28px;">📦</p>
+                                                    <p style="margin:0;font-size:13px;font-weight:600;color:#2d3748;">
+                                                        Live Tracking</p>
+                                                    <p style="margin:4px 0 0 0;font-size:12px;color:#718096;">Real-time
+                                                        order status updates</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- CTA -->
+                    <tr>
+                        <td style="padding:4px 40px 36px 40px;text-align:center;">
+                            <a href="https://cognitocart.com" target="_blank"
+                                style="display:inline-block;background:linear-gradient(135deg,#667eea,#764ba2);color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;padding:15px 40px;border-radius:50px;letter-spacing:0.3px;box-shadow:0 6px 20px rgba(102,126,234,0.4);">
+                                Start Shopping Now →
+                            </a>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="background:#f7fafc;border-top:1px solid #e2e8f0;padding:24px 40px;text-align:center;">
+                            <p style="margin:0 0 6px 0;font-size:14px;color:#718096;">Need help getting started? Visit
+                                our <a href="https://cognitocart.com/help"
+                                    style="color:#5a67d8;text-decoration:none;font-weight:500;">Help Centre</a>.</p>
+                            <p style="margin:0;font-size:12px;color:#a0aec0;">&copy; 2026 CognitoCart. All rights
+                                reserved. &nbsp;|&nbsp; Bangalore, India</p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+
+</body>
+
+</html>

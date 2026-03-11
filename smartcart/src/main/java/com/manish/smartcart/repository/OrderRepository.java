@@ -2,6 +2,7 @@ package com.manish.smartcart.repository;
 
 import com.manish.smartcart.enums.OrderStatus;
 import com.manish.smartcart.model.order.Order;
+import com.manish.smartcart.model.user.Users;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,37 +18,77 @@ import java.util.Optional;
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
 
-        // Order has @ManyToOne to Users, so use o.user.id in JPQL
-        @Query("SELECT o FROM Order o WHERE o.user.id = :userId")
-        List<Order> findByUserId(@Param("userId") Long userId);
+    // Plain lookup — used by webhook (no mapper call needed)
+    Optional<Order> findByRazorpayOrderId(String razorpayOrderId);
 
-        Long countByOrderStatus(OrderStatus status);
+    // Eager fetch with JOIN FETCH — used by /verify which calls OrderMapper
+    // and needs orderItems to be loaded before the Hibernate session closes
+    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.orderItems oi LEFT JOIN FETCH oi.product WHERE o.razorpayOrderId = :razorpayOrderId")
+    Optional<Order> findByRazorpayOrderIdWithItems(@Param("razorpayOrderId") String razorpayOrderId);
 
-        @Query("SELECT o FROM Order o WHERE o.user.id = :userId ORDER BY o.orderDate DESC")
-        Optional<Order> findFirstByUserIdOrderByOrderDateDesc(@Param("userId") Long userId);
+    // Order has @ManyToOne to Users, so use o.user.id in JPQL
+    @Query("SELECT o FROM Order o WHERE o.user.id = :userId")
+    List<Order> findByUserId(@Param("userId") Long userId);
 
-        @Query("SELECT o FROM Order o WHERE o.user.id = :userId")
-        Page<Order> findByUserId(@Param("userId") Long userId, Pageable pageable);
+    Long countByOrderStatus(OrderStatus status);
 
-        @Query("SELECT COUNT(o) > 0 FROM Order o JOIN o.orderItems oi " +
-                        "WHERE o.user.id = :userId AND oi.product.id = :productId AND o.orderStatus = :status")
-        boolean existsByUserIdAndOrderItems_Product_IdAndOrderStatus(
-                        @Param("userId") Long userId,
-                        @Param("productId") Long productId,
-                        @Param("status") OrderStatus orderStatus);
+    @Query("SELECT o FROM Order o WHERE o.user.id = :userId ORDER BY o.orderDate DESC")
+    Optional<Order> findFirstByUserIdOrderByOrderDateDesc(@Param("userId") Long userId);
 
-        @Query("SELECT SUM(o.totalAmount) FROM Order o WHERE o.orderStatus = 'DELIVERED'")
-        BigDecimal calculateRevenue();
+    @Query("SELECT o FROM Order o WHERE o.user.id = :userId")
+    Page<Order> findByUserId(@Param("userId") Long userId, Pageable pageable);
 
-        @Query("SELECT SUM(o.totalAmount) FROM Order o WHERE o.user.id = :userId AND o.orderStatus = 'DELIVERED'")
-        BigDecimal calculateTotalSpentByUser(@Param("userId") Long userId);
+    @Query("SELECT COUNT(o) > 0 FROM Order o JOIN o.orderItems oi " +
+            "WHERE o.user.id = :userId AND oi.product.id = :productId AND o.orderStatus = :status")
+    boolean existsByUserIdAndOrderItems_Product_IdAndOrderStatus(
+            @Param("userId") Long userId,
+            @Param("productId") Long productId,
+            @Param("status") OrderStatus orderStatus);
 
-        @Query("SELECT o FROM Order o LEFT JOIN FETCH o.orderItems WHERE o.user.id = :userId ORDER BY o.orderDate DESC")
-        List<Order> findByUserIdAndOrderItems(@Param("userId") Long userId);
+    @Query("SELECT SUM(o.totalAmount) FROM Order o WHERE o.orderStatus = 'DELIVERED'")
+    BigDecimal calculateRevenue();
 
-        @Query("SELECT o FROM Order o LEFT JOIN FETCH o.orderItems " +
-                        "WHERE o.orderStatus = :status AND o.orderDate < :threshold")
-        List<Order> findByOrderStatusAndOrderDateBeforeWithItems(
-                        @Param("status") OrderStatus orderStatus,
-                        @Param("threshold") LocalDateTime orderDateBefore);
+    @Query("SELECT SUM(o.totalAmount) FROM Order o WHERE o.user.id = :userId AND o.orderStatus = 'DELIVERED'")
+    BigDecimal calculateTotalSpentByUser(@Param("userId") Long userId);
+
+    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.orderItems WHERE o.user.id = :userId ORDER BY o.orderDate DESC")
+    List<Order> findByUserIdAndOrderItems(@Param("userId") Long userId);
+
+    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.orderItems " +
+            "WHERE o.orderStatus = :status AND o.orderDate < :threshold")
+    List<Order> findByOrderStatusAndOrderDateBeforeWithItems(
+            @Param("status") OrderStatus orderStatus,
+            @Param("threshold") LocalDateTime orderDateBefore);
+
+    // ── Seller Dashboard Queries ────────────────────────────────────────────
+
+    /**
+     * Revenue from DELIVERED orders that contain at least one of the seller's
+     * products
+     */
+    @Query("SELECT COALESCE(SUM(oi.priceAtPurchase * oi.quantity), 0) " +
+            "FROM OrderItem oi JOIN oi.order o " +
+            "WHERE oi.product.sellerId = :sellerId AND o.orderStatus = 'DELIVERED'")
+    BigDecimal calculateSellerRevenue(@Param("sellerId") Long sellerId);
+
+    /** Revenue from in-flight orders (paid but not yet delivered) */
+    @Query("SELECT COALESCE(SUM(oi.priceAtPurchase * oi.quantity), 0) " +
+            "FROM OrderItem oi JOIN oi.order o " +
+            "WHERE oi.product.sellerId = :sellerId AND o.orderStatus IN ('CONFIRMED', 'PACKED', 'SHIPPED')")
+    BigDecimal calculateSellerPendingRevenue(@Param("sellerId") Long sellerId);
+
+    /**
+     * Count of all distinct orders containing at least one of the seller's products
+     */
+    @Query("SELECT COUNT(DISTINCT o.id) FROM Order o JOIN o.orderItems oi " +
+            "WHERE oi.product.sellerId = :sellerId")
+    long countOrdersBySellerId(@Param("sellerId") Long sellerId);
+
+    /** Count of orders in a specific status containing seller's products */
+    @Query("SELECT COUNT(DISTINCT o.id) FROM Order o JOIN o.orderItems oi " +
+            "WHERE oi.product.sellerId = :sellerId AND o.orderStatus = :status")
+    long countOrdersBySellerIdAndStatus(@Param("sellerId") Long sellerId,
+            @Param("status") OrderStatus status);
+
+    Long user(Users user);
 }
