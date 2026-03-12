@@ -1,8 +1,10 @@
 package com.manish.smartcart.repository;
 
 import com.manish.smartcart.model.product.Product;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -18,6 +20,19 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
         List<Product> findByCategory_Id(Long categoryId);
 
         Optional<Product> findBySlug(String slug);
+
+        /**
+         * Fetches a product row with a PESSIMISTIC_WRITE lock (SELECT ... FOR UPDATE).
+         * Used exclusively during checkout to prevent double-selling when two customers
+         * attempt to buy the last unit simultaneously. The second concurrent transaction
+         * BLOCKS at this line until the first commits its stock decrement.
+         *
+         * ⚠️ Only call from within a @Transactional method — the lock is released on commit.
+         */
+        @Lock(LockModeType.PESSIMISTIC_WRITE)
+        @Query("SELECT p FROM Product p WHERE p.id = :id")
+        Optional<Product> findByIdForUpdate(@Param("id") Long id);
+
 
         // FIX: Use 'category.id' instead of 'categoryId'
         // -> because its transient in category

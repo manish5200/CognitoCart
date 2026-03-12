@@ -3,6 +3,7 @@ package com.manish.smartcart.controller;
 import com.manish.smartcart.dto.order.PaymentVerificationRequest;
 import com.manish.smartcart.dto.order.OrderResponse;
 import com.manish.smartcart.enums.OrderStatus;
+import com.manish.smartcart.enums.PaymentStatus;
 import com.manish.smartcart.mapper.OrderMapper;
 import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.repository.OrderRepository;
@@ -66,8 +67,9 @@ public class PaymentController {
             return ResponseEntity.ok(Map.of("message", "Payment already verified successfully."));
         }
 
-        // 4. Update order to PAID and save Razorpay IDs
+        // 4. Update order + payment status and save Razorpay IDs
         order.setOrderStatus(OrderStatus.PAID);
+        order.setPaymentStatus(PaymentStatus.PAID);          // ← payment lifecycle
         order.setRazorpayPaymentId(request.getRazorpayPaymentId());
         order.setRazorpaySignature(request.getRazorpaySignature());
         orderRepository.save(order);
@@ -115,20 +117,34 @@ public class PaymentController {
                 String razorpayOrderId = paymentEntity.getString("order_id");
                 String razorpayPaymentId = paymentEntity.getString("id");
 
-                // Find local order
+                // Find local order and promote to PAID if not already done by frontend
                 orderRepository.findByRazorpayOrderId(razorpayOrderId).ifPresent(order -> {
-                    // Only process if not already processed by the frontend callback
                     if (order.getOrderStatus() != OrderStatus.PAID) {
-                        log.info("Webhook processing payment for Order: {}", razorpayOrderId);
+                        log.info("Webhook: promoting Order {} to PAID", razorpayOrderId);
                         order.setOrderStatus(OrderStatus.PAID);
+                        order.setPaymentStatus(PaymentStatus.PAID);   // ← payment lifecycle
                         order.setRazorpayPaymentId(razorpayPaymentId);
                         orderRepository.save(order);
 
-                        // Trigger Email
                         OrderResponse orderResponse = orderMapper.toOrderResponse(order);
                         orderNotificationService.sendEmailNotification(orderResponse);
                     } else {
-                        log.info("Webhook ignored: Order {} was already marked PAID by frontend.", razorpayOrderId);
+                        log.info("Webhook ignored: Order {} already PAID by frontend.", razorpayOrderId);
+                    }
+                });
+
+            } else if ("payment.failed".equals(eventType)) {
+                // Mark payment as FAILED so admin can query failed payments easily
+                JSONObject paymentEntity = jsonPayload.getJSONObject("payload")
+                        .getJSONObject("payment")
+                        .getJSONObject("entity");
+                String razorpayOrderId = paymentEntity.getString("order_id");
+
+                orderRepository.findByRazorpayOrderId(razorpayOrderId).ifPresent(order -> {
+                    if (order.getPaymentStatus() != PaymentStatus.PAID) {
+                        log.warn("Webhook: payment FAILED for Order {}", razorpayOrderId);
+                        order.setPaymentStatus(PaymentStatus.FAILED);  // ← payment lifecycle
+                        orderRepository.save(order);
                     }
                 });
             }

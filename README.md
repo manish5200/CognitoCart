@@ -24,10 +24,11 @@ Most portfolio backends are CRUD wrappers. CognitoCart is built the way a real s
 
 | Concern | What Was Done |
 |---|---|
-| **Security** | Stateless JWT + refresh token rotation + RBAC, not just "add Spring Security" |
-| **Payments** | Full Razorpay integration — order creation, HMAC signature verification, async webhook, duplicate-payment guard |
+| **Security** | Stateless JWT + refresh token rotation + RBAC + **Redis token blacklist for true logout** |
+| **Payments** | Full Razorpay integration — HMAC signature verify, dual lifecycle tracking (`orderStatus` + `paymentStatus`), async webhook + `payment.failed` handling |
+| **Concurrency** | Pessimistic locking (`SELECT FOR UPDATE`) on checkout — prevents stock oversell under concurrent load |
 | **Caching** | Cache-aside pattern with Upstash Redis — per-cache TTLs, JSON serialization, real-time console logging |
-| **Data Integrity** | Schema-first (Flyway) + `@Transactional` across critical flows — stock deduction + order creation in one atomic unit |
+| **Data Integrity** | Schema-first (Flyway V1→V10) + `@Transactional` across critical flows — stock deduction + order creation as one atomic unit |
 | **Email** | Async, non-blocking email with beautiful HTML Thymeleaf templates for order confirmation, status updates, and KYC |
 | **Architecture** | Clean layered design — entities never leak to API layer, DTOs everywhere, centralized error handling |
 
@@ -37,6 +38,7 @@ Most portfolio backends are CRUD wrappers. CognitoCart is built the way a real s
 
 ### 🔐 Authentication & Authorization
 - JWT access tokens (15 min) + refresh tokens (1 hr) with **token rotation**
+- **True logout** — Redis-backed JWT blacklist using `jti` claim + auto-expiring TTL
 - Role-based access control: `ADMIN` / `SELLER` / `CUSTOMER`
 - `@PreAuthorize` method-level security on every sensitive operation
 - Auto-seeded admin account on first startup via `DataInitializer`
@@ -57,13 +59,15 @@ Most portfolio backends are CRUD wrappers. CognitoCart is built the way a real s
 
 ### 💳 Payment Integration (Razorpay)
 - Checkout creates a Razorpay order and snapshots critical data (prices, addresses) atomically
+- **Dual lifecycle tracking**: `orderStatus` (fulfillment) and `paymentStatus` (payment) updated independently
 - `/verify` endpoint validates HMAC-SHA256 signature — **no signature, no status update**
-- Async webhook listener `/webhook` for server-side payment confirmation
-- **Duplicate payment guard** — idempotent, safe to call multiple times
-- Order status promoted to `PAID` only after cryptographic verification
+- Async webhook listener `/webhook` — handles `payment.captured` and `payment.failed` events
+- **Duplicate payment guard** — idempotent verify, safe to call multiple times
+- Order promoted to `PAID` only after cryptographic verification
 
 ### 📋 Order Management
 - Full lifecycle: `PAYMENT_PENDING` → `PAID` → `CONFIRMED` → `PACKED` → `SHIPPED` → `DELIVERED`
+- **Pessimistic locking** on stock deduction (`SELECT FOR UPDATE`) — zero oversell under concurrent checkout
 - Admin-controlled status transitions with **email notification on each change**
 - Order cancellation with **automatic stock restoration**
 - Abandoned order cleanup via a scheduled background task
@@ -205,7 +209,7 @@ smartcart/
 │   ├── application-demo.yml     # Reference config (fake values — safe to commit)
 │   ├── application.yml          # Real config (gitignored)
 │   ├── templates/emails/        # Thymeleaf HTML email templates
-│   └── db/migration/            # Flyway SQL scripts (V1__init → V10__...)
+│   └── db/migration/            # Flyway SQL scripts (V1__init → V10__payment_status)
 ├── test-payment.html            # Razorpay sandbox tester (local dev use)
 └── pom.xml
 ```
@@ -318,13 +322,20 @@ Open `application.yml` and fill in your values:
 
 The following features are planned for upcoming development phases:
 
-- [ ] **Logout** — JWT blocklist via Redis for token revocation
-- [ ] **Email Verification** — OTP on signup before account activation
-- [ ] **Password Reset** — Secure time-limited reset token flow
+**Phase 1 — Auth Hardening** *(in progress)*
+- [x] **Logout** — JWT blacklist via Redis (`jti` + auto-expiring TTL)
+- [x] **Stock Race Fix** — Pessimistic locking (`SELECT FOR UPDATE`) on checkout
+- [x] **PaymentStatus Sync** — Dual lifecycle: `orderStatus` + `paymentStatus`
+- [ ] **Email Verification** — 6-digit OTP on signup, blocks checkout until verified
+- [ ] **Password Reset** — UUID token in Redis (15 min), email link flow
+
+**Phase 2 — Seller & Operations**
 - [ ] **Cloud Storage** — AWS S3 / Cloudinary for product images
 - [ ] **Refund Flow** — Razorpay refund API integration on order cancellation
 - [ ] **PDF Invoices** — Downloadable receipts per order
 - [ ] **Shipment Tracking** — Tracking number on orders, courier integration
+
+**Phase 3 — AI & Intelligence**
 - [ ] **AI Recommendations** — Personalized product suggestions (embeddings)
 - [ ] **Semantic Search** — Natural language product search (pgvector / OpenAI)
 - [ ] **Fraud Detection** — Anomaly scoring on payment events

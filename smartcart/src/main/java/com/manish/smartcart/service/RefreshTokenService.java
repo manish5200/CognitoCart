@@ -52,4 +52,8 @@ public class RefreshTokenService {
     public Optional<RefreshToken> findByToken(@NotBlank(message = "Refresh token is missing") String refreshToken) {
         return refreshTokenRepository.findByToken(refreshToken);
     }
+
+    public void deleteByUserId(Long userId) {
+        refreshTokenRepository.deleteById(userId);
+    }
 }

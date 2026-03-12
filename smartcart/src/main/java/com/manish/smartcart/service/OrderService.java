@@ -3,6 +3,7 @@ package com.manish.smartcart.service;
 import com.manish.smartcart.dto.order.OrderRequest;
 import com.manish.smartcart.dto.order.OrderResponse;
 import com.manish.smartcart.enums.OrderStatus;
+import com.manish.smartcart.enums.PaymentStatus;
 import com.manish.smartcart.mapper.OrderMapper;
 import com.manish.smartcart.model.cart.Cart;
 import com.manish.smartcart.model.cart.CartItem;
@@ -50,6 +51,7 @@ public class OrderService {
         order.setUser(cart.getUser());
         order.setOrderDate(LocalDateTime.now());
         order.setOrderStatus(OrderStatus.PAYMENT_PENDING);
+        order.setPaymentStatus(PaymentStatus.PENDING); // ← Payment lifecycle starts here
 
         // --- NEW: Transfer Delivery Fee ---
         order.setDeliveryFee(cart.getDeliveryFee());
@@ -87,15 +89,23 @@ public class OrderService {
         List<OrderItem> orderItems = new ArrayList<>();
 
         for (CartItem cartItem : cart.getItems()) {
-            Product product = cartItem.getProduct();
+            // RACE CONDITION FIX: Fetch product with SELECT FOR UPDATE (PESSIMISTIC_WRITE)
+            // This DB-level row lock ensures that if two customers checkout simultaneously,
+            // the second request WAITS at this line until the first transaction commits.
+            // Without this, both could read stockQuantity = 1 and both would pass the
+            // stock check — resulting in stock going to -1 (oversell).
+            Product product = productRepository.findByIdForUpdate(cartItem.getProduct().getId())
+                    .orElseThrow(() -> new RuntimeException(
+                            "Product not found: " + cartItem.getProduct().getId()));
 
-            // CRITICAL: Re-Check stock before confirming
+            // CRITICAL: Re-check stock on the freshly locked row
             if (product.getStockQuantity() < cartItem.getQuantity()) {
                 throw new RuntimeException("Insufficient stock for: " + product.getProductName());
             }
-            // Deduct stock
+            // Deduct stock — safe because we hold the row lock
             product.setStockQuantity(product.getStockQuantity() - cartItem.getQuantity());
             productRepository.save(product);
+
 
             // Create the snapshot record
             OrderItem orderItem = new OrderItem();

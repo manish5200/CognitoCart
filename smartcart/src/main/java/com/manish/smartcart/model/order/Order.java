@@ -1,6 +1,7 @@
 package com.manish.smartcart.model.order;
 
 import com.manish.smartcart.enums.OrderStatus;
+import com.manish.smartcart.enums.PaymentStatus;
 import com.manish.smartcart.model.base.BaseEntity;
 import com.manish.smartcart.model.user.Users;
 import jakarta.persistence.*;
@@ -41,13 +42,21 @@ public class Order extends BaseEntity {
     private BigDecimal discountAmount = BigDecimal.ZERO;
 
     // --- PHASE 1.5: DELIVERY SNAPSHOT ---
-    // CONCEPT: Once checkout happens, the cart delivery fee is transferred here
-    // permanently so the user's receipt is locked!
     @Builder.Default
     private BigDecimal deliveryFee = BigDecimal.ZERO;
 
     @Enumerated(EnumType.STRING)
-    private OrderStatus orderStatus; // PENDING, CONFIRMED, SHIPPED, DELIVERED
+    private OrderStatus orderStatus;
+
+    // --- PAYMENT STATUS (independent of fulfillment lifecycle) ---
+    // PENDING → Razorpay order created, waiting for payment
+    // PAID    → Signature verified or webhook confirmed
+    // FAILED  → Webhook reported payment.failed
+    // REFUNDED → Phase 2: refund issued
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private PaymentStatus paymentStatus = PaymentStatus.PENDING;
+
 
     // --- PHASE 3: PAYMENT GATEWAY (RAZORPAY) ---
     private String razorpayOrderId;

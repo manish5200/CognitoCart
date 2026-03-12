@@ -12,6 +12,7 @@ import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 
 @Service
@@ -42,6 +43,7 @@ public class JwtUtil {
            return Jwts.builder()
                    .claims(claims)
                    .subject(email)
+                   .id(UUID.randomUUID().toString()) //Added For logout feature
                    .issuedAt(new Date(System.currentTimeMillis()))
                    .expiration(new Date(System.currentTimeMillis() + EXPIRATION))
                    .signWith(getSigningKey())
@@ -51,6 +53,22 @@ public class JwtUtil {
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    }
+
+
+    /** Extracts the jti (unique token ID) — used as the Redis blacklist key */
+    public String extractJti(String token) {
+        return extractClaim(token, Claims::getId);
+    }
+
+    /**
+     * Returns how many seconds remain before the token expires.
+     * Used to set the Redis TTL so blacklist entries auto-expire.
+     **/
+    public long getRemainingTtlSeconds(String token) {
+        Date expiration = extractExpiration(token);
+        long remaining = expiration.getTime() - System.currentTimeMillis();
+        return Math.max(0, remaining/1000);
     }
 
     // Internal helper methods

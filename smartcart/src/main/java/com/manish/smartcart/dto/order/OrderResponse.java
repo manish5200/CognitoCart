@@ -1,6 +1,7 @@
 package com.manish.smartcart.dto.order;
 
 import com.manish.smartcart.enums.OrderStatus;
+import com.manish.smartcart.enums.PaymentStatus;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -21,6 +22,7 @@ public class OrderResponse {
     private BigDecimal discountAmount;
     private BigDecimal deliveryFee;     // <-- NEW FIELD HERE
     private OrderStatus status;
+    private PaymentStatus paymentStatus;  // ← PENDING / PAID / FAILED / REFUNDED
     private String shippingAddress;
 
     // Used by Frontend to initialize Razorpay checkout overlay

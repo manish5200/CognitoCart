@@ -9,10 +9,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -58,5 +57,16 @@ public class AuthController {
     @PostMapping("/refresh")
     public ResponseEntity<TokenRefreshResponse> refreshToken(@Valid @RequestBody TokenRefreshRequest request) {
         return ResponseEntity.ok(authService.refreshToken(request));
+    }
+
+    /*
+    *******LOGOUT********
+    */
+    @Operation(summary = "Logout", description = "Invalidates the current access token and deletes the refresh token.")
+    @ApiResponse(responseCode = "200", description = "Logged out successfully")
+    @PostMapping("/logout")
+    public ResponseEntity<Map<String, String>>logout(@RequestHeader("Authorization")String authorizationHeader) {
+        authService.logout(authorizationHeader);
+        return ResponseEntity.ok(Map.of("message", "Logged out successfully. See you soon! 👋"));
     }
 }

@@ -1,12 +1,14 @@
 package com.manish.smartcart.config.jwt;
 
 import com.manish.smartcart.config.CustomUserDetailsService;
+import com.manish.smartcart.service.TokenBlacklistService;
 import com.manish.smartcart.util.AppConstants;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,14 +19,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Service //@Component
+@RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
 
     private final CustomUserDetailsService userDetailsService;
     private final JwtUtil jwtUtil;
-    public JwtFilter(CustomUserDetailsService userDetailsService, JwtUtil jwtUtil) {
-        this.userDetailsService = userDetailsService;
-        this.jwtUtil = jwtUtil;
-    }
+    private final TokenBlacklistService tokenBlacklistService;
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -32,6 +32,7 @@ public class JwtFilter extends OncePerRequestFilter {
     }
 
 
+    // ─── CHANGE : In doFilterInternal — add blacklist check ──────────────────
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
@@ -40,11 +41,13 @@ public class JwtFilter extends OncePerRequestFilter {
         String header = request.getHeader(AppConstants.AUTH_HEADER); // "Authorization"
         String authToken;
         String username;
+
         if(header == null || !header.startsWith(AppConstants.TOKEN_PREFIX)){  //"Bearer "
              filterChain.doFilter(request,response);
              return;
         }
         authToken = header.substring(7);
+
         try{
             username = jwtUtil.extractUsername(authToken); // Uses JwtService
         } catch (Exception e) {
@@ -54,6 +57,14 @@ public class JwtFilter extends OncePerRequestFilter {
 
         if(username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                   try{
+                      // 🔒 NEW: Reject blacklisted tokens (logged-out sessions)
+                      String jti = jwtUtil.extractJti(authToken);
+                      if(tokenBlacklistService.isBlacklisted(jti)){
+                          response.sendError(HttpServletResponse.SC_UNAUTHORIZED,
+                                  "Token has been invalidated. Please log in again.");
+                          return;
+                      }
+
                       UserDetails userDetails = userDetailsService.loadUserByUsername(username);
                       if(jwtUtil.validateToken(authToken,userDetails)){
                           UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(

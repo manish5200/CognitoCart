@@ -33,6 +33,7 @@ public class AuthService {
     private final RefreshTokenService refreshTokenService;
     private final EmailService emailService;
     private final EmailTemplateBuilder emailTemplateBuilder;
+    private final TokenBlacklistService tokenBlacklistService; //for log out
 
     // -----------------------------------------
     // LOGIN
@@ -195,4 +196,38 @@ public class AuthService {
                 .kycStatus("PENDING") // Inform frontend immediately so it can show KYC notice
                 .build();
     }
+
+
+    // -----------------------------------------
+    // LOGOUT
+    // -----------------------------------------
+/*
+ * Logout = invalidate the current access token by adding its jti to Redis.
+ * The refresh token is also deleted from the DB so the user can't
+ * get a new access token without logging in again.
+ * @Param authorizationHeader  The raw "Authorization: Bearer <token>" header
+ */
+
+    public void logout(String authorizationHeader) {
+        if(authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            throw new RuntimeException("No valid Authorization header provided.");
+        }
+
+        String accessToken = authorizationHeader.substring(7);
+
+        // 1. Blacklist the access token in Redis
+        String jti = jwtUtil.extractJti(accessToken);
+        long remainingTtl = jwtUtil.getRemainingTtlSeconds(accessToken);
+        tokenBlacklistService.blacklist(jti, remainingTtl);
+
+        // 2. Delete the refresh token from DB so rotation is broken
+        String email = jwtUtil.extractUsername(accessToken);
+
+        usersRepository.findByEmail(email).ifPresent(user ->
+                refreshTokenService.deleteByUserId(user.getId())
+        );
+
+        log.info("✅ User logged out successfully: {}", email);
+    }
+
 }

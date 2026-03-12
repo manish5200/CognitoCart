@@ -20,6 +20,8 @@ public class OrderMapper {
         orderResponse.setCouponCode(order.getCouponCode());
         orderResponse.setDiscountAmount(order.getDiscountAmount());
         orderResponse.setStatus(order.getOrderStatus());
+        orderResponse.setPaymentStatus(order.getPaymentStatus());
+
 
         // --- FIXED: Mapping the Snapshot Address ---
         // We build a readable address string from the individual snapshot columns
