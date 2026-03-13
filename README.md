@@ -24,11 +24,11 @@ Most portfolio backends are CRUD wrappers. CognitoCart is built the way a real s
 
 | Concern | What Was Done |
 |---|---|
-| **Security** | Stateless JWT + refresh token rotation + RBAC + **Redis token blacklist for true logout** |
+| **Security** | Stateless JWT + refresh token rotation + RBAC + Redis token blacklist (true logout) + **secure password reset with force-logout + rate limiting** |
 | **Payments** | Full Razorpay integration — HMAC signature verify, dual lifecycle tracking (`orderStatus` + `paymentStatus`), async webhook + `payment.failed` handling |
 | **Concurrency** | Pessimistic locking (`SELECT FOR UPDATE`) on checkout — prevents stock oversell under concurrent load |
 | **Caching** | Cache-aside pattern with Upstash Redis — per-cache TTLs, JSON serialization, real-time console logging |
-| **Data Integrity** | Schema-first (Flyway V1→V10) + `@Transactional` across critical flows — stock deduction + order creation as one atomic unit |
+| **Data Integrity** | Schema-first (Flyway V1→V11) + `@Transactional` across critical flows — stock deduction + order creation as one atomic unit |
 | **Email** | Async, non-blocking email with beautiful HTML Thymeleaf templates for order confirmation, status updates, and KYC |
 | **Architecture** | Clean layered design — entities never leak to API layer, DTOs everywhere, centralized error handling |
 
@@ -39,6 +39,9 @@ Most portfolio backends are CRUD wrappers. CognitoCart is built the way a real s
 ### 🔐 Authentication & Authorization
 - JWT access tokens (15 min) + refresh tokens (1 hr) with **token rotation**
 - **True logout** — Redis-backed JWT blacklist using `jti` claim + auto-expiring TTL
+- **Password reset** — UUID reset token in Redis (15-min TTL, one-time use, per-email rate limit)
+- **Force logout on reset** — `passwordChangedAt` timestamp invalidates all pre-reset sessions
+- **Security notification email** — fires on every password change (same pattern as Google/GitHub)
 - Role-based access control: `ADMIN` / `SELLER` / `CUSTOMER`
 - `@PreAuthorize` method-level security on every sensitive operation
 - Auto-seeded admin account on first startup via `DataInitializer`
@@ -315,6 +318,9 @@ Open `application.yml` and fill in your values:
 - Razorpay keys are consumed via environment variables, never hardcoded
 - Webhook endpoint validates HMAC-SHA256 signature before any state change
 - All write operations require authenticated JWT with the appropriate role
+- Password reset tokens are **one-time use**, expire in 15 min, and live only in Redis — never in DB
+- Per-email rate limiting on `/forgot-password` prevents inbox bombing attacks
+- `passwordChangedAt` timestamp invalidates **all pre-reset sessions** automatically — no DB scan needed
 
 ---
 
@@ -326,8 +332,8 @@ The following features are planned for upcoming development phases:
 - [x] **Logout** — JWT blacklist via Redis (`jti` + auto-expiring TTL)
 - [x] **Stock Race Fix** — Pessimistic locking (`SELECT FOR UPDATE`) on checkout
 - [x] **PaymentStatus Sync** — Dual lifecycle: `orderStatus` + `paymentStatus`
+- [x] **Password Reset** — UUID token (15 min TTL, one-time use), per-email rate limit, force-logout via `passwordChangedAt`, security notification email
 - [ ] **Email Verification** — 6-digit OTP on signup, blocks checkout until verified
-- [ ] **Password Reset** — UUID token in Redis (15 min), email link flow
 
 **Phase 2 — Seller & Operations**
 - [ ] **Cloud Storage** — AWS S3 / Cloudinary for product images

@@ -11,6 +11,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -59,6 +60,11 @@ public class Users extends BaseEntity {
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private SellerProfile sellerProfile;
+
+    // Timestamp of last password change.
+    // Any JWT issued before this moment is considered stale and rejected.
+    // Updated on password reset AND on manual password change (future feature).
+    private LocalDateTime passwordChangedAt;
 
     public Users(String email, String password, Role role) {
         this.email = email;

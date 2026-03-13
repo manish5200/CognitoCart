@@ -2,11 +2,13 @@ package com.manish.smartcart.controller;
 
 import com.manish.smartcart.dto.auth.*;
 import com.manish.smartcart.service.AuthService;
+import com.manish.smartcart.service.PasswordResetService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import okhttp3.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +22,7 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final PasswordResetService passwordResetService;
 
     // --- REGISTRATION ---
 
@@ -60,13 +63,38 @@ public class AuthController {
     }
 
     /*
-    *******LOGOUT********
-    */
+     *******LOGOUT********
+     */
     @Operation(summary = "Logout", description = "Invalidates the current access token and deletes the refresh token.")
     @ApiResponse(responseCode = "200", description = "Logged out successfully")
     @PostMapping("/logout")
-    public ResponseEntity<Map<String, String>>logout(@RequestHeader("Authorization")String authorizationHeader) {
+    public ResponseEntity<Map<String, String>> logout(@RequestHeader("Authorization") String authorizationHeader) {
         authService.logout(authorizationHeader);
         return ResponseEntity.ok(Map.of("message", "Logged out successfully. See you soon! 👋"));
+    }
+
+    @Operation(summary = "Forgot Password",
+            description = "Sends a password reset link to the given email. " +
+                    "Always returns 200 — does not reveal if email is registered.")
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Map<String, String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        passwordResetService.initiatePasswordReset(request.getEmail());
+
+        // Same message whether email exists or not — prevents user enumeration
+        return ResponseEntity.ok(Map.of(
+                "message", "If that email is registered, a reset link has been sent."
+        ));
+    }
+
+    @Operation(summary = "Reset Password",
+            description = "Resets the user's password using the token from the email link. " +
+                    "Token is one-time use and expires in 15 minutes.")
+    @PostMapping("/reset-password")
+    public ResponseEntity<Map<String, String>> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request) {
+        passwordResetService.resetPassword(request.getToken(), request.getNewPassword());
+        return ResponseEntity.ok(Map.of(
+                "message", "Password updated successfully. Please log in with your new password."
+        ));
     }
 }

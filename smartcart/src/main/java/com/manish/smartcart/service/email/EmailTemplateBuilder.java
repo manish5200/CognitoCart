@@ -2,12 +2,12 @@ package com.manish.smartcart.service.email;
 
 import com.manish.smartcart.dto.order.OrderResponse;
 import com.manish.smartcart.model.user.Users;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
@@ -18,24 +18,25 @@ import java.time.format.DateTimeFormatter;
 public class EmailTemplateBuilder {
 
     private final TemplateEngine templateEngine;
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm");
 
-    /**
-     * Builds the Welcome Email HTML for new user registrations.
-     */
+    private static final DateTimeFormatter DATE_FORMATTER =
+            DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm");
+
+    // Used in security notification emails — more human-readable
+    private static final DateTimeFormatter SECURITY_FORMATTER =
+            DateTimeFormatter.ofPattern("MMMM dd, yyyy 'at' hh:mm a 'IST'");
+
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /** Builds the Welcome Email HTML for new user registrations. */
     public String buildWelcomeEmail(Users user) {
         Context context = new Context();
         context.setVariable("name", user.getFullName());
         context.setVariable("email", user.getEmail());
-
-        // We look for a template named "welcome-email.html" in
-        // src/main/resources/templates/emails/
         return templateEngine.process("emails/welcome-email", context);
     }
 
-    /**
-     * Builds the Order Confirmation HTML after successful checkout.
-     */
+    /** Builds the Order Confirmation HTML after successful checkout. */
     public String buildOrderConfirmation(OrderResponse order) {
         Context context = new Context();
         context.setVariable("customerName", order.getCustomerName());
@@ -47,44 +48,64 @@ public class EmailTemplateBuilder {
         context.setVariable("totalAmount", order.getTotalAmount());
         context.setVariable("couponCode", order.getCouponCode());
         context.setVariable("discountAmount", order.getDiscountAmount());
-
         return templateEngine.process("emails/order-confirmation", context);
     }
 
-    /**
-     * Builds the Order Status Update HTML for admins updating orders.
-     */
+    /** Builds the Order Status Update HTML when admin changes order state. */
     public String buildOrderStatusUpdate(OrderResponse order) {
         Context context = new Context();
         context.setVariable("customerName", order.getCustomerName());
         context.setVariable("orderId", order.getOrderId());
         context.setVariable("status", order.getStatus().name());
 
-        // Add dynamic messaging based on status
         String statusMessage = switch (order.getStatus()) {
-            case SHIPPED -> "Great news! Your order has been shipped and is on its way to you.";
-            case OUT_FOR_DELIVERY -> "Your order is out for delivery today. Keep an eye out!";
-            case DELIVERED -> "Your order has been delivered. Enjoy your purchase!";
-            case CANCELLED -> "Your order has been cancelled. If you have questions, please contact support.";
-            case RETURN_REQUESTED -> "We have received your return request and are processing it.";
-            case REFUNDED -> "Your refund has been issued successfully.";
-            default -> "The status of your order has been updated.";
+            case SHIPPED           -> "Great news! Your order has been shipped and is on its way to you.";
+            case OUT_FOR_DELIVERY  -> "Your order is out for delivery today. Keep an eye out!";
+            case DELIVERED         -> "Your order has been delivered. Enjoy your purchase!";
+            case CANCELLED         -> "Your order has been cancelled. If you have questions, please contact support.";
+            case RETURN_REQUESTED  -> "We have received your return request and are processing it.";
+            case REFUNDED          -> "Your refund has been issued successfully.";
+            default                -> "The status of your order has been updated.";
         };
         context.setVariable("statusMessage", statusMessage);
-
         return templateEngine.process("emails/order-status", context);
     }
 
-    /**
-     * Builds the Seller KYC Status HTML.
-     */
+    /** Builds the Seller KYC Status HTML (approved / rejected). */
     public String buildSellerKycStatus(String sellerName, boolean isApproved, String comments) {
         Context context = new Context();
         context.setVariable("sellerName", sellerName);
         context.setVariable("isApproved", isApproved);
         context.setVariable("statusWord", isApproved ? "Approved" : "Rejected");
         context.setVariable("comments", comments != null ? comments : "No additional comments provided.");
-
         return templateEngine.process("emails/seller-kyc", context);
+    }
+
+    /**
+     * Builds the password reset REQUEST email — the link the user clicks to choose a new password.
+     * Token is embedded in the reset URL and stored in Redis with a 15-min TTL.
+     */
+    public String buildPasswordResetEmail(Users user, String token) {
+        Context context = new Context();
+        context.setVariable("name", user.getFullName());
+        context.setVariable("email", user.getEmail()); // shown at bottom: "you're receiving this because..."
+        // Full reset link — update base URL when deploying to production
+        context.setVariable("resetLink",
+                "https://cognitocart.com/reset-password?token=" + token);
+        return templateEngine.process("emails/password-reset", context);
+    }
+
+    /**
+     * Builds the password CHANGED security notification email.
+     * Sent immediately after a successful reset — if it wasn't them, they can react immediately.
+     * Real-world pattern: Google, GitHub, Amazon all send this.
+     */
+    public String buildPasswordChangedEmail(Users user) {
+        Context context = new Context();
+        context.setVariable("name", user.getFullName());
+        context.setVariable("email", user.getEmail());
+        // Human-readable timestamp: "March 13, 2026 at 10:30 AM IST"
+        context.setVariable("changedAt", LocalDateTime.now().format(SECURITY_FORMATTER));
+        return templateEngine.process("emails/password-changed", context);
     }
 }
