@@ -108,4 +108,12 @@ public class EmailTemplateBuilder {
         context.setVariable("changedAt", LocalDateTime.now().format(SECURITY_FORMATTER));
         return templateEngine.process("emails/password-changed", context);
     }
+
+    /** Builds the email verification OTP email. */
+    public String buildEmailVerificationEmail(Users user, String otp) {
+        Context context = new Context();
+        context.setVariable("name", user.getFullName());
+        context.setVariable("otp", otp);  // The 6-digit code displayed in the email
+        return templateEngine.process("emails/email-verification", context);
+    }
 }

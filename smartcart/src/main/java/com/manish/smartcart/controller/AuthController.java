@@ -1,13 +1,18 @@
 package com.manish.smartcart.controller;
 
 import com.manish.smartcart.dto.auth.*;
+import com.manish.smartcart.repository.UsersRepository;
 import com.manish.smartcart.service.AuthService;
+import com.manish.smartcart.service.EmailService;
+import com.manish.smartcart.service.OtpService;
 import com.manish.smartcart.service.PasswordResetService;
+import com.manish.smartcart.service.email.EmailTemplateBuilder;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import okhttp3.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/auth")
@@ -23,6 +29,10 @@ public class AuthController {
 
     private final AuthService authService;
     private final PasswordResetService passwordResetService;
+    private final OtpService otpService;
+    private final UsersRepository usersRepository;
+    private final EmailTemplateBuilder emailTemplateBuilder;
+    private final EmailService emailService;
 
     // --- REGISTRATION ---
 
@@ -96,5 +106,49 @@ public class AuthController {
         return ResponseEntity.ok(Map.of(
                 "message", "Password updated successfully. Please log in with your new password."
         ));
+    }
+
+    // ── Endpoint 1: Verify email with OTP ────────────────────────────────────
+    @Operation(summary = "Verify Email", description = "Submit the 6-digit OTP sent at registration.")
+    @PostMapping("/verify-email")
+    public ResponseEntity<Map<String, String>> verifyEmail(
+            @Valid @RequestBody VerifyEmailRequest request) {
+        // Check the OTP against Redis
+        boolean isValid = otpService.verifyOTP(request.getEmail(), request.getOtp());
+        if (!isValid) {
+            return ResponseEntity.status(400)
+                    .body(Map.of("message", "Invalid or expired OTP. Please request a new one."));
+        }
+
+        usersRepository.findByEmail(request.getEmail()).ifPresent(user -> {
+            user.setEmailVerified(true);
+            usersRepository.save(user);
+        });
+        return ResponseEntity.ok(Map.of("message", "Email verified! Your account is fully activated. ✅"));
+    }
+
+    // ── Endpoint 2: Resend OTP ────────────────────────────────────────────────
+    @Operation(summary = "Resend OTP", description = "Resend a fresh 6-digit OTP. Rate limited to once every 2 minutes.")
+    @PostMapping("/resend-otp")
+    public ResponseEntity<Map<String, String>> resendOtp(@RequestParam String email){
+        // Rate limit guard — prevent abuse / inbox flooding
+        if(otpService.isRateLimited(email)){
+            return ResponseEntity.status(429)
+                    .body(Map.of("message", "Please wait 2 minutes before requesting a new OTP."));
+        }
+        usersRepository.findByEmail(email).ifPresent(user -> {
+            // Mark rate limit, generate fresh OTP, send email
+            otpService.markRateLimited(email);
+            String otp = otpService.generateAndStore(email);
+            try{
+                String body = emailTemplateBuilder.buildEmailVerificationEmail(user, otp);
+                emailService.sendMail(email,
+                        "Your New CognitoCart Verification Code ✉️", body, "CognitoCart Team");
+            }catch (Exception e){
+                log.warn("Failed to resend OTP to {}", email, e);
+            }
+        });
+        //Same response whether email exists or not (no user enumeration)
+        return ResponseEntity.ok(Map.of("message", "If that email is unverified, a new OTP has been sent."));
     }
 }

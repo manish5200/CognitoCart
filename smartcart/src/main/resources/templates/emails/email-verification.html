@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Verify Your Email — CognitoCart</title>
+</head>
+<body style="margin:0;padding:0;background:#0f0c29;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+
+<table width="100%" cellspacing="0" cellpadding="0" border="0"
+       style="background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);padding:48px 0;">
+    <tr>
+        <td align="center">
+            <table width="620" cellspacing="0" cellpadding="0" border="0"
+                   style="border-radius:20px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,0.5);">
+
+                <!-- Top accent bar -->
+                <tr>
+                    <td style="background:linear-gradient(90deg,#f093fb,#f5576c,#667eea);height:4px;font-size:0;">&nbsp;</td>
+                </tr>
+
+                <!-- Header -->
+                <tr>
+                    <td style="background:#1a1a2e;padding:48px 48px 28px;text-align:center;">
+                        <p style="margin:0 0 28px;font-size:17px;font-weight:700;color:#a78bfa;letter-spacing:1px;text-transform:uppercase;">🛒 CognitoCart</p>
+                        <div style="display:inline-block;background:linear-gradient(135deg,#f093fb,#f5576c);border-radius:50%;width:80px;height:80px;box-shadow:0 0 30px rgba(240,147,251,0.4);margin-bottom:22px;">
+                            <p style="margin:0;font-size:36px;line-height:80px;">✉️</p>
+                        </div>
+                        <h1 style="margin:0 0 10px;font-size:26px;font-weight:800;color:#fff;">Verify Your Email Address</h1>
+                        <p style="margin:0;font-size:14px;color:#94a3b8;">Enter the code below to activate your CognitoCart account</p>
+                    </td>
+                </tr>
+
+                <!-- Greeting -->
+                <tr>
+                    <td style="background:#1a1a2e;padding:16px 48px 8px;">
+                        <p style="margin:0;font-size:15px;color:#94a3b8;line-height:1.8;">
+                            Hi <strong style="color:#e2e8f0;" th:text="${name}">there</strong>, welcome aboard! 🎉<br/>
+                            Use the code below to verify your email and unlock your full account.
+                        </p>
+                    </td>
+                </tr>
+
+                <!-- OTP Box — the hero element -->
+                <tr>
+                    <td style="background:#1a1a2e;padding:28px 48px;text-align:center;">
+                        <div style="background:linear-gradient(135deg,rgba(240,147,251,0.08),rgba(102,126,234,0.08));
+                        border:1.5px solid rgba(167,139,250,0.3);border-radius:16px;padding:32px;">
+                            <p style="margin:0 0 10px;font-size:13px;font-weight:600;color:#94a3b8;letter-spacing:2px;text-transform:uppercase;">
+                                Your One-Time Code
+                            </p>
+                            <!-- Large spaced OTP digits for easy reading -->
+                            <p style="margin:0;font-size:48px;font-weight:900;letter-spacing:14px;color:#f0f0ff;font-family:'Courier New',monospace;"
+                               th:text="${otp}">1 2 3 4 5 6</p>
+                            <p style="margin:12px 0 0;font-size:13px;color:#f59e0b;font-weight:600;">
+                                ⏱ Expires in 10 minutes
+                            </p>
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- How to use -->
+                <tr>
+                    <td style="background:#1a1a2e;padding:0 48px 28px;">
+                        <table width="100%" cellspacing="0" cellpadding="16" border="0"
+                               style="background:rgba(102,126,234,0.06);border:1px solid rgba(102,126,234,0.2);border-radius:12px;">
+                            <tr>
+                                <td>
+                                    <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#a78bfa;">📋 &nbsp;How to verify:</p>
+                                    <p style="margin:0;font-size:13px;color:#94a3b8;line-height:1.8;">
+                                        Send a <strong style="color:#e2e8f0;">POST</strong> request to
+                                        <code style="background:rgba(167,139,250,0.1);color:#c4b5fd;padding:2px 8px;border-radius:4px;font-size:12px;">/api/v1/auth/verify-email</code>
+                                        with your email and this 6-digit code.
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- Divider -->
+                <tr>
+                    <td style="background:#1a1a2e;padding:0 48px;">
+                        <div style="border-top:1px solid #2d2d44;"></div>
+                    </td>
+                </tr>
+
+                <!-- Didn't sign up? -->
+                <tr>
+                    <td style="background:#1a1a2e;padding:24px 48px 36px;">
+                        <table width="100%" cellspacing="0" cellpadding="16" border="0"
+                               style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:12px;">
+                            <tr>
+                                <td>
+                                    <p style="margin:0;font-size:13px;color:#f87171;line-height:1.7;">
+                                        🚨 <strong>Didn't create this account?</strong> Ignore this email — the account will remain inactive.
+                                        If you're concerned, <a href="https://cognitocart.com/support" style="color:#fb923c;text-decoration:underline;">contact support</a>.
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                    <td style="background:#13131f;border-top:1px solid #2d2d44;padding:24px 48px;text-align:center;">
+                        <p style="margin:0 0 4px;font-size:13px;color:#64748b;">
+                            Need a new code? &nbsp;<a href="https://cognitocart.com/resend-otp" style="color:#a78bfa;text-decoration:none;font-weight:500;">Resend OTP</a>
+                        </p>
+                        <p style="margin:0;font-size:12px;color:#374151;">&copy; 2026 CognitoCart · Bangalore, India</p>
+                    </td>
+                </tr>
+
+                <!-- Bottom accent bar -->
+                <tr>
+                    <td style="background:linear-gradient(90deg,#f093fb,#f5576c,#667eea);height:4px;font-size:0;">&nbsp;</td>
+                </tr>
+
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

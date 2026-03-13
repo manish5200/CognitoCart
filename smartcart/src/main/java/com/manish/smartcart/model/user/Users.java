@@ -66,6 +66,12 @@ public class Users extends BaseEntity {
     // Updated on password reset AND on manual password change (future feature).
     private LocalDateTime passwordChangedAt;
 
+    // Whether this user has confirmed ownership of their email address.
+    // Set to FALSE on registration → TRUE after OTP verification.
+    // Checkout is blocked while this is FALSE.
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified = false;
+
     public Users(String email, String password, Role role) {
         this.email = email;
         this.password = password;

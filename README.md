@@ -28,7 +28,7 @@ Most portfolio backends are CRUD wrappers. CognitoCart is built the way a real s
 | **Payments** | Full Razorpay integration — HMAC signature verify, dual lifecycle tracking (`orderStatus` + `paymentStatus`), async webhook + `payment.failed` handling |
 | **Concurrency** | Pessimistic locking (`SELECT FOR UPDATE`) on checkout — prevents stock oversell under concurrent load |
 | **Caching** | Cache-aside pattern with Upstash Redis — per-cache TTLs, JSON serialization, real-time console logging |
-| **Data Integrity** | Schema-first (Flyway V1→V11) + `@Transactional` across critical flows — stock deduction + order creation as one atomic unit |
+| **Data Integrity** | Schema-first (Flyway V1→V12) + `@Transactional` across critical flows — stock deduction + order creation as one atomic unit |
 | **Email** | Async, non-blocking email with beautiful HTML Thymeleaf templates for order confirmation, status updates, and KYC |
 | **Architecture** | Clean layered design — entities never leak to API layer, DTOs everywhere, centralized error handling |
 
@@ -39,6 +39,7 @@ Most portfolio backends are CRUD wrappers. CognitoCart is built the way a real s
 ### 🔐 Authentication & Authorization
 - JWT access tokens (15 min) + refresh tokens (1 hr) with **token rotation**
 - **True logout** — Redis-backed JWT blacklist using `jti` claim + auto-expiring TTL
+- **Email Verification** — 6-digit OTP on signup using Redis (10-min TTL), blocks checkout until verified
 - **Password reset** — UUID reset token in Redis (15-min TTL, one-time use, per-email rate limit)
 - **Force logout on reset** — `passwordChangedAt` timestamp invalidates all pre-reset sessions
 - **Security notification email** — fires on every password change (same pattern as Google/GitHub)
@@ -319,8 +320,9 @@ Open `application.yml` and fill in your values:
 - Webhook endpoint validates HMAC-SHA256 signature before any state change
 - All write operations require authenticated JWT with the appropriate role
 - Password reset tokens are **one-time use**, expire in 15 min, and live only in Redis — never in DB
-- Per-email rate limiting on `/forgot-password` prevents inbox bombing attacks
+- Per-email rate limiting on `/forgot-password` and `/resend-otp` prevents inbox bombing attacks
 - `passwordChangedAt` timestamp invalidates **all pre-reset sessions** automatically — no DB scan needed
+- `emailVerified` flag acts as a guard on `OrderService` — forcing email ownership confirmation before checkout
 
 ---
 
@@ -333,7 +335,7 @@ The following features are planned for upcoming development phases:
 - [x] **Stock Race Fix** — Pessimistic locking (`SELECT FOR UPDATE`) on checkout
 - [x] **PaymentStatus Sync** — Dual lifecycle: `orderStatus` + `paymentStatus`
 - [x] **Password Reset** — UUID token (15 min TTL, one-time use), per-email rate limit, force-logout via `passwordChangedAt`, security notification email
-- [ ] **Email Verification** — 6-digit OTP on signup, blocks checkout until verified
+- [x] **Email Verification** — 6-digit OTP on signup, blocks checkout until verified
 
 **Phase 2 — Seller & Operations**
 - [ ] **Cloud Storage** — AWS S3 / Cloudinary for product images

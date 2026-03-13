@@ -11,9 +11,11 @@ import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.model.order.OrderItem;
 import com.manish.smartcart.model.order.UserCouponUsage;
 import com.manish.smartcart.model.product.Product;
+import com.manish.smartcart.model.user.Users;
 import com.manish.smartcart.repository.OrderRepository;
 import com.manish.smartcart.repository.ProductRepository;
 import com.manish.smartcart.repository.UserCouponUsageRepository;
+import com.manish.smartcart.repository.UsersRepository;
 import com.manish.smartcart.service.notifications.OrderNotificationService;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
@@ -38,9 +40,20 @@ public class OrderService {
     private final CouponService couponService;
     private final PaymentService paymentService;
     private final UserCouponUsageRepository userCouponUsageRepository;
+    private final UsersRepository usersRepository;
 
     @Transactional
     public OrderResponse placeOrder(Long userId, OrderRequest orderRequest) {
+
+        // CHECKOUT GUARD: Unverified accounts cannot place orders.
+        // This forces email ownership confirmation before any money moves.
+        Users user = usersRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (!user.isEmailVerified()) {
+            throw new RuntimeException(
+                    "Please verify your email before placing an order. Check your inbox for the OTP.");
+        }
+
         // 1. Get the user's cart
         Cart cart = cartService.getCartForUser(userId);
         if (cart == null || cart.getItems().isEmpty()) {

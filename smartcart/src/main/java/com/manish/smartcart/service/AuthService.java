@@ -34,6 +34,7 @@ public class AuthService {
     private final EmailService emailService;
     private final EmailTemplateBuilder emailTemplateBuilder;
     private final TokenBlacklistService tokenBlacklistService; //for log out
+    private final OtpService otpService;
 
     // -----------------------------------------
     // LOGIN
@@ -138,6 +139,17 @@ public class AuthService {
             log.warn("Failed to send welcome email to {}", user.getEmail(), e);
         }
 
+        // Send email verification OTP immediately after registration.
+        // The account is active but checkout is blocked until email is verified.
+        try {
+            String otp = otpService.generateAndStore(user.getEmail());
+            String body = emailTemplateBuilder.buildEmailVerificationEmail(user, otp);
+            emailService.sendMail(user.getEmail(),
+                    "Verify Your CognitoCart Email ✉️", body, "CognitoCart Team");
+        } catch (Exception e) {
+            log.warn("Failed to send OTP email to {}", user.getEmail(), e);
+        }
+
         return RegisterResponse.builder()
                 .message("Customer registered successfully. Welcome to CognitoCart! ✅")
                 .email(user.getEmail())
@@ -189,6 +201,17 @@ public class AuthService {
         // 4. Save user (cascade persists profile)
         usersRepository.save(user);
 
+        // Send email verification OTP immediately after registration.
+        // The account is active but checkout is blocked until email is verified.
+        try {
+            String otp = otpService.generateAndStore(user.getEmail());
+            String body = emailTemplateBuilder.buildEmailVerificationEmail(user, otp);
+            emailService.sendMail(user.getEmail(),
+                    "Verify Your CognitoCart Email ✉️", body, "CognitoCart Team");
+        } catch (Exception e) {
+            log.warn("Failed to send OTP email to {}", user.getEmail(), e);
+        }
+
         return RegisterResponse.builder()
                 .message("Seller account created successfully. Your KYC verification is pending. ✅")
                 .email(user.getEmail())
@@ -196,7 +219,6 @@ public class AuthService {
                 .kycStatus("PENDING") // Inform frontend immediately so it can show KYC notice
                 .build();
     }
-
 
     // -----------------------------------------
     // LOGOUT
@@ -229,5 +251,6 @@ public class AuthService {
 
         log.info("✅ User logged out successfully: {}", email);
     }
+
 
 }
