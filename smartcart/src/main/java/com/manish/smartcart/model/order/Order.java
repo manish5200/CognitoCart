@@ -58,13 +58,13 @@ public class Order extends BaseEntity {
     private PaymentStatus paymentStatus = PaymentStatus.PENDING;
 
 
-    // --- PHASE 3: PAYMENT GATEWAY (RAZORPAY) ---
+    //PAYMENT GATEWAY (RAZORPAY) ---
     private String razorpayOrderId;
     private String razorpayPaymentId;
     private String razorpaySignature;
 
-    // --- PHASE 1: SHIPPING SNAPSHOT (IMMUTABLE) ---
-    // These fields "freeze" the data at the moment of checkout
+    //SHIPPING SNAPSHOT (IMMUTABLE) ---
+    //These fields "freeze" the data at the moment of checkout
     private String shippingFullName;
     private String shippingPhone;
     private String shippingStreetAddress;

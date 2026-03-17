@@ -41,6 +41,7 @@ public class OrderService {
     private final PaymentService paymentService;
     private final UserCouponUsageRepository userCouponUsageRepository;
     private final UsersRepository usersRepository;
+    private final RazorpayRefundService razorpayRefundService;
 
     @Transactional
     public OrderResponse placeOrder(Long userId, OrderRequest orderRequest) {
@@ -145,8 +146,7 @@ public class OrderService {
             couponService.incrementUsage(cart.getCouponCode());
 
             // --- Track Per-User Usage Limit ---
-            // Fetch the Coupon entity - validation was already done when coupon was applied
-            // to cart
+            // Fetch the Coupon entity - validation was already done when coupon was applied to cart
             com.manish.smartcart.model.order.Coupon coupon = couponService.getCouponByCode(cart.getCouponCode());
 
             // Check if they already have a usage record, otherwise create one
@@ -171,8 +171,8 @@ public class OrderService {
         order.setTotalAmount(computedTotal);
         Order savedOrder = orderRepository.save(order);
 
-        // --- PHASE 3: PAYMENT GATEWAY (RAZORPAY) ---
-        // 6. Connect to Razorpay to initialize the remote transaction
+        //PAYMENT GATEWAY (RAZORPAY) ---
+        //6. Connect to Razorpay to initialize the remote transaction
         String razorpayOrderId = paymentService.createRazorpayOrder(savedOrder);
         savedOrder.setRazorpayOrderId(razorpayOrderId);
         savedOrder = orderRepository.save(savedOrder);
@@ -185,9 +185,7 @@ public class OrderService {
         orderResponse.setRazorpayOrderId(razorpayOrderId);
 
         // Note: The Order Confirmation Email has been MOVED to PaymentController
-        // because we only want to email the user AFTER the webhooks/callbacks verify
-        // the payment.
-
+        // because we only want to email the user AFTER the webhooks/callbacks verify the payment.
         log.info("Order processed as PENDING for local orderId {} and razorpayId {}", orderResponse.getOrderId(),
                 razorpayOrderId);
         return orderResponse;
@@ -196,15 +194,17 @@ public class OrderService {
     // Order History feature.
     public List<OrderResponse> getOrderHistoryForUser(Long userId) {
         List<Order> orders = orderRepository.findByUserIdAndOrderItems(userId);
-        // Map each Entity to a DTO to prevent infinite loops and hide internal DB
-        // details
+
+        // Map each Entity to a DTO to prevent infinite loops and hide internal DB details
         return orders.stream()
                 .map(orderMapper::toOrderResponse)
                 .collect(Collectors.toList());
     }
 
-    // Cancellation of the order if the order is still pending -> stock will be back
-    // to product
+    /*
+    Cancellation of the order if the order is still pending -> stock will be back
+    to product
+    */
     @Transactional
     public OrderResponse cancelOrder(Long userId, Long orderId) {
         // 1. Find the order and verify ownership
@@ -232,14 +232,36 @@ public class OrderService {
             // saveAndFlush pushes the update to the DB immediately
             productRepository.saveAndFlush(product);
         }
-        // 4. Update Status
+
+        // 4. REFUND : Handle Refunds if the order was already PAID
+        if(order.getPaymentStatus() == PaymentStatus.PAID &&
+        order.getRazorpayPaymentId() != null) {
+            try{
+                // Call Razorpay API to return the money
+                String refundId = razorpayRefundService.initiateFullRefund(order.getRazorpayPaymentId(), order.getTotalAmount());
+
+                // Update payment lifecycle tracking
+                order.setPaymentStatus(PaymentStatus.REFUNDED);
+                log.info("Refund processed for Order ID {}", orderId);
+
+                // Send Premium Refund Email
+                OrderResponse orderResponse = orderMapper.toOrderResponse(order);
+                orderNotificationService.sendRefundEmail(orderResponse, refundId);
+
+            } catch (Exception e) {
+                // If refund fails, we probably shouldn't cancel the order yet,
+                // or we need manual admin intervention. For now, throw the error.
+                throw new RuntimeException("Cannot cancel order: " + e.getMessage());
+            }
+        }
+        // 5. Update Status
         order.setOrderStatus(OrderStatus.CANCELLED);
         Order savedOrder = orderRepository.save(order);
         return orderMapper.toOrderResponse(savedOrder);
     }
 
-    // OrderProcessing: Abandoning the stale orders
 
+    // OrderProcessing: Abandoning the stale orders
     @Transactional
     public void cancelAndReleaseStock(Order order) {
         log.info("Releasing stock for abandoned order ID: {}", order.getId());

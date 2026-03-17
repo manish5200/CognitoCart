@@ -39,4 +39,15 @@ public class OrderNotificationService {
             log.warn("Error in sending order status update message {}", e.getMessage());
         }
     }
+
+    // 3️⃣ Send Refund Confirmation Email
+    public void sendRefundEmail(OrderResponse orderResponse, String refundId) {
+        try {
+            String body = emailTemplateBuilder.buildRefundEmail(orderResponse, refundId);
+            String subject = "💰 Refund Processed: Order #" + orderResponse.getOrderId();
+            emailService.sendMail(orderResponse.getEmail(), subject, body, "CognitoCart");
+        } catch (Exception e) {
+            log.warn("Error in sending refund email {}", e.getMessage());
+        }
+    }
 }

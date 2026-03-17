@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Refund Processed — CognitoCart</title>
+</head>
+<body style="margin:0;padding:0;background:#0f0c29;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+
+<table width="100%" cellspacing="0" cellpadding="0" border="0" style="background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);padding:48px 0;min-height:100vh;">
+  <tr>
+    <td align="center">
+      <table width="620" cellspacing="0" cellpadding="0" border="0" style="border-radius:20px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,0.5);">
+
+        <!-- ══ TOP ACCENT BAR ════════════════════════════════════════════ -->
+        <tr>
+          <td style="background:linear-gradient(90deg,#3b82f6,#8b5cf6,#ec4899);height:4px;font-size:0;line-height:0;">&nbsp;</td>
+        </tr>
+
+        <!-- ══ HEADER ═════════════════════════════════════════════════════ -->
+        <tr>
+          <td style="background:#1a1a2e;padding:48px 48px 32px 48px;text-align:center;">
+
+            <!-- Brand -->
+            <p style="margin:0 0 32px 0;font-size:18px;font-weight:700;color:#a78bfa;letter-spacing:1px;text-transform:uppercase;">🛒 CognitoCart</p>
+
+            <!-- Money / Refresh Icon with Glow -->
+            <div style="display:inline-block;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:50%;width:80px;height:80px;line-height:80px;text-align:center;box-shadow:0 0 30px rgba(59,130,246,0.5);margin-bottom:24px;">
+              <p style="margin:0;font-size:36px;line-height:80px;">💸</p>
+            </div>
+
+            <h1 style="margin:0 0 12px 0;font-size:28px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">
+              Your Refund is on the Way
+            </h1>
+            <p style="margin:0;font-size:15px;color:#94a3b8;line-height:1.6;">
+              We have successfully processed a refund for your recent cancelled order.
+            </p>
+          </td>
+        </tr>
+
+        <!-- ══ REFUND AMOUNT BADGE ════════════════════════════════════════ -->
+        <tr>
+          <td style="background:#1a1a2e;padding:0 48px 24px;text-align:center;">
+            <div style="display:inline-block;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.35);border-radius:12px;padding:16px 32px;">
+              <p style="margin:0 0 4px 0;font-size:12px;font-weight:600;color:#93c5fd;text-transform:uppercase;letter-spacing:1px;">
+                Refund Amount
+              </p>
+              <p style="margin:0;font-size:26px;font-weight:800;color:#ffffff;">
+                ₹<span th:text="${#numbers.formatDecimal(refundAmount, 1, 'COMMA', 2, 'POINT')}">1,499.00</span>
+              </p>
+              <p style="margin:16px 0 0 0;font-size:12px;color:#93c5fd;font-family:monospace;">
+                Transaction ID: <span th:text="${refundId}">rfnd_XXXXXXXXX</span>
+              </p>
+            </div>
+          </td>
+        </tr>
+
+        <!-- ══ ORDER DETAILS ═══════════════════════════════════════════════ -->
+        <tr>
+          <td style="background:#1a1a2e;padding:16px 48px 32px 48px;">
+            <p style="margin:0 0 16px 0;font-size:16px;font-weight:600;color:#e2e8f0;">
+              Hi <span th:text="${customerName}" style="color:#a78bfa;">there</span>,
+            </p>
+            <p style="margin:0 0 24px 0;font-size:15px;color:#94a3b8;line-height:1.8;">
+              This email confirms that your order <strong>#<span th:text="${orderId}">1024</span></strong> was cancelled, and a refund of <strong>₹<span th:text="${#numbers.formatDecimal(refundAmount, 1, 'COMMA', 2, 'POINT')}">1,499.00</span></strong> has been initiated back to your original payment method.
+            </p>
+
+            <!-- Timeline Box -->
+            <table width="100%" cellspacing="0" cellpadding="20" border="0"
+                   style="background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.2);border-radius:14px;">
+              <tr>
+                <td>
+                  <p style="margin:0 0 12px 0;font-size:14px;font-weight:700;color:#c4b5fd;">
+                    ⏱️ &nbsp;When will I get my money?
+                  </p>
+                  <table width="100%" cellspacing="0" cellpadding="6" border="0">
+                    <tr>
+                      <td style="font-size:13px;color:#94a3b8;">• &nbsp;<strong>UPI / Wallets:</strong> Usually instant or within 24 hours.</td>
+                    </tr>
+                    <tr>
+                      <td style="font-size:13px;color:#94a3b8;">• &nbsp;<strong>Credit / Debit Cards:</strong> 5 to 7 business days.</td>
+                    </tr>
+                    <tr>
+                      <td style="font-size:13px;color:#94a3b8;">• &nbsp;<strong>Net Banking:</strong> 3 to 5 business days.</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- ══ DIVIDER ═════════════════════════════════════════════════════ -->
+        <tr>
+          <td style="background:#1a1a2e;padding:0 48px;">
+            <div style="border-top:1px solid #2d2d44;"></div>
+          </td>
+        </tr>
+
+        <!-- ══ SUPPORT / CONTINUE SHOPPING ════════════════════════════════ -->
+        <tr>
+          <td style="background:#1a1a2e;padding:32px 48px;text-align:center;">
+            <p style="margin:0 0 20px 0;font-size:14px;color:#94a3b8;">
+              If you have any questions regarding this refund, please quote your Order ID (#<span th:text="${orderId}">1024</span>) when contacting our support team.
+            </p>
+            <a href="https://cognitocart.com"
+               style="display:inline-block;background:linear-gradient(135deg,#3b82f6,#8b5cf6);
+                      color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;
+                      padding:14px 40px;border-radius:50px;letter-spacing:0.3px;
+                      box-shadow:0 8px 25px rgba(59,130,246,0.4);">
+              Explore More Products &nbsp;→
+            </a>
+          </td>
+        </tr>
+
+        <!-- ══ FOOTER ══════════════════════════════════════════════════════ -->
+        <tr>
+          <td style="background:#13131f;border-top:1px solid #2d2d44;padding:28px 48px;text-align:center;">
+            <p style="margin:0 0 6px 0;font-size:13px;color:#64748b;">
+              Need help? &nbsp;<a href="https://cognitocart.com/support" style="color:#a78bfa;text-decoration:none;font-weight:500;">Contact Support</a>
+            </p>
+            <p style="margin:0;font-size:12px;color:#374151;">&copy; 2026 CognitoCart. All rights reserved. &nbsp;·&nbsp; Bangalore, India</p>
+          </td>
+        </tr>
+
+        <!-- ══ BOTTOM ACCENT BAR ══════════════════════════════════════════ -->
+        <tr>
+          <td style="background:linear-gradient(90deg,#3b82f6,#8b5cf6,#ec4899);height:4px;font-size:0;line-height:0;">&nbsp;</td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>

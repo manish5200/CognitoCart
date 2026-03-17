@@ -116,4 +116,15 @@ public class EmailTemplateBuilder {
         context.setVariable("otp", otp);  // The 6-digit code displayed in the email
         return templateEngine.process("emails/email-verification", context);
     }
+
+    /** Builds the Refund Notification email for canceled orders. */
+    public String buildRefundEmail(OrderResponse order, String refundId) {
+        Context context = new Context();
+        context.setVariable("customerName", order.getCustomerName());
+        context.setVariable("orderId", order.getOrderId());
+        context.setVariable("refundAmount", order.getTotalAmount()); // Full refund amount
+        context.setVariable("refundId", refundId); // Inject the refund transaction ID
+        return templateEngine.process("emails/refund-processed", context);
+    }
 }
+

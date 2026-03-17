@@ -24,13 +24,13 @@ Most portfolio backends are CRUD wrappers. CognitoCart is built the way a real s
 
 | Concern | What Was Done |
 |---|---|
-| **Security** | Stateless JWT + refresh token rotation + RBAC + Redis token blacklist (true logout) + **secure password reset with force-logout + rate limiting** |
-| **Payments** | Full Razorpay integration — HMAC signature verify, dual lifecycle tracking (`orderStatus` + `paymentStatus`), async webhook + `payment.failed` handling |
+| **Security** | Stateless JWT + refresh token rotation + RBAC + Redis blacklist (true logout) + password reset with force-logout + rate limiting + **email verification OTP** |
+| **Payments** | Full Razorpay integration — HMAC signature verify, dual `orderStatus`/`paymentStatus` lifecycle, webhook, `payment.failed` handling, **automatic refund on cancellation** |
 | **Concurrency** | Pessimistic locking (`SELECT FOR UPDATE`) on checkout — prevents stock oversell under concurrent load |
 | **Caching** | Cache-aside pattern with Upstash Redis — per-cache TTLs, JSON serialization, real-time console logging |
 | **Data Integrity** | Schema-first (Flyway V1→V12) + `@Transactional` across critical flows — stock deduction + order creation as one atomic unit |
-| **Email** | Async, non-blocking email with beautiful HTML Thymeleaf templates for order confirmation, status updates, and KYC |
-| **Architecture** | Clean layered design — entities never leak to API layer, DTOs everywhere, centralized error handling |
+| **Email** | 8 premium async Thymeleaf email templates — order confirmation, refund processed, password security, OTP verification, seller KYC |
+| **Architecture** | 12 controllers · 20 services · Clean layered design — entities never leak to API layer, DTOs everywhere, centralized error handling |
 
 ---
 
@@ -68,18 +68,30 @@ Most portfolio backends are CRUD wrappers. CognitoCart is built the way a real s
 - Async webhook listener `/webhook` — handles `payment.captured` and `payment.failed` events
 - **Duplicate payment guard** — idempotent verify, safe to call multiple times
 - Order promoted to `PAID` only after cryptographic verification
+- **Automated Refunds** — on order cancellation, `RazorpayRefundService` automatically issues a full refund via Razorpay Refund API and fires a confirmation email
 
 ### 📋 Order Management
 - Full lifecycle: `PAYMENT_PENDING` → `PAID` → `CONFIRMED` → `PACKED` → `SHIPPED` → `DELIVERED`
 - **Pessimistic locking** on stock deduction (`SELECT FOR UPDATE`) — zero oversell under concurrent checkout
 - Admin-controlled status transitions with **email notification on each change**
-- Order cancellation with **automatic stock restoration**
+- Order cancellation: auto-restores stock + auto-triggers Razorpay refund (if `PAID`)
 - Abandoned order cleanup via a scheduled background task
 
 ### 📧 Email Notifications (Async)
-- Beautiful HTML email templates via Thymeleaf + Spring Mail
-- Order confirmation, status update (per transition), welcome email, seller KYC result
-- Non-blocking `@Async` execution — payment verification never waits for SMTP
+8 premium dark-theme HTML email templates (Thymeleaf + Spring Mail):
+
+| Template | Trigger |
+|---|---|
+| Welcome | New user registration |
+| Order Confirmation | Payment verified |
+| Order Status Update | Admin changes status |
+| **Refund Processed** | Order cancelled + refund issued |
+| Password Reset | `/forgot-password` request |
+| Password Changed | Security notification post-reset |
+| Email Verification OTP | New signup / resend OTP |
+| Seller KYC | KYC approved or rejected |
+
+Non-blocking `@Async` — email dispatch never blocks the HTTP response thread.
 
 ### 🏪 Seller Portal
 - Seller registration with KYC fields (GSTIN, PAN, business address)
@@ -117,12 +129,12 @@ Most portfolio backends are CRUD wrappers. CognitoCart is built the way a real s
 └──────────────────────────┬──────────────────────────────┘
                            │
 ┌──────────────────────────▼──────────────────────────────┐
-│   Controller Layer   @RestController  (10 controllers)  │
+│   Controller Layer   @RestController  (12 controllers)  │
 │   DTOs only — entities never exposed directly           │
 └──────────────────────────┬──────────────────────────────┘
                            │
 ┌──────────────────────────▼──────────────────────────────┐
-│   Service Layer   Business Logic  (13 services)         │
+│   Service Layer   Business Logic  (20 services)         │
 │   @Transactional · @Cacheable · @CacheEvict · @Async    │
 └──────────────────────────┬──────────────────────────────┘
                            │
@@ -194,9 +206,10 @@ smartcart/
 │   ├── config/                  # Security, JWT, Redis, Swagger, Data Initializer
 │   │   ├── jwt/                 # JwtUtil, JwtFilter
 │   │   └── initializer/         # AdminProperties, DataInitializer
-│   ├── controller/              # REST endpoints (10 controllers)
-│   ├── service/                 # Business logic (13 services)
-│   │   └── notifications/       # OrderNotificationService (async email)
+│   ├── controller/              # REST endpoints (12 controllers)
+│   ├── service/                 # Business logic (20 services)
+│   │   ├── email/               # EmailTemplateBuilder (8 Thymeleaf templates)
+│   │   └── notifications/       # OrderNotificationService (async email dispatch)
 │   ├── repository/              # Spring Data JPA repositories with JPQL
 │   ├── model/                   # JPA entities
 │   │   ├── base/                # BaseEntity (id, timestamps, auditing, soft delete)
@@ -212,8 +225,8 @@ smartcart/
 ├── src/main/resources/
 │   ├── application-demo.yml     # Reference config (fake values — safe to commit)
 │   ├── application.yml          # Real config (gitignored)
-│   ├── templates/emails/        # Thymeleaf HTML email templates
-│   └── db/migration/            # Flyway SQL scripts (V1__init → V10__payment_status)
+│   ├── templates/emails/        # 8 premium Thymeleaf HTML email templates
+│   └── db/migration/            # Flyway SQL scripts (V1__init → V12__email_verified)
 ├── test-payment.html            # Razorpay sandbox tester (local dev use)
 └── pom.xml
 ```
@@ -323,30 +336,35 @@ Open `application.yml` and fill in your values:
 - Per-email rate limiting on `/forgot-password` and `/resend-otp` prevents inbox bombing attacks
 - `passwordChangedAt` timestamp invalidates **all pre-reset sessions** automatically — no DB scan needed
 - `emailVerified` flag acts as a guard on `OrderService` — forcing email ownership confirmation before checkout
+- Razorpay refund only fires if `paymentStatus == PAID` — unpaid order cancellations never trigger external API calls
 
 ---
 
 ## 🗺️ Roadmap
 
-The following features are planned for upcoming development phases:
+**Phase 1 — Auth Hardening** ✅ *Complete*
+- [x] **True Logout** — Redis JWT blacklist using `jti` claim + auto-expiring TTL
+- [x] **Stock Race Condition Fix** — Pessimistic locking (`SELECT FOR UPDATE`) prevents oversell
+- [x] **Dual Payment Lifecycle** — `orderStatus` + `paymentStatus` tracked independently
+- [x] **Password Reset** — UUID token (15 min TTL, one-time use, rate-limited per email, force-logout via `passwordChangedAt`, security notification email)
+- [x] **Email Verification (OTP)** — 6-digit Redis-backed OTP on signup, blocks checkout until verified
 
-**Phase 1 — Auth Hardening** *(in progress)*
-- [x] **Logout** — JWT blacklist via Redis (`jti` + auto-expiring TTL)
-- [x] **Stock Race Fix** — Pessimistic locking (`SELECT FOR UPDATE`) on checkout
-- [x] **PaymentStatus Sync** — Dual lifecycle: `orderStatus` + `paymentStatus`
-- [x] **Password Reset** — UUID token (15 min TTL, one-time use), per-email rate limit, force-logout via `passwordChangedAt`, security notification email
-- [x] **Email Verification** — 6-digit OTP on signup, blocks checkout until verified
+**Phase 2 — Fulfillment & Operations** *(in progress)*
+- [x] **Automated Refunds** — Razorpay Refund API fires on order cancellation; premium refund email with `rfnd_XXXXX` transaction ID
+- [ ] **PDF Invoices** — Auto-generate and email a PDF invoice on payment success
+- [ ] **Shipment Tracking** — Attach tracking number + courier to shipped orders, expose tracking endpoint
+- [ ] **Cloud Object Storage** — AWS S3 / Cloudinary for product images and user avatars
 
-**Phase 2 — Seller & Operations**
-- [ ] **Cloud Storage** — AWS S3 / Cloudinary for product images
-- [ ] **Refund Flow** — Razorpay refund API integration on order cancellation
-- [ ] **PDF Invoices** — Downloadable receipts per order
-- [ ] **Shipment Tracking** — Tracking number on orders, courier integration
+**Phase 3 — User Engagement**
+- [ ] **Address Book** — Multiple saved shipping addresses, selectable at checkout
+- [ ] **Review Images** — Allow buyers to attach photos to reviews
+- [ ] **Admin Analytics API** — Aggregated revenue, sales trends, low-stock alerts dashboard
 
-**Phase 3 — AI & Intelligence**
-- [ ] **AI Recommendations** — Personalized product suggestions (embeddings)
-- [ ] **Semantic Search** — Natural language product search (pgvector / OpenAI)
-- [ ] **Fraud Detection** — Anomaly scoring on payment events
+**Phase 4 — Artificial Intelligence** *(after Phase 3)*
+- [ ] **Semantic Search** — Natural language product search using vector embeddings (pgvector / OpenAI)
+- [ ] **Personalized Recommendations** — "Customers who bought X also bought Y" (collaborative filtering)
+- [ ] **AI Review Summarization** — LLM-generated 3-sentence summaries of product review clusters
+- [ ] **Fraud Detection** — Anomaly scoring on payment events using ML signals
 
 ---
 
