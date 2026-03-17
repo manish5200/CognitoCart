@@ -59,13 +59,16 @@ public class EmailTemplateBuilder {
         context.setVariable("status", order.getStatus().name());
 
         String statusMessage = switch (order.getStatus()) {
+            case CONFIRMED         -> "Great news! Your order has been confirmed and is being prepared.";
+            case PACKED            -> "Your order has been packed and is ready to be picked up by the courier.";
             case SHIPPED           -> "Great news! Your order has been shipped and is on its way to you.";
             case OUT_FOR_DELIVERY  -> "Your order is out for delivery today. Keep an eye out!";
-            case DELIVERED         -> "Your order has been delivered. Enjoy your purchase!";
+            case DELIVERED         -> "Your order has been delivered. We hope you love your purchase! 🎉";
             case CANCELLED         -> "Your order has been cancelled. If you have questions, please contact support.";
             case RETURN_REQUESTED  -> "We have received your return request and are processing it.";
-            case REFUNDED          -> "Your refund has been issued successfully.";
-            default                -> "The status of your order has been updated.";
+            case RETURNED          -> "Your returned item has been received at our warehouse.";
+            case REFUNDED          -> "Your refund has been issued successfully. It will reflect in 5-7 business days.";
+            default                -> "The status of your order has been updated. Visit the app for details.";
         };
         context.setVariable("statusMessage", statusMessage);
         return templateEngine.process("emails/order-status", context);

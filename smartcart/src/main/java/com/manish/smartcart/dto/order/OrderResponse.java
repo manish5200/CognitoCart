@@ -25,6 +25,9 @@ public class OrderResponse {
     private PaymentStatus paymentStatus;  // ← PENDING / PAID / FAILED / REFUNDED
     private String shippingAddress;
 
+    // Contains tracking data IF the order has been shipped. Will be null otherwise.
+    private ShipmentTrackingDTO shipmentTracking;
+
     // Used by Frontend to initialize Razorpay checkout overlay
     private String razorpayOrderId;
     // List of the items we ordered

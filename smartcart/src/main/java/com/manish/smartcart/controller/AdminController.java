@@ -2,15 +2,18 @@ package com.manish.smartcart.controller;
 
 import com.manish.smartcart.dto.admin.DashboardResponse;
 import com.manish.smartcart.dto.admin.StatusChangeRequest;
+import com.manish.smartcart.dto.order.ShipmentRequest;
 import com.manish.smartcart.mapper.OrderMapper;
 import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.service.AdminService;
+import com.manish.smartcart.service.ShipmentService;
 import com.manish.smartcart.util.AppConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,6 +29,7 @@ import com.manish.smartcart.service.notifications.OrderNotificationService;
 import jakarta.validation.Valid;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/v1/admin")
 @PreAuthorize("hasRole('ADMIN')")
 @Tag(name = "2. Admin Controller", description = "Restricted administrative operations for system management")
@@ -36,14 +40,7 @@ public class AdminController {
     private final OrderMapper orderMapper;
     private final CouponService couponService;
     private final OrderNotificationService orderNotificationService;
-
-    public AdminController(AdminService adminService, OrderMapper orderMapper, CouponService couponService,
-            OrderNotificationService orderNotificationService) {
-        this.adminService = adminService;
-        this.orderMapper = orderMapper;
-        this.couponService = couponService;
-        this.orderNotificationService = orderNotificationService;
-    }
+    private final ShipmentService shipmentService;
 
     @Operation(summary = "Get Dashboard Stats", description = "Retrieves top-selling products and low-stock alerts. Access restricted to users with ROLE_ADMIN.")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved statistics")
@@ -102,5 +99,15 @@ public class AdminController {
     public ResponseEntity<String> toggleCouponStatus(@PathVariable Long couponId) {
         couponService.toggleActive(couponId);
         return ResponseEntity.ok("Coupon status toggled successfully.");
+    }
+
+    // POST /api/v1/admin/{orderId}/shipment
+    // Called once the admin has physically packed and handed the order to the courier
+    @PostMapping("/{orderId}/shipment")
+    @Operation(summary = "Attach shipment tracking to an order and mark it as SHIPPED")
+    public ResponseEntity<?> attachShipment(
+            @PathVariable Long orderId,
+            @Valid @RequestBody ShipmentRequest request) {
+        return ResponseEntity.ok(shipmentService.attachShipmentAndShip(orderId, request));
     }
 }

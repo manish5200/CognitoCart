@@ -14,6 +14,7 @@ import com.manish.smartcart.model.product.Product;
 import com.manish.smartcart.model.user.Users;
 import com.manish.smartcart.repository.OrderRepository;
 import com.manish.smartcart.repository.ProductRepository;
+import com.manish.smartcart.repository.ShipmentRepository;
 import com.manish.smartcart.repository.UserCouponUsageRepository;
 import com.manish.smartcart.repository.UsersRepository;
 import com.manish.smartcart.service.notifications.OrderNotificationService;
@@ -42,6 +43,7 @@ public class OrderService {
     private final UserCouponUsageRepository userCouponUsageRepository;
     private final UsersRepository usersRepository;
     private final RazorpayRefundService razorpayRefundService;
+    private final ShipmentRepository shipmentRepository;
 
     @Transactional
     public OrderResponse placeOrder(Long userId, OrderRequest orderRequest) {
@@ -51,10 +53,10 @@ public class OrderService {
         Users user = usersRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // ─── ADD THIS after you fetch the `user` object from the DB ───────────────
+        // GUARD: Email must be verified before any order can be placed.
         // CONCEPT: Email verification guard — same pattern used by Amazon, Flipkart.
         // If the user hasn't verified their email, we block checkout entirely.
-        // Why here and not in the controller? Because business rules belong in the service layer.
+        // Why here and not in the controller? Because business rules belong in the service layer. 
         if(!user.isEmailVerified()){
             throw new RuntimeException(
                     "Please verify your email before placing an order. " +
@@ -203,9 +205,15 @@ public class OrderService {
     public List<OrderResponse> getOrderHistoryForUser(Long userId) {
         List<Order> orders = orderRepository.findByUserIdAndOrderItems(userId);
 
-        // Map each Entity to a DTO to prevent infinite loops and hide internal DB details
+        // Map each Entity to a DTO and — for shipped orders — inject tracking info.
+        // CONCEPT: mapShipment is null-safe. Orders without a shipment remain unaffected.
         return orders.stream()
-                .map(orderMapper::toOrderResponse)
+                .map(order -> {
+                    OrderResponse response = orderMapper.toOrderResponse(order);
+                    shipmentRepository.findByOrder_Id(order.getId())
+                            .ifPresent(shipment -> orderMapper.mapShipment(response, shipment));
+                    return response;
+                })
                 .collect(Collectors.toList());
     }
 

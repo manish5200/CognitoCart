@@ -1,8 +1,10 @@
 package com.manish.smartcart.mapper;
 
 import com.manish.smartcart.dto.order.OrderResponse;
+import com.manish.smartcart.dto.order.ShipmentTrackingDTO;
 import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.model.order.OrderItem;
+import com.manish.smartcart.model.order.Shipment;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -21,6 +23,7 @@ public class OrderMapper {
         orderResponse.setDiscountAmount(order.getDiscountAmount());
         orderResponse.setStatus(order.getOrderStatus());
         orderResponse.setPaymentStatus(order.getPaymentStatus());
+        orderResponse.setDeliveryFee(order.getDeliveryFee()); // ← was missing — fixes "null" in PDF invoice
 
 
         // --- FIXED: Mapping the Snapshot Address ---
@@ -52,5 +55,19 @@ public class OrderMapper {
                 orderItem.getQuantity(),
                 orderItem.getPriceAtPurchase() // Correctly uses the "Frozen" price
         );
+    }
+
+    // Add this helper method to OrderMapper.java
+    public void mapShipment(OrderResponse response, Shipment shipment) {
+        // CONCEPT: Called after toOrderResponse() to inject tracking data if available.
+        // Nullable by design — most orders won't have a shipment yet.
+        if (shipment != null) {
+            response.setShipmentTracking(ShipmentTrackingDTO.builder()
+                    .courierName(shipment.getCourierName())
+                    .trackingNumber(shipment.getTrackingNumber())
+                    .trackingUrl(shipment.getTrackingUrl())
+                    .estimatedDeliveryDate(shipment.getEstimatedDeliveryDate())
+                    .build());
+        }
     }
 }

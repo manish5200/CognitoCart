@@ -91,4 +91,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             @Param("status") OrderStatus status);
 
     Long user(Users user);
+
+    // CONCEPT: Spring Data generates → SELECT COUNT(*) FROM orders WHERE user_id = ?
+    // Far more efficient than loading all rows just to call .size() on them.
+    long countByUserId(Long userId);
 }
