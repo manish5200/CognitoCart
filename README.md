@@ -84,6 +84,7 @@ Most portfolio backends are CRUD wrappers. CognitoCart is built the way a real s
 |---|---|
 | Welcome | New user registration |
 | Order Confirmation | Payment verified |
+| **PDF Invoice Attachment** | Payment verified (sent with Order Confirmation) |
 | Order Status Update | Admin changes status |
 | **Refund Processed** | Order cancelled + refund issued |
 | Password Reset | `/forgot-password` request |
@@ -335,7 +336,7 @@ Open `application.yml` and fill in your values:
 - Password reset tokens are **one-time use**, expire in 15 min, and live only in Redis — never in DB
 - Per-email rate limiting on `/forgot-password` and `/resend-otp` prevents inbox bombing attacks
 - `passwordChangedAt` timestamp invalidates **all pre-reset sessions** automatically — no DB scan needed
-- `emailVerified` flag acts as a guard on `OrderService` — forcing email ownership confirmation before checkout
+- `emailVerified` boolean physically blocks checkout inside `OrderService` — forcing OTP confirmation before any order can be placed
 - Razorpay refund only fires if `paymentStatus == PAID` — unpaid order cancellations never trigger external API calls
 
 ---
@@ -351,7 +352,7 @@ Open `application.yml` and fill in your values:
 
 **Phase 2 — Fulfillment & Operations** *(in progress)*
 - [x] **Automated Refunds** — Razorpay Refund API fires on order cancellation; premium refund email with `rfnd_XXXXX` transaction ID
-- [ ] **PDF Invoices** — Auto-generate and email a PDF invoice on payment success
+- [x] **PDF Invoices** — iText7 integration auto-generates a premium, Amazon India-style tax invoice (GSTIN, zebra-striping, ₹ formatting) attached to the confirmation email
 - [ ] **Shipment Tracking** — Attach tracking number + courier to shipped orders, expose tracking endpoint
 - [ ] **Cloud Object Storage** — AWS S3 / Cloudinary for product images and user avatars
 

@@ -50,9 +50,17 @@ public class OrderService {
         // This forces email ownership confirmation before any money moves.
         Users user = usersRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        if (!user.isEmailVerified()) {
+
+        // ─── ADD THIS after you fetch the `user` object from the DB ───────────────
+        // CONCEPT: Email verification guard — same pattern used by Amazon, Flipkart.
+        // If the user hasn't verified their email, we block checkout entirely.
+        // Why here and not in the controller? Because business rules belong in the service layer.
+        if(!user.isEmailVerified()){
             throw new RuntimeException(
-                    "Please verify your email before placing an order. Check your inbox for the OTP.");
+                    "Please verify your email before placing an order. " +
+                            "Check your inbox for the OTP, or use /auth/resend-otp to get a new one."
+            );
+
         }
 
         // 1. Get the user's cart

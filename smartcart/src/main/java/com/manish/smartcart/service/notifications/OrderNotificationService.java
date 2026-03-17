@@ -2,21 +2,22 @@ package com.manish.smartcart.service.notifications;
 
 import com.manish.smartcart.dto.order.OrderResponse;
 import com.manish.smartcart.service.EmailService;
+import com.manish.smartcart.service.InvoiceService;
 import com.manish.smartcart.service.email.EmailTemplateBuilder;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class OrderNotificationService {
 
     private final EmailService emailService;
     private final EmailTemplateBuilder emailTemplateBuilder;
+    private final InvoiceService invoiceService;
 
-    public OrderNotificationService(EmailService emailService, EmailTemplateBuilder emailTemplateBuilder) {
-        this.emailService = emailService;
-        this.emailTemplateBuilder = emailTemplateBuilder;
-    }
 
     // 1️⃣ Send Order Confirmation Email
     public void sendEmailNotification(OrderResponse orderResponse) {
@@ -48,6 +49,28 @@ public class OrderNotificationService {
             emailService.sendMail(orderResponse.getEmail(), subject, body, "CognitoCart");
         } catch (Exception e) {
             log.warn("Error in sending refund email {}", e.getMessage());
+        }
+    }
+
+    // 4️⃣ Send Invoice Email — HTML body + PDF attachment
+    // InvoiceService generates the bytes → EmailService attaches it and sends
+    @Async
+    public void sendInvoiceEmail(OrderResponse order, byte[] invoicePdf){
+        try{
+            // Reuse the existing order-confirmation Thymeleaf template as the email body
+            String body     = emailTemplateBuilder.buildOrderConfirmation(order);
+            String subject  = "🧾 Your Invoice — Order #" + order.getOrderId() + " | CognitoCart";
+            String filename = "CognitoCart-Invoice-" + order.getOrderId() + ".pdf";
+
+            // Uses the new sendMailWithAttachment method we just added to EmailService
+            emailService.sendMailWithAttachment(
+                    order.getEmail(), subject, body, "CognitoCart Billing", invoicePdf, filename);
+
+            log.info("Invoice email dispatched for Order #{}", order.getOrderId());
+
+
+        } catch (Exception e) {
+            log.warn("Failed to send invoice email for Order #{}: {}", order.getOrderId(), e.getMessage());
         }
     }
 }

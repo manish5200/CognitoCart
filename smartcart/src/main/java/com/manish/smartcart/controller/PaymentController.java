@@ -7,6 +7,7 @@ import com.manish.smartcart.enums.PaymentStatus;
 import com.manish.smartcart.mapper.OrderMapper;
 import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.repository.OrderRepository;
+import com.manish.smartcart.service.InvoiceService;
 import com.manish.smartcart.service.PaymentService;
 import com.manish.smartcart.service.notifications.OrderNotificationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,6 +36,7 @@ public class PaymentController {
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
     private final OrderNotificationService orderNotificationService;
+    private final InvoiceService  invoiceService;
 
     @Value("${razorpay.webhook-secret}")
     private String webhookSecret;
@@ -77,6 +79,10 @@ public class PaymentController {
         // 5. Fire exactly one Order Confirmation Email now that money is secured
         OrderResponse orderResponse = orderMapper.toOrderResponse(order);
         orderNotificationService.sendEmailNotification(orderResponse);
+
+        // Generate and email PDF invoice now that payment is confirmed
+        byte[] invoicePdf = invoiceService.generateInvoice(orderResponse);
+        orderNotificationService.sendInvoiceEmail(orderResponse, invoicePdf);
 
         return ResponseEntity.ok(Map.of(
                 "message", "Payment verified successfully",
@@ -128,6 +134,10 @@ public class PaymentController {
 
                         OrderResponse orderResponse = orderMapper.toOrderResponse(order);
                         orderNotificationService.sendEmailNotification(orderResponse);
+
+                        // Generate and email PDF invoice now that payment is confirmed
+                        byte[] invoicePdf = invoiceService.generateInvoice(orderResponse);
+                        orderNotificationService.sendInvoiceEmail(orderResponse, invoicePdf);
                     } else {
                         log.info("Webhook ignored: Order {} already PAID by frontend.", razorpayOrderId);
                     }

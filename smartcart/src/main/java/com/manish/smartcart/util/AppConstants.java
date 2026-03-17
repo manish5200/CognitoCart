@@ -1,5 +1,6 @@
 package com.manish.smartcart.util;
 
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 
@@ -37,6 +38,10 @@ public class AppConstants {
     public static final List<String> ALLOWED_EXTENSIONS = Arrays.asList("jpg", "jpeg", "png", "webp");
     public static final List<String> ALLOWED_MIME_TYPES = Arrays.asList("image/jpeg", "image/png", "image/webp");
     public static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+    //--- INVOICE ---
+    // Formatter for displaying the date on the invoice
+    public static final DateTimeFormatter INVOICE_DATE_FORMAT = DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a");
 
     private AppConstants() {
         throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
