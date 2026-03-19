@@ -50,6 +50,7 @@ Most portfolio projects stop at basic CRUD. **CognitoCart** is built to handle t
 
 ### 🚦 Performance & Resilience
 - **Rate Limiting:** Per-IP token-bucket rate limiting via **Bucket4j + Redis** to prevent DDoS and brute-force attacks at the `OncePerRequestFilter` layer.
+- **Cloud Image CDN:** Direct integration with **Cloudinary** for scalable product image hosting. Offloads binary delivery from the API server and prevents data loss in ephemeral deployments (e.g. Heroku/Docker).
 - **Distributed Caching:** Cache-aside pattern via Spring `@Cacheable` using Upstash Redis. Heavily read data (product catalogs, categories) is served in sub-milliseconds with automatic invalidation on writes.
 - **Async Operations:** `@Async` non-blocking email dispatcher using Thymeleaf templates. The API responds instantly while PDF invoices and welcome emails render and send in background threads.
 
@@ -84,6 +85,7 @@ graph TD
 | **Java 21 / Spring Boot 3.4** | Core Framework | LTS stability, ecosystem maturity, and Virtual Threads readiness. |
 | **PostgreSQL 15** | Primary Datastore | Unmatched ACID compliance, JSONB support, and robust locking for financial data. |
 | **Redis (Upstash)** | Cache & Fast State | Serverless, sub-ms latency. Used for JWT blacklisting, rate limiting, and OTPs. |
+| **Cloudinary SDK** | Media Storage | Offloads expensive image storage & delivery. Essential for stateless containerized deployments. |
 | **Flyway** | Schema Migrations | Enforces schema-first design. Prevents "works on my machine" Hibernate auto-DDL disasters. |
 | **iText7 / Thymeleaf** | Document Generation | Programmatic PDF creation and robust HTML templating for professional customer communications. |
 
@@ -150,8 +152,8 @@ With over 50+ endpoints, the API is broken down into clean domain boundaries:
 - [x] Shipment tracking data model + Courier API integration groundwork
 - [x] N+1 Query optimization via native `COUNT(*)` metrics
 
-**Phase 3 — Scale & Media** *(Next Up)*
-- [ ] AWS S3 / Cloudinary integration for scalable product image hosting
+**Phase 3 — Scale & Media** *(In Progress)*
+- [x] Cloudinary integration for scalable product image hosting CDN
 - [ ] Multi-address management for users
 - [ ] Advanced Admin Analytics dashboard with historical trendlines
 

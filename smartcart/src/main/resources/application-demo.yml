@@ -122,3 +122,11 @@ razorpay:
   key-id: ${RAZORPAY_KEY_ID:rzp_test_placeholder}
   key-secret: ${RAZORPAY_KEY_SECRET:placeholder_secret}
   webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:my_secure_webhook_secret_123}
+
+# ─── Cloudinary Configuration ───────────────────────────────────────────────
+# Sign up free at https://cloudinary.com/ → Dashboard shows cloud-name, key, secret
+# Images are stored on Cloudinary's CDN and served via https://res.cloudinary.com/...
+cloudinary:
+  cloud-name: your-cloud-name
+  api-key: your-api-key
+  api-secret: your-api-secret

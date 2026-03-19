@@ -159,6 +159,18 @@
             <type>pom</type>
         </dependency>
 
+        <!-- ──────────────────────────────────────────────────────────────────
+     CLOUDINARY SDK
+     Purpose: Handles image upload/delete to Cloudinary CDN.
+     The SDK wraps all API calls, authentication, and response parsing.
+     ────────────────────────────────────────────────────────────────── -->
+        <dependency>
+            <groupId>com.cloudinary</groupId>
+            <artifactId>cloudinary-http45</artifactId>
+            <version>1.39.0</version>
+        </dependency>
+
+
 
     </dependencies>
 

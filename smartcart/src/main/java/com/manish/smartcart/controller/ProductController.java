@@ -7,6 +7,7 @@ import com.manish.smartcart.dto.product.ProductSearchDTO;
 import com.manish.smartcart.model.product.Product;
 import com.manish.smartcart.repository.ProductRepository;
 import com.manish.smartcart.service.CategoryService;
+import com.manish.smartcart.service.CloudinaryService;
 import com.manish.smartcart.service.FileService;
 import com.manish.smartcart.service.ProductService;
 import com.manish.smartcart.util.AppConstants;
@@ -15,6 +16,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -32,6 +34,7 @@ import java.util.Map;
 import java.util.Objects;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/v1/products")
 @Tag(name = "4. Product Management", description = "Browse, search, and manage products")
 public class ProductController {
@@ -40,17 +43,8 @@ public class ProductController {
         private final CategoryService categoryService;
         private final ProductRepository productRepository;
         private final FileService fileService;
+        private final CloudinaryService cloudinaryService;
 
-        public ProductController(
-                        ProductService productService,
-                        CategoryService categoryService,
-                        ProductRepository productRepository,
-                        FileService fileService) {
-                this.productService = productService;
-                this.categoryService = categoryService;
-                this.productRepository = productRepository;
-                this.fileService = fileService;
-        }
 
         // Get All products
         @GetMapping
@@ -166,26 +160,96 @@ public class ProductController {
                 @PathVariable Long productId,
                 @RequestParam("file") MultipartFile file) throws IOException {
 
-                // 1. Validate the file (Security First!)
+                // STEP 1. Validate the file (Security First!)
                 FileValidator.validateImage(file);
 
-                // 2. Proceed with upload if validation passes
-                String fileName = fileService.uploadImage(file);
+                // STEP 2: Upload to Cloudinary CDN.
+                // CloudinaryService.upload() pushes the bytes to Cloudinary's servers
+                // and returns back a permanent, public https:// URL like:
+                // "https://res.cloudinary.com/your-cloud/image/upload/v123/products/file.jpg"
+                // We pass "products" as the folder so images are organized in Cloudinary dashboard.
+                String imageUrl = cloudinaryService.upload(file, "products");
 
-                // 3. Update Product in Database
+
+
+                // STEP 3: Fetch the product from DB.
+                // We need the current product entity to append the new URL to its image list.
                 Product product = productRepository.findById(productId)
                                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
+
+                // STEP 4: Append the CDN URL to the product's image list.
+                // IMPORTANT: We APPEND — we do NOT overwrite! A product can have many images.
+                // The @ElementCollection on Product.imageUrls stores each URL as a row
+                // in the product_images table. Adding to the list = inserting a new row.
                 // Append new image URL to existing list (do NOT overwrite)
                 List<String> existingUrls = product.getImageUrls() != null
                                 ? new java.util.ArrayList<>(product.getImageUrls())
                                 : new java.util.ArrayList<>();
-                existingUrls.add(fileName);
+
+                existingUrls.add(imageUrl);
                 product.setImageUrls(existingUrls);
+
+                // STEP 5: Persist the updated list.
                 productRepository.save(product);
+
+
+                // STEP 6: Return the CDN URL AND the publicId to the caller.
+                // WHY RETURN publicId: The caller (frontend/Postman) needs the publicId
+                // to later call DELETE /{productId}/images?publicId=... for cleanup.
+                // We extract it here from the URL since the Cloudinary SDK result map
+                // also provides it — no extra API call needed.
+                String publicId = cloudinaryService.extractPublicId(imageUrl);
+
                 return ResponseEntity.ok(Map.of(
-                                "message", "Image verified and uploaded successfully",
-                                "fileName", fileName));
+                        "message", "Image uploaded successfully to Cloudinary CDN",
+                        "imageUrl", imageUrl,   // Full CDN URL — use in <img src="...">
+                        "publicId", publicId    // Store this! Pass it to DELETE endpoint to remove the image
+                ));
         }
+
+        // ─── DELETE A SPECIFIC PRODUCT IMAGE ───────────────────────────────────────
+        // REST: DELETE /api/v1/products/{productId}/images?publicId=products/usb-hub-abc123
+        // The caller passes the Cloudinary publicId (received from the upload response or
+        // the Cloudinary Dashboard). We handle CDN deletion + DB cleanup here.
+        @DeleteMapping("/{productId}/images")
+        @PreAuthorize("hasRole('SELLER')")
+        public ResponseEntity<?> deleteProductImage(
+                @PathVariable Long productId,
+                @RequestParam String publicId) {  // e.g. "products/usb-hub-abc123"
+
+                // STEP 1: Fetch the product entity.
+                Product product = productRepository.findById(productId)
+                        .orElseThrow(() -> new RuntimeException("Product not found"));
+
+                // STEP 2: Find the matching CDN URL in the stored imageUrls list.
+                // WHY: We store full URLs like "https://res.cloudinary.com/.../products/usb-hub.jpg"
+                // The publicId "products/usb-hub-abc123" is a SUBSTRING of that URL.
+                // So we search for the URL that CONTAINS the publicId to identify which one to remove.
+                String matchingUrl = product.getImageUrls().stream()
+                        .filter(url -> url.contains(publicId))
+                        .findFirst()
+                        .orElseThrow(() -> new RuntimeException(
+                                "No image found with publicId '" + publicId + "' for product " + productId));
+
+                // STEP 3: Delete from Cloudinary CDN first (safer order — see why below).
+                // WHY FIRST: If DB delete succeeds but Cloudinary delete fails, we've lost
+                // the URL forever and can never clean it up. Doing CDN first is the safer order.
+                cloudinaryService.delete(publicId);
+
+                // STEP 4: Remove the matching URL from the product's imageUrls list.
+                // @ElementCollection means this list maps to rows in product_images table.
+                // Removing from the list + saving = DELETE FROM product_images WHERE image_url = ?
+                List<String> updatedUrls = new java.util.ArrayList<>(product.getImageUrls());
+                updatedUrls.remove(matchingUrl);
+                product.setImageUrls(updatedUrls);
+                productRepository.save(product);
+
+                return ResponseEntity.ok(Map.of(
+                        "message", "Image deleted successfully",
+                        "deletedPublicId", publicId
+                ));
+        }
+
 
 }
