@@ -129,5 +129,15 @@ public class EmailTemplateBuilder {
         context.setVariable("refundId", refundId); // Inject the refund transaction ID
         return templateEngine.process("emails/refund-processed", context);
     }
+
+    /** Builds the Cart Abandonment Recovery HTML */
+    public String buildCartAbandonmentEmail(String customerName, int itemCount, String checkoutUrl){
+        Context context = new Context();
+        context.setVariable("name", customerName);
+        context.setVariable("itemCount", itemCount);
+        context.setVariable("checkoutUrl", checkoutUrl);
+        return templateEngine.process("emails/cart-abandonment", context);
+    }
+
 }
 
