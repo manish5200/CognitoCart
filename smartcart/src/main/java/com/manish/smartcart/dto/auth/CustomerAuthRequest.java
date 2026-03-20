@@ -36,4 +36,6 @@ public class CustomerAuthRequest {
     // Jackson auto-deserialises the string value to this enum.
     // Invalid values produce a clean 400 validation error automatically.
     private Gender gender;
+
+    private String guestSessionId;
 }
