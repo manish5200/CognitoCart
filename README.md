@@ -159,7 +159,7 @@ With over 50+ endpoints, the API is broken down into clean domain boundaries:
 
 **Phase 3.5 — Enterprise Operations** *(In Progress)*
 - [x] Cart Abandonment Background Job (`@Scheduled` cron)
-- [ ] Anonymous Guest Checkout with Redis session migration
+- [x] Anonymous Guest Checkout with Redis session migration
 - [ ] Dead Letter Queue (DLQ) for webhook failure resilience
 
 **Phase 4 — Intelligence**

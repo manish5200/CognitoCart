@@ -19,4 +19,7 @@ public class LoginRequest {
     @Size(min = 8, message = "Password must be at least 8 characters")
     private String password;
 
+    // Keep your existing email and password fields, just add this:
+    private String guestSessionId;
+
 }

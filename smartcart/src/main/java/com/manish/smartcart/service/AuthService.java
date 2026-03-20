@@ -10,7 +10,6 @@ import com.manish.smartcart.model.user.SellerProfile;
 import com.manish.smartcart.model.user.Users;
 import com.manish.smartcart.repository.UsersRepository;
 import com.manish.smartcart.util.PhoneUtil;
-import com.manish.smartcart.service.EmailService;
 import com.manish.smartcart.service.email.EmailTemplateBuilder;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -35,11 +34,11 @@ public class AuthService {
     private final EmailTemplateBuilder emailTemplateBuilder;
     private final TokenBlacklistService tokenBlacklistService; //for log out
     private final OtpService otpService;
+    private final GuestCartService guestCartService;
 
     // -----------------------------------------
     // LOGIN
     // -----------------------------------------
-
     /**
      * Orchestrates authentication, JWT generation, and stateful session storage.
      * "Heavy Payload" login - used once at session start.
@@ -57,6 +56,12 @@ public class AuthService {
         // 3. Generate Dual Tokens (stateless access + stateful refresh)
         String accessToken = jwtUtil.generateToken(user.getEmail());
         var refreshToken = refreshTokenService.createRefreshToken(user.getId());
+
+        // NEW: Merger Trigger
+        if(loginRequest.getGuestSessionId() != null &&
+        !loginRequest.getGuestSessionId().isBlank()){
+            guestCartService.mergeCart(loginRequest.getGuestSessionId(), user.getId());
+        }
 
         // 4. Identity Hoisting — return everything the UI needs in one trip
         return LoginResponse.builder()
@@ -148,6 +153,11 @@ public class AuthService {
                     "Verify Your CognitoCart Email ✉️", body, "CognitoCart Team");
         } catch (Exception e) {
             log.warn("Failed to send OTP email to {}", user.getEmail(), e);
+        }
+
+        // NEW: Merger Trigger
+        if (request.getGuestSessionId() != null && !request.getGuestSessionId().isBlank()) {
+            guestCartService.mergeC art(request.getGuestSessionId(), user.getId());
         }
 
         return RegisterResponse.builder()

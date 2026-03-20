@@ -39,22 +39,23 @@ public class SecurityConfig {
                                 .csrf(csrf -> csrf.disable())
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                                 .authorizeHttpRequests(request -> request
-                                                .requestMatchers(
-                                                                "/api/v1/auth/**",
-                                                                "/api/v1/payments/verify",
-                                                                "/api/v1/payments/webhook",
-                                                                "/swagger-ui/**",
-                                                                "/swagger-ui.html",
-                                                                "/v3/api-docs/**",
-                                                                "/actuator/**")
-                                                .permitAll()
-                                                .requestMatchers(HttpMethod.GET,
-                                                                "/api/v1/products",
-                                                                "/api/v1/products/search",
-                                                                "/api/v1/categories",
-                                                                "/api/v1/products/{slug}",
-                                                                "/api/v1/products/category/{categoryId}",
-                                                                "/api/v1/reviews/**")
+                                        .requestMatchers(
+                                                "/api/v1/auth/**",
+                                                "/api/v1/guest-cart/**",
+                                                "/api/v1/payments/verify",
+                                                "/api/v1/payments/webhook",
+                                                "/swagger-ui/**",
+                                                "/swagger-ui.html",
+                                                "/v3/api-docs/**",
+                                                "/actuator/**")
+                                        .permitAll()
+                                        .requestMatchers(HttpMethod.GET,
+                                                "/api/v1/products",
+                                                "/api/v1/products/search",
+                                                "/api/v1/categories",
+                                                "/api/v1/products/{slug}",
+                                                "/api/v1/products/category/{categoryId}",
+                                                "/api/v1/reviews/**")
                                                 .permitAll()
                                                 .anyRequest().authenticated())
                                 .sessionManagement(session -> session
