@@ -1,5 +1,6 @@
 package com.manish.smartcart.repository;
 
+import com.manish.smartcart.dto.admin.DailyRevenueDTO;
 import com.manish.smartcart.enums.OrderStatus;
 import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.model.user.Users;
@@ -60,8 +61,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             @Param("status") OrderStatus orderStatus,
             @Param("threshold") LocalDateTime orderDateBefore);
 
-    // ── Seller Dashboard Queries ────────────────────────────────────────────
 
+
+    // ── Seller Dashboard Queries ────────────────────────────────────────────
     /**
      * Revenue from DELIVERED orders that contain at least one of the seller's
      * products
@@ -95,4 +97,15 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     // CONCEPT: Spring Data generates → SELECT COUNT(*) FROM orders WHERE user_id = ?
     // Far more efficient than loading all rows just to call .size() on them.
     long countByUserId(Long userId);
+
+    // ── Seller Dashboard Queries ────────────────────────────────────────────
+    // COMPLEX JPQL: Groups orders by Date and sums the revenue.
+    // Highly optimized DB-level aggregation for rendering charts.
+    @Query("SELECT new com.manish.smartcart.dto.admin.DailyRevenueDTO(CAST(o.orderDate AS date), SUM(o.totalAmount)) " +
+            "FROM Order o " +
+            "WHERE o.paymentStatus = 'PAID' AND o.orderDate >= :startDate " +
+            "GROUP BY CAST(o.orderDate AS date) " +
+            "ORDER BY CAST(o.orderDate AS date) ASC")
+    List<DailyRevenueDTO> getDailyRevenueTrend(@Param("startDate") java.time.LocalDateTime startDate);
+
 }

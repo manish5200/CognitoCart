@@ -1,9 +1,6 @@
 package com.manish.smartcart.service;
 
-import com.manish.smartcart.dto.admin.DashboardResponse;
-import com.manish.smartcart.dto.admin.LowStockResponse;
-import com.manish.smartcart.dto.admin.StatusChangeRequest;
-import com.manish.smartcart.dto.admin.TopProductDTO;
+import com.manish.smartcart.dto.admin.*;
 import com.manish.smartcart.enums.OrderStatus;
 import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.model.product.Product;
@@ -15,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -68,13 +66,17 @@ public class AdminService {
                         );
                 }).toList();
 
+        // ADD THIS: Calculate the trend for the last 7 days
+        LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
+        List<DailyRevenueDTO> dailyTrend = orderRepository.getDailyRevenueTrend(sevenDaysAgo);
         // 4. Return the combined Dashboard
         return new DashboardResponse(
                 revenue != null ? revenue : BigDecimal.ZERO,
                 successful,
                 canceled,
                 lowStockResponse,
-                topSellingProducts
+                topSellingProducts,
+                dailyTrend
         );
     }
 
