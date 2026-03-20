@@ -16,7 +16,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public class SellerProfile extends BaseEntity {
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne
     @MapsId // User ID becomes the Profile ID
     @JoinColumn(name = "user_id", foreignKey = @ForeignKey(name = "fk_seller_profile_user"))
     private Users user;

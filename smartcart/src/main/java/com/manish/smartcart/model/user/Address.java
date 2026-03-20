@@ -47,7 +47,7 @@ public class Address extends BaseEntity{
     @Builder.Default
     private Boolean isDefault = false; // Flag for UI "Default" selection
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private Users user; // Links address to the core User account
 

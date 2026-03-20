@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.SoftDelete;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +24,7 @@ import java.util.List;
 @SuperBuilder
 @Entity
 @Table(name = "categories")
+@SoftDelete(columnName = "is_deleted")
 // Add this at the top of the class to skip any weird unknown JSON fields
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Category extends BaseEntity {
@@ -37,7 +39,7 @@ public class Category extends BaseEntity {
     // Prevents "no session" errors when serializing the parent-child relationship.
     // This allows the JSON to show the category details without crashing on
     // Hibernate's lazy-loading proxies.
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "parent_id")
     @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
     private Category parentCategory; //// The "Parent" node
