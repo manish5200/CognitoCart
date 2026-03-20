@@ -9,6 +9,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.SoftDelete;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -20,6 +21,7 @@ import java.time.LocalDateTime;
 @Setter
 @Getter
 @SuperBuilder
+@SoftDelete(columnName = "is_deleted")
 public class Users extends BaseEntity {
     @Column(nullable = false, unique = true, length = 180)
     @Email

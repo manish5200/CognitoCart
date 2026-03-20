@@ -3,6 +3,7 @@ package com.manish.smartcart.model.base;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.SoftDelete;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -47,4 +48,5 @@ public abstract class BaseEntity implements Serializable {
 
     @Version
     private Long version; // Managed automatically by Hibernate
+
 }

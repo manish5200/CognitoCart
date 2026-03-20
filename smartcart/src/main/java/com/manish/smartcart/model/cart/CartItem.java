@@ -27,7 +27,7 @@ public class CartItem extends BaseEntity{
 
     private Integer quantity;
 
-    @ManyToOne(fetch =  FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "cart_id") //act as foreign key to link with Cart
     private Cart cart;
 
