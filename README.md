@@ -154,7 +154,7 @@ With over 50+ endpoints, the API is broken down into clean domain boundaries:
 
 **Phase 3 — Scale & Media** *(In Progress)*
 - [x] Cloudinary integration for scalable product image hosting CDN
-- [ ] Multi-address management for users
+- [x] Multi-address management for users
 - [ ] Advanced Admin Analytics dashboard with historical trendlines
 
 **Phase 4 — Intelligence**
