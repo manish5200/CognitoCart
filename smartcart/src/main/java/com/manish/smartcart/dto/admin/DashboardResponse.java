@@ -21,4 +21,7 @@ public class DashboardResponse {
     //Products with stock < 5
     private List<LowStockResponse> lowStockAlerts;
     private List<TopProductDTO> topSellingProducts; // New field
+
+    // ADD THIS NEW FIELD: Daily Revenue
+    private List<DailyRevenueDTO> dailyRevenueTrend;
 }
