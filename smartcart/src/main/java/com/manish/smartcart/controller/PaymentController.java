@@ -9,6 +9,7 @@ import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.repository.OrderRepository;
 import com.manish.smartcart.service.InvoiceService;
 import com.manish.smartcart.service.PaymentService;
+import com.manish.smartcart.service.WebhookDlqService;
 import com.manish.smartcart.service.notifications.OrderNotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -37,6 +38,7 @@ public class PaymentController {
     private final OrderMapper orderMapper;
     private final OrderNotificationService orderNotificationService;
     private final InvoiceService  invoiceService;
+    private final WebhookDlqService  webhookDlqService;
 
     @Value("${razorpay.webhook-secret}")
     private String webhookSecret;
@@ -164,8 +166,22 @@ public class PaymentController {
 
         } catch (Exception e) {
             log.error("Error processing Razorpay Webhook", e);
-            // Return 500 to let Razorpay know to retry later
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Webhook processing failed");
+
+            // 🚨 THE DLQ INTERCEPT
+            // Extract event type if possible from the payload to make searching easier
+            String eventType = "UNKNOWN";
+            try{
+                eventType = new JSONObject(payload).optString("event", "UNKNOWN");
+
+            }catch (Exception ignored) {}
+            webhookDlqService.saveFailedWebhook(payload, signature, eventType, e.getMessage());
+
+            // By returning 500, we STILL tell Razorpay to retry in 20 mins.
+            // If Razorpay succeeds on the 2nd try, great! If it fails all 3 times,
+            // we safely have it in our DB forever.
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Webhook processing failed. Saved to DLQ.");
         }
     }
 }

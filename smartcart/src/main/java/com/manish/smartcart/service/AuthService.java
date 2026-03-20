@@ -157,7 +157,7 @@ public class AuthService {
 
         // NEW: Merger Trigger
         if (request.getGuestSessionId() != null && !request.getGuestSessionId().isBlank()) {
-            guestCartService.mergeC art(request.getGuestSessionId(), user.getId());
+            guestCartService.mergeCart(request.getGuestSessionId(), user.getId());
         }
 
         return RegisterResponse.builder()

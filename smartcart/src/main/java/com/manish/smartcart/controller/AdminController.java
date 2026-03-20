@@ -7,6 +7,7 @@ import com.manish.smartcart.mapper.OrderMapper;
 import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.service.AdminService;
 import com.manish.smartcart.service.ShipmentService;
+import com.manish.smartcart.service.WebhookDlqService;
 import com.manish.smartcart.util.AppConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -41,6 +42,7 @@ public class AdminController {
     private final CouponService couponService;
     private final OrderNotificationService orderNotificationService;
     private final ShipmentService shipmentService;
+    private final WebhookDlqService webhookDlqService;
 
     @Operation(summary = "Get Dashboard Stats", description = "Retrieves top-selling products and low-stock alerts. Access restricted to users with ROLE_ADMIN.")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved statistics")
@@ -109,5 +111,18 @@ public class AdminController {
             @PathVariable Long orderId,
             @Valid @RequestBody ShipmentRequest request) {
         return ResponseEntity.ok(shipmentService.attachShipmentAndShip(orderId, request));
+    }
+
+    // --- WEBHOOK DLQ MANAGEMENT ---
+    @GetMapping("/webhooks/dlq/pending")
+    @Operation(summary = "View broken webhooks", description = "Retrieves all failed Razorpay webhooks that need manual admin intervention.")
+    public ResponseEntity<?> getPendingWebhooks() {
+        return ResponseEntity.ok(webhookDlqService.getPendingFailures());
+    }
+    @PostMapping("/webhooks/dlq/{eventId}/replay")
+    @Operation(summary = "Re-Play a failed webhook", description = "Simulates Razorpay re-sending the exact JSON payload to your server to fix a dropped payment.")
+    public ResponseEntity<String> replayFailedWebhook(@PathVariable Long eventId) {
+        String result = webhookDlqService.replayFailedWebhook(eventId);
+        return ResponseEntity.ok(result);
     }
 }
