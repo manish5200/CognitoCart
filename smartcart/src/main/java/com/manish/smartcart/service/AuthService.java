@@ -1,7 +1,7 @@
 package com.manish.smartcart.service;
 
 import com.manish.smartcart.config.CustomUserDetails;
-import com.manish.smartcart.config.jwt.JwtUtil;
+import com.manish.smartcart.util.JwtUtil;
 import com.manish.smartcart.dto.auth.*;
 import com.manish.smartcart.enums.ErrorCode;
 import com.manish.smartcart.enums.Role;

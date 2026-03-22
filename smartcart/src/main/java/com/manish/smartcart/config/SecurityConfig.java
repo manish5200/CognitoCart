@@ -1,6 +1,6 @@
 package com.manish.smartcart.config;
 
-import com.manish.smartcart.config.jwt.JwtFilter;
+import com.manish.smartcart.config.filter.JwtFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
