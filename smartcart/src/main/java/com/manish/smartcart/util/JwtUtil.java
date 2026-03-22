@@ -1,4 +1,4 @@
-package com.manish.smartcart.config.jwt;
+package com.manish.smartcart.util;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

@@ -1,7 +1,8 @@
-package com.manish.smartcart.config.jwt;
+package com.manish.smartcart.config.filter;
 
 import com.manish.smartcart.config.CustomUserDetails;
 import com.manish.smartcart.config.CustomUserDetailsService;
+import com.manish.smartcart.util.JwtUtil;
 import com.manish.smartcart.service.TokenBlacklistService;
 import com.manish.smartcart.util.AppConstants;
 import io.jsonwebtoken.JwtException;
@@ -10,6 +11,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -37,8 +39,8 @@ public class JwtFilter extends OncePerRequestFilter {
     // ─── CHANGE : In doFilterInternal — add blacklist check ──────────────────
     @Override
     protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+                                    @NonNull HttpServletResponse response,
+                                    @NonNull FilterChain filterChain) throws ServletException, IOException {
 
         String header = request.getHeader(AppConstants.AUTH_HEADER); // "Authorization"
         String authToken;

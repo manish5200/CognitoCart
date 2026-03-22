@@ -162,6 +162,10 @@ With over 50+ endpoints, the API is broken down into clean domain boundaries:
 - [x] Anonymous Guest Checkout with Redis session migration
 - [x] Dead Letter Queue (DLQ) for webhook failure resilience
 
+**Phase 3.9 — Architecture Hardening** *(In Progress)*
+- [x] Global `@SoftDelete` architecture for continuous data preservation
+- [x] Redis-backed Payment Idempotency Filter to guarantee zero double-charges
+
 **Phase 4 — Intelligence**
 - [ ] Semantic vector search (pgvector)
 - [ ] Collaborative filtering recommendations
