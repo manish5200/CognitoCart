@@ -1,5 +1,6 @@
 package com.manish.smartcart.service;
 
+import com.manish.smartcart.dto.order.PromotionResult;
 import com.manish.smartcart.enums.DiscountType;
 import com.manish.smartcart.model.cart.Cart;
 import com.manish.smartcart.model.cart.CartItem;
@@ -28,6 +29,7 @@ public class CartService {
     private final ProductRepository productRepository;
     private final UsersRepository usersRepository;
     private final CouponService couponService;
+    private final PromotionEngineService promotionEngine;
 
     // The threshold for Free Delivery
     private static final BigDecimal FREE_DELIVERY_THRESHOLD = new BigDecimal("599.00");
@@ -126,72 +128,70 @@ public class CartService {
     }
 
     /**
-     * THE MATH ENGINE: This runs every time an item is added, removed, or a coupon
-     * is applied.
-     * It recalculates the 5-step pipeline securely.
+     * THE MATH ENGINE: This runs every time an item is added, removed, or a coupon is applied.
+     * It recalculates the 5-step algebraic pipeline securely and logs its decisions using SLF4J.
      */
     private void updateCartTotal(Cart cart) {
 
-        // Step 1: Gross Subtotal
+        log.debug("Initiating Cart Math Engine for User ID: {}", cart.getUser().getId());
+
+        // Step 1: Gross Subtotal (Sum of quantities * price of all items)
         BigDecimal grossSubTotal = cart.getItems().stream()
                 .map(item -> item.getPriceAtAdding().multiply(new BigDecimal(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal discountAmount = BigDecimal.ZERO;
+        boolean forceFreeShipping = false;
+        // Step 2: Complex Promotions evaluation
+        if(cart.getCouponCode() != null ){
+             Coupon coupon = couponService.findActiveCouponByCode(cart.getCouponCode());
 
-        // Step 2: Handle Discount — safe coupon check (no exception thrown inside TX)
-        if (cart.getCouponCode() != null) {
-            // Use a non-throwing lookup so the transaction is never marked rollback-only
-            Coupon coupon = couponService.findActiveCouponByCode(cart.getCouponCode());
+            // Validate not just existence, but also specific user exclusivity constraints
+            if(coupon != null && coupon.isValidForUser(cart.getUser().getId())) {
+                log.info("Valid Coupon [{}] found. Delegating calculation to PromotionEngine...",
+                        coupon.getCode());
+                // --- THE BRAIN IS CALLED HERE ---
+                PromotionResult promoResult =   promotionEngine.evaluate(cart, coupon, grossSubTotal);
+                discountAmount = promoResult.discountAmount();
+                forceFreeShipping = promoResult.isFreeShippingApplies();
 
-            boolean couponStillValid = coupon != null
-                    && coupon.getIsActive()
-                    && (coupon.getMinOrderAmount() == null
-                            || grossSubTotal.compareTo(coupon.getMinOrderAmount()) >= 0);
-
-            if (couponStillValid) {
-                if (coupon.getDiscountType() == DiscountType.FLAT) {
-                    discountAmount = coupon.getDiscountValue();
-                } else {
-                    // Percentage Logic
-                    BigDecimal discountFactor = coupon.getDiscountValue().divide(new BigDecimal("100"), 2,
-                            RoundingMode.HALF_UP);
-                    discountAmount = grossSubTotal.multiply(discountFactor).setScale(2, RoundingMode.HALF_UP);
-
-                    if (coupon.getMaxDiscountAmount() != null
-                            && discountAmount.compareTo(coupon.getMaxDiscountAmount()) > 0) {
-                        discountAmount = coupon.getMaxDiscountAmount();
-                    }
-                }
-                // Make sure discount doesn't exceed the subtotal itself
-                if (discountAmount.compareTo(grossSubTotal) > 0) {
+                // Safety net: No massive discounts creating negative carts
+                if(discountAmount.compareTo(grossSubTotal) > 0){
+                    log.warn("Discount (₹{}) exceeded Gross Total. Capping heavily.", discountAmount);
                     discountAmount = grossSubTotal;
                 }
-            } else {
-                // Coupon is no longer valid (expired, min-order no longer met, etc.) — strip it
-                // silently
-                log.warn("Coupon '{}' stripped from cart (no longer valid for subtotal {})",
-                        cart.getCouponCode(), grossSubTotal);
+
+                // If the Engine returned zero money off (e.g., they didn't meet BOGO criteria), strip the code silently\
+                if(discountAmount.compareTo(BigDecimal.ZERO) == 0 && !forceFreeShipping){
+                    log.warn("Coupon [{}] stripped from cart. Constraints no longer met (Returned ₹0 off).",
+                            cart.getCouponCode());
+
+                }
+            }else{
+                log.warn("Coupon [{}] stripped from cart. Either completely invalid, expired, or locked to another user.",
+                        cart.getCouponCode());
                 cart.setCouponCode(null);
-                discountAmount = BigDecimal.ZERO;
             }
         }
-
-        // Step 3: Net Subtotal
+        // Step 3: Net Subtotal (Total cost of items after discounts are stripped away)
         BigDecimal netSubTotal = grossSubTotal.subtract(discountAmount);
+        log.debug("Net Subtotal mathematically calculated as: ₹{}", netSubTotal);
 
         // Step 4: Delivery Fee Calculation
         BigDecimal deliveryFee = BigDecimal.ZERO;
 
-        // If Net Subtotal is greater than 0 BUT less than 599, charge Delivery Fee!
-        if (netSubTotal.compareTo(BigDecimal.ZERO) > 0 && netSubTotal.compareTo(FREE_DELIVERY_THRESHOLD) < 0) {
+        // Rule: If they got a FREE_SHIPPING coupon, ignore the rule.
+        // Otherwise, if Net Total < 599 -> Automatically charge 50.00 Delivery Fee.
+        if (!forceFreeShipping && netSubTotal.compareTo(BigDecimal.ZERO) > 0 && netSubTotal.compareTo(FREE_DELIVERY_THRESHOLD) < 0) {
+            log.info("Net Subtotal is below FREE_DELIVERY threshold. Assessing flat ₹50.00 delivery fee.");
             deliveryFee = STANDARD_DELIVERY_FEE;
         }
 
-        // Step 5: Final Total
+        // Step 5: Final Checkout Total (Items + Delivery)
         BigDecimal finalTotal = netSubTotal.add(deliveryFee).setScale(2, RoundingMode.HALF_UP);
+        log.info("Math Engine completed. Final Total: ₹{}", finalTotal);
 
-        // Save Snapshot
+        // Persist Snapshot inside the entity state
         cart.setDiscountAmount(discountAmount);
         cart.setDeliveryFee(deliveryFee);
         cart.setTotalAmount(finalTotal);

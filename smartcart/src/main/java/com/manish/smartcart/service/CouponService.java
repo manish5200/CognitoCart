@@ -48,6 +48,15 @@ public class CouponService {
         coupon.setCurrentUses(0);
         coupon.setExpiryDate(request.getExpiryDate());
         coupon.setIsActive(true);
+        
+        // Advanced Fields
+        coupon.setApplicableCategoryId(request.getApplicableCategoryId());
+        coupon.setApplicableProductId(request.getApplicableProductId());
+        coupon.setBuyXQuantity(request.getBuyXQuantity());
+        coupon.setGetYQuantity(request.getGetYQuantity());
+        coupon.setIsAutoApplied(request.getIsAutoApplied() != null ? request.getIsAutoApplied() : false);
+        coupon.setTargetUserId(request.getTargetUserId());
+        coupon.setGlobalBudgetLimit(request.getGlobalBudgetLimit());
 
         Coupon saved = couponRepository.save(coupon);
         return toResponse(saved);
@@ -115,7 +124,15 @@ public class CouponService {
                 coupon.getValidFrom(),
                 coupon.getExpiryDate(),
                 coupon.getIsActive(),
-                coupon.getCreatedAt());
+                coupon.getCreatedAt(),
+                coupon.getApplicableCategoryId(),
+                coupon.getApplicableProductId(),
+                coupon.getBuyXQuantity(),
+                coupon.getGetYQuantity(),
+                coupon.getIsAutoApplied(),
+                coupon.getTargetUserId(),
+                coupon.getGlobalBudgetLimit(),
+                coupon.getCurrentBudgetUsed());
     }
 
     /**
@@ -128,8 +145,8 @@ public class CouponService {
                 .orElseThrow(() -> new RuntimeException("Coupon not found: " + couponCode));
 
         // 1. Check Global Rules (Is it active, expired?)
-        if (!coupon.isValid() || !coupon.getIsActive()) {
-            throw new RuntimeException("Coupon is invalid, inactive, or expired.");
+        if (!coupon.isValidForUser(userId) || !coupon.getIsActive()) {
+            throw new RuntimeException("Coupon is invalid, inactive, expired, or the campaign budget has been exhausted.");
         }
 
         // 2. Check Minimum Order Amount
@@ -164,5 +181,24 @@ public class CouponService {
         }
         return coupon;
     }
+
+
+    @Transactional
+    public void recordCouponSuccess(String code, BigDecimal moneySavedByUser) {
+        Coupon coupon = couponRepository.findByCode(code.toUpperCase().trim())
+                .orElseThrow(() -> new RuntimeException("Coupon missing"));
+
+        // 1. Increment total ticket uses
+        coupon.setCurrentUses(coupon.getCurrentUses() + 1);
+
+        // 2. Add the mathematical transaction to the Global Budget usage!
+        if (coupon.getCurrentBudgetUsed() == null) {
+            coupon.setCurrentBudgetUsed(BigDecimal.ZERO);
+        }
+        coupon.setCurrentBudgetUsed(coupon.getCurrentBudgetUsed().add(moneySavedByUser));
+
+        couponRepository.save(coupon);
+    }
+
 
 }
