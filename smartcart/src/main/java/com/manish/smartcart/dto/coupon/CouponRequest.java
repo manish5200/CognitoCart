@@ -22,8 +22,9 @@ public class CouponRequest {
     private DiscountType discountType;
 
     @NotNull(message = "Discount value is required")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Discount value must be greater than 0")
+    @DecimalMin(value = "0.0", inclusive = true, message = "Discount value must be 0 or greater")
     private BigDecimal discountValue;
+
     // Optional rules
     private BigDecimal minOrderAmount;
     private BigDecimal maxDiscountAmount;
@@ -37,5 +38,14 @@ public class CouponRequest {
 
     @NotNull(message = "Expiry date is required")
     private LocalDateTime expiryDate;
+
+    // Advanced Promotion Fields
+    private Long applicableCategoryId;
+    private Long applicableProductId;
+    private Integer buyXQuantity;
+    private Integer getYQuantity;
+    private Boolean isAutoApplied;
+    private Long targetUserId;
+    private BigDecimal globalBudgetLimit;
 
 }

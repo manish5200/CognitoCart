@@ -7,7 +7,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -47,7 +46,7 @@ public class Coupon extends BaseEntity {
     // CONCEPT: This replaces the old "discountPercentage".
     // If type is PERCENTAGE, this value is 20. If type is FLAT, this value is 500.
     @NotNull(message = "Discount value is required")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Discount value must be greater than 0")
+    @DecimalMin(value = "0.0", inclusive = true, message = "Discount value must be 0 or greater")
     private BigDecimal discountValue;
 
     // CONCEPT: "Cart Total must be above ₹1000 to use this code"
@@ -80,6 +79,51 @@ public class Coupon extends BaseEntity {
     // CONCEPT: "WELCOME100" can only be used on the user's very first purchase.
     @Builder.Default
     private Boolean isFirstOrderOnly = false;
+
+    // --- ADVANCED PROMOTIONS ---
+    @Column(name = "applicable_category_id")
+    private Long applicableCategoryId;
+
+    @Column(name = "applicable_product_id")
+    private Long applicableProductId;
+
+    @Column(name = "buy_x_quantity")
+    private Integer buyXQuantity;
+
+    @Column(name = "get_y_quantity")
+    private Integer getYQuantity;
+
+    @Column(name = "is_auto_applied")
+    @Builder.Default
+    private Boolean isAutoApplied = false;
+
+    @Column(name = "target_user_id")
+    private Long targetUserId;
+
+    // --- GLOBAL BUDGET SAFEGUARDS ---
+    @Column(name = "global_budget_limit")
+    private BigDecimal globalBudgetLimit;
+
+    @Column(name = "current_budget_used")
+    @Builder.Default
+    private BigDecimal currentBudgetUsed = BigDecimal.ZERO;
+
+    // --- UPDATE YOUR isValid() METHOD TO CHECK BUDGET AND TARGET USER ---
+    public boolean isValidForUser(Long requestingUserId) {
+        if (!isValid()) return false;
+
+        // 1. Check if the company ran out of Marketing Budget for this Coupon!
+        if (globalBudgetLimit != null && currentBudgetUsed.compareTo(globalBudgetLimit) >= 0) {
+            return false; // Campaign budget exhausted!
+        }
+
+        // 2. If it was auto-generated for an Abandoned Cart Email, block other users from stealing it
+        if (targetUserId != null && !targetUserId.equals(requestingUserId)) {
+            return false;
+        }
+
+        return true;
+    }
 
     /**
      * Helper to check if the coupon is currently valid overall.

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- Define the log files location -->
+    <property name="LOGS_DIR" value="./logs" />
+    <property name="LOG_FILE" value="cognitocart-application.log" />
+
+    <!-- 1. Console Appender with colors for local development -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight(%-5level) [%15.15t] %cyan(%-40.40logger{39}) : %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 2. Rolling File Appender for Production History -->
+    <appender name="ROLLING_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOGS_DIR}/${LOG_FILE}</file>
+        
+        <!-- Configure continuous rolling every day -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- Daily rollover with date suffix -->
+            <fileNamePattern>${LOGS_DIR}/cognitocart-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <!-- Auto-Delete after 7 days -->
+            <maxHistory>7</maxHistory>
+            <!-- Cap total archive size at 3GB -->
+            <totalSizeCap>3GB</totalSizeCap>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%t] %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 3. Specialized Error Asynchronous Appender -->
+    <!-- This catches critical errors and writes them to a separate file so you don't have to filter through info logs -->
+    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOGS_DIR}/cognitocart-error.log</file>
+        <!-- Only intercept ERROR level messages! -->
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOGS_DIR}/error-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>7</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%t] %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- ROOT LOGGER CONFIGURATION -->
+    <springProfile name="dev | local">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE" />
+            <appender-ref ref="ROLLING_FILE" />
+            <appender-ref ref="ERROR_FILE" />
+        </root>
+        
+        <!-- Specific tuning to see your own logic but silence noisy libraries -->
+        <logger name="com.manish.smartcart" level="DEBUG" />
+        <logger name="org.springframework.security" level="INFO" />
+        <logger name="org.hibernate.SQL" level="INFO" /> <!-- Turn to DEBUG if you ever want to see raw SQL -->
+    </springProfile>
+
+    <springProfile name="prod">
+        <!-- In production, we ONLY log warning and error to save CPU and Disk Space -->
+        <root level="WARN">
+            <appender-ref ref="ROLLING_FILE" />
+            <appender-ref ref="ERROR_FILE" />
+        </root>
+        
+        <!-- Only print absolute business critical INFO level events of our own code -->
+        <logger name="com.manish.smartcart" level="INFO" />
+    </springProfile>
+
+    <!-- Fallback if no profile is active -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+    </root>
+
+</configuration>

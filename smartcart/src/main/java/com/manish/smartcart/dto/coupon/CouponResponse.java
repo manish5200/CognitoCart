@@ -26,4 +26,14 @@ public class CouponResponse {
     private LocalDateTime expiryDate;
     private Boolean isActive;
     private LocalDateTime createdAt;
+    
+    // Advanced Promotion Fields
+    private Long applicableCategoryId;
+    private Long applicableProductId;
+    private Integer buyXQuantity;
+    private Integer getYQuantity;
+    private Boolean isAutoApplied;
+    private Long targetUserId;
+    private BigDecimal globalBudgetLimit;
+    private BigDecimal currentBudgetUsed;
 }

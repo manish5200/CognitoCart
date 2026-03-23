@@ -162,14 +162,15 @@ With over 50+ endpoints, the API is broken down into clean domain boundaries:
 - [x] Anonymous Guest Checkout with Redis session migration
 - [x] Dead Letter Queue (DLQ) for webhook failure resilience
 
-**Phase 3.9 — Architecture Hardening** *(In Progress)*
+**Phase 3.9 — Architecture Hardening** ✅
 - [x] Global `@SoftDelete` architecture for continuous data preservation
 - [x] Redis-backed Payment Idempotency Filter to guarantee zero double-charges
+- [x] Advanced Enterprise Promotions Engine (BOGO, Global Budget Caps, Auto-Apply)
 
-**Phase 4 — Intelligence**
-- [ ] Semantic vector search (pgvector)
-- [ ] Collaborative filtering recommendations
-- [ ] ML-based anomaly detection for fraudulent orders
+**Phase 4 — Artificial Intelligence & Advanced State Management**
+- [ ] **Semantic Vector Search**: Integrate PostgreSQL `pgvector` to allow users to search by *meaning* (e.g., searching "comfortable walking gear" magically returns "running shoes").
+- [ ] **Robust Order State Machine**: Implement `Spring StateMachine` to mathematically lock the Order Lifecycle (`PLACED` ➔ `SHIPPED` ➔ `DELIVERED`), strictly preventing illegal backward state transitions.
+- [ ] **Collaborative Filtering**: Build a dynamic algorithmic recommendation engine ("Customers who bought this item also bought...").
 
 ---
 
