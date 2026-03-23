@@ -27,6 +27,9 @@ public class ProductRequest {
     @Min(value = 0, message = "Price must be positive")
     private BigDecimal price;
 
+    @Min(value = 0, message = "Discount price must be positive")
+    private BigDecimal discountPrice;
+
     private String sku; // Optional: If empty, service generates one
 
     @NotNull(message = "Stock quantity is required")

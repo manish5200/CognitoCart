@@ -139,5 +139,14 @@ public class EmailTemplateBuilder {
         return templateEngine.process("emails/cart-abandonment", context);
     }
 
+    /** Builds the Wishlist FOMO Price Drop HTML */
+    public String buildWishlistSaleEmail(String customerName, java.util.List<com.manish.smartcart.model.product.Product> products, String frontendUrl){
+        Context context = new Context();
+        context.setVariable("name", customerName);
+        context.setVariable("products", products);
+        context.setVariable("frontendUrl", frontendUrl);
+        return templateEngine.process("emails/wishlist-sale", context);
+    }
+
 }
 

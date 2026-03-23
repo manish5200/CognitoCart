@@ -1,189 +1,166 @@
-# 🛒 CognitoCart — Enterprise-Grade E-Commerce API
-
 <div align="center">
 
-[![Java](https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://openjdk.org/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.1-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Redis](https://img.shields.io/badge/Redis-Upstash-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://upstash.com/)
-[![Razorpay](https://img.shields.io/badge/Razorpay-Integration-072654?style=for-the-badge&logo=razorpay&logoColor=white)](https://razorpay.com/)
-[![Security](https://img.shields.io/badge/Security-Stateless%20JWT-black?style=for-the-badge&logo=springsecurity&logoColor=white)](https://spring.io/projects/spring-security)
-[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
+# 🛒 CognitoCart
+**An Enterprise-Grade, Zero-Compromise E-Commerce Architecture**
 
-**A high-performance, production-ready REST API architected to solve real-world e-commerce challenges.**<br>
-Built entirely solo to demonstrate mastery over distributed locks, payment idempotency, secure auth flows, and scalable data design.
+[![Java](https://img.shields.io/badge/Java_21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://openjdk.org/)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot_3-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL_15-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Redis](https://img.shields.io/badge/Redis_Upstash-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://upstash.com/)
+[![Razorpay](https://img.shields.io/badge/Razorpay_API-072654?style=for-the-badge&logo=razorpay&logoColor=white)](https://razorpay.com/)
 
-[📖 Interactive API Docs](#-api-domain-overview) · [🚀 Quick Start](#-getting-started-local-development) · [🏗️ Architecture](#️-architecture--system-design) · [🗺️ Roadmap](#️-roadmap)
+> Most portfolio projects stop at basic CRUD. **CognitoCart** is engineered to handle the brutal edge cases that define real production systems—preventing stock manipulation, surviving double-charge payment failures, and scaling securely.
+
+[Explore the Code](#️-core-architectural-achievements) · [View API Domains](#-api-infrastructure) · [Run it Locally](#-quick-start-guide)
 
 </div>
 
 ---
 
-## 🎯 Why This Project Stands Out
+## 🏗️ The Engineering
 
-Most portfolio projects stop at basic CRUD. **CognitoCart** is built to handle the edge cases that define real production systems. If you're an engineering manager evaluating this repository, here is what this codebase demonstrates:
+CognitoCart rejects simplified logic in favor of robust, distributed architecture. If you're reviewing this repository, here is exactly what the backend handles gracefully:
 
-### 🛡️ 1. Transactional Integrity & Concurrency
-- **The Problem:** Two users check out the last iPhone simultaneously.
-- **The Solution:** Implemented **Pessimistic Locking (`SELECT FOR UPDATE`)** in PostgreSQL. The checkout flow atomically locks the stock rows, recalculates the cart, deducts stock, and creates the order within a single `@Transactional` boundary. Zero oversells, guaranteed.
+### 🛡️ Transactional Integrity & Concurrency
+> **The Threat:** Two users click 'Checkout' on the exact same pair of final sneakers.
+> **The Solution:** Implemented **Pessimistic Locking (`SELECT FOR UPDATE`)** in PostgreSQL. Checkout workflows mathematically lock the physical row, evaluate promotions, map address offsets, deduct stock, and generate the invoice within a single immutable `@Transactional` boundary.
 
-### 💳 2. Payment Idempotency & Webhooks
-- **The Problem:** Frontend payment confirmation drops, or webhooks hit the server twice.
-- **The Solution:** Dual lifecycle tracking (`orderStatus` vs `paymentStatus`). Integrated Razorpay with **HMAC-SHA256 signature verification** and an async webhook listener. The promotional logic is strictly idempotent — safe to retry indefinitely without double-crediting.
+### 💳 Webhook Idempotency & Resiliency
+> **The Threat:** A user's internet drops immediately after paying Razorpay, or Razorpay's API fires the webhook twice simultaneously.
+> **The Solution:** Dual lifecycle modeling (`orderStatus` & `paymentStatus`). Integrated a strictly **idempotent Redis `SETNX` lock layer**. An async Dead Letter Queue (DLQ) listens to HMAC-SHA256 verified webhooks—if a node fails halfway through, the transaction is retried safely without double-charging the customer.
 
-### 🔒 3. Enterprise Authentication (True Logout)
-- **The Problem:** Standard JWTs cannot be revoked before expiration.
-- **The Solution:** Designed a **Redis-backed token blacklist**. Upon logout or password reset, the specific token's `jti` (JWT ID) is written to Redis with a TTL matching its remaining life. Subsequent requests are rejected instantly. Combines the stateless scaling of JWT with the security of server-side state.
-
-### 📦 4. Scalable Data Architecture
-- **The Problem:** E-commerce categories are deeply nested (Electronics → Smartphones → Apple).
-- **The Solution:** Engineered a recursive self-referencing `Category` entity with eager/lazy fetch optimization. Supported by a robust Schema-First approach using **Flyway** for deterministic database migrations.
+### 🔒 Enterprise Identity Architecture (True Logout)
+> **The Threat:** Malicious actors steal standard JWTs, or users click "Logout" but the JWT simply lives on elsewhere.
+> **The Solution:** Built a highly-secure **Redis-backed token blacklist**. The JWT `jti` (Token Identifier) isn't just discarded—it is stamped into Redis with a TTL replicating its remaining lifespan. Any subsequent backend entry is aggressively intercepted and denied.
 
 ---
 
-## ✨ Core Capabilities
+## ✨ System Capabilities
 
-### 🏢 B2B / B2C Workflows
-- **Multi-Tenant Roles:** Independent flows for `ADMIN`, `SELLER`, and `CUSTOMER`.
-- **Seller KYC:** Onboarding approval pipeline with automated email notifications.
-- **Dynamic Pricing:** 5-stage checkout pipeline mapping Gross Subtotal → Coupon Offsets → Net Subtotal → Delivery Fees → Final Charge.
+<details open>
+<summary><b> B2B / B2C Operations</b></summary>
+<br>
 
-### 🚦 Performance & Resilience
-- **Rate Limiting:** Per-IP token-bucket rate limiting via **Bucket4j + Redis** to prevent DDoS and brute-force attacks at the `OncePerRequestFilter` layer.
-- **Cloud Image CDN:** Direct integration with **Cloudinary** for scalable product image hosting. Offloads binary delivery from the API server and prevents data loss in ephemeral deployments (e.g. Heroku/Docker).
-- **Distributed Caching:** Cache-aside pattern via Spring `@Cacheable` using Upstash Redis. Heavily read data (product catalogs, categories) is served in sub-milliseconds with automatic invalidation on writes.
-- **Async Operations:** `@Async` non-blocking email dispatcher using Thymeleaf templates. The API responds instantly while PDF invoices and welcome emails render and send in background threads.
+- **Multi-Tenant Scopes:** Heavily restricted endpoint logic isolating `ADMIN`, `SELLER`, and `CUSTOMER` payloads natively.
+- **Dynamic Pricing Engine:** 5-stage checkout pipeline applying Base Prices → Coupon Validations → targeted BOGO/Category Discounts → Delivery Offsets → Net Payable.
+- **Seller KYC Pipeline:** Approval lifecycle for third-party sellers gated by global Admins.
 
-### 🧾 Professional Fulfillment
-- **Automated Refunds:** Cancellation triggers an immediate, automated Razorpay Refund API call and fires a premium refund receipt via email.
-- **Dynamic PDF Invoices:** On-the-fly generation of iText7 PDF tax invoices featuring GSTIN, zebra-striping, and compliance disclaimers.
-- **Shipment Tracking:** End-to-end status management tied into logistics (BlueDart/Delhivery) with strict state-machine guards enforcing immutable terminal states (`DELIVERED`, `CANCELLED`).
+</details>
+
+<details open>
+<summary><b> Performance & Scale</b></summary>
+<br>
+
+- **Autonomous Background Masterminds:** Engineered a highly aggressive Spring `@Scheduled` thread that scans PostgreSQL every 10 seconds for Flash Sales, dynamically generating native HTML FOMO tables via Thymeleaf, and blasting emails to Users with exact timestamp-locks to prevent spam.
+- **DDoS Mitigation:** Active per-IP Token Bucket rate limiting via **Bucket4j** built directly into the Spring Security configuration.
+- **Cloud Content Delivery:** Direct binary integration with the **Cloudinary CDN** ensures horizontal container scalability with no local disk dependency.
+- **Sub-Millisecond Caching:** `@Cacheable` directives tied to **Upstash Redis**, dramatically offloading repetitive Product and Category DB queries with native eviction triggers.
+
+</details>
+
+<details open>
+<summary><b> Automated Logistics</b></summary>
+<br>
+
+- **Instant Refund Processing:** Cancellation protocols autonomously invoke Razorpay's Reversal API and instantly dispatch `rfnd_XXXXX` receipts to customers.
+- **Dynamic PDF Rendering:** Heavyweight on-the-fly PDF generation using **iText7**, stamping absolute GSTIN variables, zebra-striped tables, and mathematical delivery dates into clean tax documentation.
+- **Logistics Machine:** Strict mathematical state locks forcing shipments to traverse `PLACED` → `SHIPPED` → `OUT_FOR_DELIVERY` without capability of illegal backward traversals.
+
+</details>
 
 ---
 
-## 🏗️ Architecture & System Design
+## 🗺️ System Architecture
 
-### Request Lifecycle
 ```mermaid
 graph TD
-    Client[Client Request] --> RL[Rate Limit Filter Bucket4j]
-    RL --> JWT[JWT Auth Filter]
-    JWT --> Controller[RestController]
-    Controller --> Service[Service Layer @Transactional]
+    Client((Client App)) --> RL[⚙️ Bucket4j Rate Limiter]
+    RL --> JWT[🔒 JWT Auth Filter]
+    JWT --> API[REST Controllers]
     
-    Service -.-> Cache[(Redis Cache)]
-    Service -.-> DB[(PostgreSQL)]
-    Service -.-> Async[Async Worker Thread]
+    API --> SVC[Service Layer]
     
-    Async --> Email[Email Service]
-    Async --> PDF[PDF Generator]
+    SVC <--> Cache[(⚡ Redis Cache)]
+    SVC <--> DB[(🐘 PostgreSQL)]
+    SVC --> ASYNC[🔄 Async Worker Threads]
+    
+    ASYNC -.->|Renders HTML| Email[Mailtrap/Gmail SMTP]
+    ASYNC -.->|Generates Binary| PDF[iText7 Engine]
+    ASYNC -.-> Webhook[Razorpay Webhooks]
 ```
-
-### Stack Justification
-| Technology | Role | "Why This?" |
-|---|---|---|
-| **Java 21 / Spring Boot 3.4** | Core Framework | LTS stability, ecosystem maturity, and Virtual Threads readiness. |
-| **PostgreSQL 15** | Primary Datastore | Unmatched ACID compliance, JSONB support, and robust locking for financial data. |
-| **Redis (Upstash)** | Cache & Fast State | Serverless, sub-ms latency. Used for JWT blacklisting, rate limiting, and OTPs. |
-| **Cloudinary SDK** | Media Storage | Offloads expensive image storage & delivery. Essential for stateless containerized deployments. |
-| **Flyway** | Schema Migrations | Enforces schema-first design. Prevents "works on my machine" Hibernate auto-DDL disasters. |
-| **iText7 / Thymeleaf** | Document Generation | Programmatic PDF creation and robust HTML templating for professional customer communications. |
 
 ---
 
-## 🚀 Getting Started (Local Development)
+## 💻 Tech Stack
+
+- **Framework:** `Java 21` / `Spring Boot 3.4` (LTS stability & Virtual Threads readiness)
+- **Persistance:** `PostgreSQL 15` (ACID rigor, JSONB) & `Flyway` (Determinative Schema Migrations)
+- **State & Scalability:** `Upstash Redis` (JWT Blacklists, OTPs, Idempotency Locks, Sub-ms Read Caching)
+- **Media:** `Cloudinary CDN SDK`
+- **Render Engine:** `iText7` & `Thymeleaf`
+
+---
+
+## 🚀 Quick Start Guide
 
 ### 1. Prerequisites
-- **Java 21** (Eclipse Temurin)
-- **Maven 3.8+**
-- **PostgreSQL 15+**
-- **Upstash Redis** (Free tier)
-- **Razorpay Test Account**
+You will need **Java 21+**, **Maven 3.8+**, and an active instance of **PostgreSQL** & **Redis**.
 
-### 2. Environment Setup
+### 2. Initialization
 ```bash
 git clone https://github.com/manish5200/CognitoCart.git
 cd CognitoCart/smartcart
 
-# Create the database
+# Instantiate PostgreSQL Database
 psql -U postgres -c "CREATE DATABASE cognitocart;"
-
-# Setup config
-cp src/main/resources/application-demo.yml src/main/resources/application.yml
 ```
+*Note: You must construct your own `application.yml` incorporating your private Redis URL, Email SMTP keys, Cloudinary tokens, and Razorpay Sandbox Keys.*
 
-Configure your `application.yml` (gitignored to prevent secret leaks). You must provide your own Postgres credentials, Redis URL, Gmail App Password, and Razorpay keys.
-
-### 3. Launch
+### 3. Server Ignition
 ```bash
 ./mvnw spring-boot:run
 ```
-*On first boot: Flyway runs all 13 migrations, seeds the admin account, and populates the 61-node category tree.*
+> *On server start, Flyway will hijack the boot process, aggressively injecting 18 Database migrations, seeding global Admins, dropping anti-spam columns, and populating 61 category nodes.*
 
-### 4. Verify
-Head to **`http://localhost:8080/swagger-ui.html`** to explore the fully documented OpenAPI 3 specification and interact with the endpoints directly.
-
----
-
-## 📬 API Domain Overview
-
-With over 50+ endpoints, the API is broken down into clean domain boundaries:
-
-| Domain | Access | Purpose |
-|---|---|---|
-| `/auth/**` | Public | Signup, Login, Password Reset, OTP Verification |
-| `/products/**` | Public/Seller | Catalog browsing, search, inventory management |
-| `/orders/**` | Customer | Checkout, order history, invoice retrieval |
-| `/payments/**` | Webhook | Cryptographically verified Razorpay callbacks |
-| `/admin/**` | Admin | Platform revenue, KYC approvals, order dispatch |
+### 4. Direct Testing
+Navigate directly to **`http://localhost:8080/swagger-ui.html`** to browse over 50+ thoroughly structured OpenAPI endpoints.
 
 ---
 
-## 🗺️ Roadmap
+## 🛣️ Engineering Roadmap
 
-**Phase 1 — Auth Hardening** ✅
-- [x] Redis JWT blacklist (True Logout)
-- [x] Pessimistic locking for stock deductions
-- [x] Email OTP verification blocking rogue checkouts
+<details>
+<summary><b>View Completed Phases (1-3.9)</b></summary>
 
-**Phase 2 — Fulfillment & Operations** ✅
-- [x] Automated Razorpay refunds on cancellation
-- [x] Dynamic iText7 PDF Tax Invoices
-- [x] Shipment tracking data model + Courier API integration groundwork
-- [x] N+1 Query optimization via native `COUNT(*)` metrics
+- **Phase 1 — Auth Hardening:** Redis JWT Blacklists, Pessimistic Stock Locks, Secure OTP verifications.
+- **Phase 2 — Fulfillment:** Automated Razorpay refunds, iText7 PDFs, Logistical state machines.
+- **Phase 3 — Scale:** Cloudinary Integration, Robust Data modeling, Advanced JPQL analytics.
+- **Phase 3.5 — Operations:** DLQs for failed webhooks, Guest-to-User cart migrations.
+- **Phase 3.9 — Pre-AI Architecture:** Global `@SoftDelete`, Idempotency Locks, BOGO Targeted Engine, and autonomous Wishlist HTML Schedulers synced with Daily Rotated Appenders.
+</details>
 
-**Phase 3 — Scale & Media** ✅
-- [x] Cloudinary integration for scalable product image hosting CDN
-- [x] Multi-address management for users
-- [x] Advanced Admin Analytics dashboard with historical trendlines
+**Phase 4 — Artificial Intelligence & Advanced Algorithms** 🤖 (In Progress)
+- [ ] **Semantic Vector Search**: Integrate PostgreSQL `pgvector` to allow users to search by numerical mathematical meaning rather than exact strings.
+- [ ] **Collaborative Filtering**: "Customers who bought this item also bought..." mathematical recommendation clusters.
+- [ ] **AI Review Summarization**: Transmit heavy review clusters to an LLM to render instant bullet-point sentiment takeaways.
 
-**Phase 3.5 — Enterprise Operations** ✅
-- [x] Cart Abandonment Background Job (`@Scheduled` cron)
-- [x] Anonymous Guest Checkout with Redis session migration
-- [x] Dead Letter Queue (DLQ) for webhook failure resilience
-
-**Phase 3.9 — Architecture Hardening** ✅
-- [x] Global `@SoftDelete` architecture for continuous data preservation
-- [x] Redis-backed Payment Idempotency Filter to guarantee zero double-charges
-- [x] Advanced Enterprise Promotions Engine (BOGO, Global Budget Caps, Auto-Apply)
-
-**Phase 4 — Artificial Intelligence & Advanced State Management**
-- [ ] **Semantic Vector Search**: Integrate PostgreSQL `pgvector` to allow users to search by *meaning* (e.g., searching "comfortable walking gear" magically returns "running shoes").
-- [ ] **Robust Order State Machine**: Implement `Spring StateMachine` to mathematically lock the Order Lifecycle (`PLACED` ➔ `SHIPPED` ➔ `DELIVERED`), strictly preventing illegal backward state transitions.
-- [ ] **Collaborative Filtering**: Build a dynamic algorithmic recommendation engine ("Customers who bought this item also bought...").
+**Phase 5 — Cloud DevOps & Distributed Systems** ☁️ (Upcoming)
+- [ ] **Distributed Schedulers**: Upgrade native `@Scheduled` jobs with `ShedLock` to coordinate the Wishlist background engine safely across multiple load-balanced AWS EC2 nodes.
+- [ ] **High-Availability**: Full backend containerization via Docker.
+- [ ] **CI/CD Pipeline**: GitHub Actions auto-build, audit, and image deployment.
 
 ---
 
-## 👨‍💻 Author
+## 👨‍💻 Primary Engineer
 
 **Manish Kumar Singh**  
-*Backend Engineer — Java · Spring Boot · Microservices*
+*Backend Systems Engineer | Java · Spring Boot · Microservices*
 
-I build robust software that solves business problems. This project is a testament to my ability to own a complex architecture from database schema to API delivery.
+I engineer resilient software capable of surviving heavy abuse and dynamic scaling bounds. This API stands as a testament to my ability to blueprint and command complex architecture from raw schema definitions directly to network deployment.
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/maniish5200/)
 [![GitHub](https://img.shields.io/badge/GitHub-Follow-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/manish5200)
 
 <div align="center">
-  <sub>⭐ If you appreciate clean code and rigorous engineering standards, consider leaving a star!</sub>
+  <sub>⭐ Leave a star if you appreciate rigorous software design standards!</sub>
 </div>
