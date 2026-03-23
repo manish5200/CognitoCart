@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Price Drop Alert | CognitoCart</title>
+    <style>
+        /* Base Resets */
+        body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f3f4f6; -webkit-font-smoothing: antialiased; }
+        table { border-spacing: 0; width: 100%; }
+        td { padding: 0; }
+        img { border: 0; }
+
+        /* Container */
+        .wrapper { width: 100%; table-layout: fixed; background-color: #f3f4f6; padding-top: 40px; padding-bottom: 40px; }
+        .main { background-color: #ffffff; margin: 0 auto; width: 100%; max-width: 600px; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+
+        /* Hero Section */
+        .hero { background: linear-gradient(135deg, #10b981 0%, #047857 100%); padding: 40px 30px; text-align: center; }
+        .hero-title { color: #ffffff; font-size: 28px; font-weight: 700; margin: 0; letter-spacing: -0.5px; }
+        .hero-subtitle { color: #d1fae5; font-size: 16px; margin-top: 10px; font-weight: 300; }
+
+        /* Body Content */
+        .content { padding: 40px 30px; text-align: center; }
+        .greeting { font-size: 20px; color: #111827; font-weight: 600; margin-bottom: 20px; }
+        .message { font-size: 16px; color: #4b5563; line-height: 1.6; margin-bottom: 30px; }
+
+        /* Real-World FOMO Box */
+        .urgency-box { background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 20px; margin-bottom: 35px; }
+        .urgency-text { color: #047857; font-size: 15px; font-weight: 500; margin: 0; }
+
+        /* Product List */
+        .product-list { margin-bottom: 30px; text-align: left; }
+        .product-item { padding: 15px 0; border-bottom: 1px solid #e5e7eb; }
+        .product-item:last-child { border-bottom: none; }
+        .product-name { font-size: 16px; color: #111827; font-weight: 600; display: block; margin-bottom: 5px; }
+        .price-container { display: flex; align-items: center; gap: 10px; }
+        .old-price { color: #9ca3af; text-decoration: line-through; font-size: 14px; }
+        .new-price { color: #10b981; font-weight: bold; font-size: 18px; }
+
+        /* The CTA Button */
+        .btn-container { text-align: center; margin-bottom: 30px; margin-top: 20px; }
+        .btn { display: inline-block; background-color: #10b981; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600; padding: 16px 36px; border-radius: 8px; text-transform: uppercase; letter-spacing: 1px; transition: background-color 0.3s; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2); }
+
+        /* Footer */
+        .footer { background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb; }
+        .footer-logo { font-size: 18px; font-weight: 800; color: #111827; margin-bottom: 15px; letter-spacing: -0.5px; }
+        .footer-text { color: #6b7280; font-size: 13px; margin: 0 0 10px 0; }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <table class="main">
+        <tr>
+            <td class="hero">
+                <h1 class="hero-title">Massive Price Drop 🔥</h1>
+                <p class="hero-subtitle">Items you love are finally on sale.</p>
+            </td>
+        </tr>
+        <tr>
+            <td class="content">
+                <p class="greeting">Hi <span th:text="${name}">Customer</span>,</p>
+
+                <p class="message">
+                    Great news! The products you have been watching on your Wishlist just had their prices slashed. 
+                    This is your perfect chance to grab them!
+                </p>
+
+                <div class="urgency-box">
+                    <p class="urgency-text">⚡ <strong>Flash Alert:</strong> These discounts are strictly limited and stock is moving fast!</p>
+                </div>
+
+                <!-- Dynamic Iteration over the Java List<Product> -->
+                <div class="product-list">
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr th:each="product : ${products}" class="product-item">
+                            <td style="padding: 15px 0; border-bottom: 1px solid #e5e7eb;">
+                                <span class="product-name" th:text="${product.productName}">Product Name</span>
+                                <div>
+                                    <span class="old-price" th:text="'₹' + ${product.price}">₹100</span>
+                                    <span class="new-price" th:text="'₹' + ${product.discountPrice}">₹80</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="btn-container">
+                    <a th:href="${frontendUrl}" class="btn">Shop The Sale Now</a>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td class="footer">
+                <div class="footer-logo">CognitoCart</div>
+                <p class="footer-text">You received this email because you saved active items to your Wishlist.</p>
+                <p class="footer-text" style="font-size: 12px; margin-top: 15px;">&copy; 2026 CognitoCart Inc. All rights reserved.</p>
+            </td>
+        </tr>
+    </table>
+</div>
+</body>
+</html>

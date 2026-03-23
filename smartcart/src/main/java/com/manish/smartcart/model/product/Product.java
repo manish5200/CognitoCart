@@ -46,6 +46,10 @@ public class Product extends BaseEntity {
     @NotNull
     private BigDecimal price;
 
+    // CONCEPT: When this is NOT NULL and is lower than the 'price', the Scheduler knows a sale is active!
+    // It also allows your frontend UI to show "₹1000" crossed out with a green "₹500" next to it!
+    private BigDecimal discountPrice;
+
     @NotBlank
     @Column(unique = true)
     private String sku; // Stock Keeping Unit

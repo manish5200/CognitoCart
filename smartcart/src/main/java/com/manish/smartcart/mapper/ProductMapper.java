@@ -24,6 +24,7 @@ public class ProductMapper {
         productResponse.setProductName(product.getProductName());
         productResponse.setDescription(product.getDescription());
         productResponse.setPrice(product.getPrice());
+        productResponse.setDiscountPrice(product.getDiscountPrice());
         productResponse.setSku(product.getSku());
         productResponse.setStockQuantity(product.getStockQuantity());
         productResponse.setAverageRating(product.getAverageRating());
@@ -52,6 +53,9 @@ public class ProductMapper {
         Product product = new Product();
         product.setProductName(productRequest.getProductName());
         product.setPrice(productRequest.getPrice());
+        if(productRequest.getDiscountPrice() != null) {
+            product.setDiscountPrice(productRequest.getDiscountPrice());
+        }
         product.setDescription(productRequest.getDescription());
         product.setStockQuantity(productRequest.getStockQuantity());
         // Handle Images and Tags safely

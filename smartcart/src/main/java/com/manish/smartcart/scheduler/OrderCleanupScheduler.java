@@ -13,7 +13,6 @@ import java.util.List;
 
 @Slf4j
 @Component
-
 public class OrderCleanupScheduler{
 
     private final OrderRepository orderRepository;
