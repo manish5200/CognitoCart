@@ -76,6 +76,20 @@ SELECT * FROM products ORDER BY embedding <=> CAST(:query AS vector) LIMIT 10
 Top Match: "Noise Cancelling Headphones" (cosine distance: 0.12 — very close)
 ```
 
+### AI Review Summarization (Sentiment Insights)
+
+Users don't have time to read hundreds of reviews. CognitoCart uses the **HuggingFace BART (Large CNN)** model to aggregate raw review clusters into a single, high-impact sentiment summary. 
+
+- **Intelligence:** Automatically identifies recurring pros/cons (e.g., "Loved the bass, but the ear-tips are stiff").
+- **Performance:** Summaries are pre-computed by a Spring `@Scheduled` background worker and saved to a dedicated `ProductInsights` table for instant retrieval.
+- **Scale:** Uses a `@Transactional` + `JOIN FETCH` optimized repository query to process the entire catalog in a single SQL operation, avoiding N+1 bottlenecks.
+
+**How to Test:**
+```bash
+# Check the 'aiSummary' field in any product response payload
+GET /api/v1/products/{slug}
+```
+
 ---
 
 ## ✨ System Capabilities
@@ -215,14 +229,16 @@ curl "http://localhost:8080/api/v1/products/search/semantic?q=wireless earphones
 - **Phase 3 — Scale:** Cloudinary CDN · Advanced JPQL analytics · Seller dashboards
 - **Phase 3.5 — Operations:** DLQs for failed webhooks · Guest-to-User cart migrations
 - **Phase 3.9 — Pre-AI:** Global `@SoftDelete` · Idempotency Locks · BOGO Engine · Wishlist HTML Schedulers
-- **Phase 4.1 — Semantic Search ✅:** pgvector + HuggingFace AI embeddings · Cosine similarity search · Zero-keyword matching
+- **Phase 4.1 — Semantic Search ✅:** pgvector + HuggingFace AI embeddings · Cosine similarity search
+- **Phase 4.3 — AI Review Summarization ✅:** HuggingFace BART Large CNN · Background `@Scheduled` workers · `ProductInsights` engine
 
 </details>
 
 **Phase 4 (In Progress) — Artificial Intelligence 🤖**
-- [x] **Semantic Vector Search** — pgvector + HuggingFace `all-MiniLM-L6-v2` · Products indexed as float[384] vectors · Cosine similarity endpoint
+- [x] **Semantic Vector Search** — pgvector + HuggingFace · Cosine similarity endpoint
+- [x] **AI Review Summarization** — HuggingFace BART Large CNN · Automated sentiment insights
 - [ ] **Collaborative Filtering** — "Customers who bought this also bought..." co-purchase frequency matrix
-- [ ] **AI Review Summarization** — LLM-generated bullet-point sentiment summaries from raw review clusters
+- [ ] **Visual Reverse Image Search** — CLIP Embeddings + pgvector image similarity
 
 **Phase 5 — Cloud & DevOps ☁️**
 - [ ] **Distributed Schedulers:** `ShedLock` to safely coordinate background jobs across multiple EC2 nodes

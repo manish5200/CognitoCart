@@ -44,7 +44,7 @@ public class EmbeddingService {
     // "Accept any Content-Type in the response — don't reject based on headers."
     private final RestTemplate restTemplate = buildPermissiveRestTemplate();
 
-    private static RestTemplate buildPermissiveRestTemplate() {
+    static RestTemplate buildPermissiveRestTemplate() {
         org.springframework.http.converter.json.MappingJackson2HttpMessageConverter converter =
                 new org.springframework.http.converter.json.MappingJackson2HttpMessageConverter();
         // Accept ALL media types — bypasses the strict comma-separated MIME type validation

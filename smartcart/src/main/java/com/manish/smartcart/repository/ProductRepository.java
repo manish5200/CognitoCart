@@ -132,4 +132,19 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
                 nativeQuery = true
         )
         void updateEmbedding(@Param("productId") Long productId, @Param("vectorString") String vectorString);
+
+        /**
+         * Fetches ALL products with their reviews in a SINGLE SQL JOIN query.
+         *
+         * CONCEPT: JOIN FETCH tells Hibernate: "load the reviews collection eagerly
+         * as part of THIS query" — no second SQL per product (eliminates N+1).
+         *
+         * DISTINCT is required because a JOIN on a one-to-many relationship produces
+         * duplicate Product rows in the result set (one per review). DISTINCT
+         * de-duplicates them at the Hibernate level before returning to Java.
+         *
+         * Used exclusively by the AI Review Summarization scheduler.
+         */
+        @Query("SELECT DISTINCT p FROM Product p LEFT JOIN FETCH p.reviews")
+        List<Product> findAllWithReviews();
 }

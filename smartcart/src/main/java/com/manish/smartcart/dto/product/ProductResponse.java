@@ -3,6 +3,7 @@ package com.manish.smartcart.dto.product;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
@@ -26,5 +27,6 @@ public class ProductResponse {
     private Double averageRating;
     private Integer totalReviews;
     private List<String> imageUrls;
-
+    private String aiSummary;           // from ProductInsights
+    private LocalDateTime insightLastGenerated; // when was this AI summary computed
 }

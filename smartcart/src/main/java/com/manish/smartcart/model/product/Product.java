@@ -98,6 +98,10 @@ public class Product extends BaseEntity {
     @Builder.Default
     private List<Review> reviews = new ArrayList<>();
 
+    @JsonIgnore
+    @OneToOne(mappedBy = "product", cascade = CascadeType.ALL)
+    private ProductInsights insights;
+
     // Hibernate will automatically create a secondary table called product_images.
     // It will have two columns: product_id and image_url.
     @ElementCollection(fetch = FetchType.EAGER)
