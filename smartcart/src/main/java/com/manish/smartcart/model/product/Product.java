@@ -17,6 +17,10 @@ import jakarta.persistence.CascadeType;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.*;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashSet;

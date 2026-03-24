@@ -76,4 +76,60 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
                         "GROUP BY i.product " +
                         "ORDER BY totalSold DESC")
         List<Object[]> findTopProductsBySellerId(@Param("sellerId") Long sellerId, Pageable pageable);
+
+        /**
+         * Semantic Vector Search using PostgreSQL's cosine distance operator (<=>).
+         *
+         * CONCEPT: This is NOT a normal JPA query. It is a @NativeQuery because
+         * pgvector's <=> operator is PostgreSQL-specific syntax that JPQL doesn't know.
+         *
+         * How it works:
+         *   embedding <=> CAST(:queryVector AS vector)
+         *   This calculates the COSINE DISTANCE between each stored product vector
+         *   and our search query vector. Think of it like measuring the "angle"
+         *   between two arrows in 1536-dimensional space.
+         *
+         * Distance 0.0 = identical meaning (perfect match)
+         * Distance 1.0 = completely unrelated
+         * Distance 2.0 = exact opposites
+         *
+         * ORDER BY distance ASC = most similar products come first.
+         * WHERE embedding IS NOT NULL = skip products not yet indexed.
+         *
+         * @param queryVector  The search query converted to float[] by EmbeddingService
+         * @param limit        How many results to return (e.g., top 10)
+         */
+        @Query(
+                value = "SELECT * FROM products " +
+                        "WHERE embedding IS NOT NULL AND is_deleted = false " +
+                        "ORDER BY embedding <=> CAST(:queryVector AS vector) " +
+                        "LIMIT :limit",
+                nativeQuery = true
+        )
+        List<Product> findBySimilarity(
+                @Param("queryVector") String queryVector,
+                @Param("limit") int limit
+        );
+
+        /**
+         * Updates the embedding column for a product using a native SQL CAST.
+         *
+         * CONCEPT: We CANNOT set a vector column via normal JPA save() because Hibernate
+         * binds String parameters as VARCHAR, and PostgreSQL rejects VARCHAR → vector.
+         * The only reliable way is a native UPDATE with an explicit CAST(:value AS vector),
+         * which tells PostgreSQL: "trust me, this string IS a valid vector literal".
+         *
+         * @Modifying means this query mutates data (not a SELECT).
+         * @Transactional is required for any @Modifying query.
+         *
+         * The vectorString format must be: "[0.021,-0.455,0.891,...]"
+         * Our VectorAttributeConverter.convertToDatabaseColumn(float[]) produces exactly that.
+         */
+        @jakarta.transaction.Transactional
+        @org.springframework.data.jpa.repository.Modifying
+        @Query(
+                value = "UPDATE products SET embedding = CAST(:vectorString AS vector) WHERE id = :productId",
+                nativeQuery = true
+        )
+        void updateEmbedding(@Param("productId") Long productId, @Param("vectorString") String vectorString);
 }

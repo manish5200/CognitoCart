@@ -1,17 +1,19 @@
 <div align="center">
 
 # 🛒 CognitoCart
-**An Enterprise-Grade, Zero-Compromise E-Commerce Architecture**
+### **Enterprise-Grade E-Commerce API · Now with AI-Powered Semantic Search**
 
 [![Java](https://img.shields.io/badge/Java_21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://openjdk.org/)
-[![Spring Boot](https://img.shields.io/badge/Spring_Boot_3-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL_15-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot_3.4-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL_pgvector-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Redis](https://img.shields.io/badge/Redis_Upstash-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://upstash.com/)
+[![HuggingFace](https://img.shields.io/badge/HuggingFace_AI-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black)](https://huggingface.co/)
 [![Razorpay](https://img.shields.io/badge/Razorpay_API-072654?style=for-the-badge&logo=razorpay&logoColor=white)](https://razorpay.com/)
 
-> Most portfolio projects stop at basic CRUD. **CognitoCart** is engineered to handle the brutal edge cases that define real production systems—preventing stock manipulation, surviving double-charge payment failures, and scaling securely.
+> Most portfolio projects stop at basic CRUD.
+> **CognitoCart** tackles the brutal edge cases that define real production systems — preventing stock manipulation under concurrency, surviving double-charge payment failures, scaling with Redis, and now, finding products by **mathematical meaning** using AI embeddings and pgvector.
 
-[Explore the Code](#️-core-architectural-achievements) · [View API Domains](#-api-infrastructure) · [Run it Locally](#-quick-start-guide)
+[Core Architecture](#️-the-engineering) · [AI Features](#-phase-4--ai-features) · [API Domains](#-api-infrastructure) · [Quick Start](#-quick-start-guide)
 
 </div>
 
@@ -19,52 +21,95 @@
 
 ## 🏗️ The Engineering
 
-CognitoCart rejects simplified logic in favor of robust, distributed architecture. If you're reviewing this repository, here is exactly what the backend handles gracefully:
+CognitoCart rejects simplified logic in favor of robust, distributed architecture. Here is exactly what it handles gracefully:
 
 ### 🛡️ Transactional Integrity & Concurrency
-> **The Threat:** Two users click 'Checkout' on the exact same pair of final sneakers.
-> **The Solution:** Implemented **Pessimistic Locking (`SELECT FOR UPDATE`)** in PostgreSQL. Checkout workflows mathematically lock the physical row, evaluate promotions, map address offsets, deduct stock, and generate the invoice within a single immutable `@Transactional` boundary.
+> **The Threat:** Two users click 'Checkout' on the last unit simultaneously.
+> **The Solution:** **Pessimistic Locking (`SELECT FOR UPDATE`)** in PostgreSQL — the checkout flow mathematically locks the row, evaluates promotions, deducts stock, and generates the invoice within a single immutable `@Transactional` boundary.
 
 ### 💳 Webhook Idempotency & Resiliency
-> **The Threat:** A user's internet drops immediately after paying Razorpay, or Razorpay's API fires the webhook twice simultaneously.
-> **The Solution:** Dual lifecycle modeling (`orderStatus` & `paymentStatus`). Integrated a strictly **idempotent Redis `SETNX` lock layer**. An async Dead Letter Queue (DLQ) listens to HMAC-SHA256 verified webhooks—if a node fails halfway through, the transaction is retried safely without double-charging the customer.
+> **The Threat:** A user's internet drops after paying Razorpay, or the webhook fires twice simultaneously.
+> **The Solution:** Dual lifecycle modeling (`orderStatus` & `paymentStatus`) + a strictly **idempotent Redis `SETNX` lock layer**. An async DLQ processes HMAC-SHA256 verified webhooks — if a node fails mid-transaction, it retries safely without double-charging.
 
 ### 🔒 Enterprise Identity Architecture (True Logout)
-> **The Threat:** Malicious actors steal standard JWTs, or users click "Logout" but the JWT simply lives on elsewhere.
-> **The Solution:** Built a highly-secure **Redis-backed token blacklist**. The JWT `jti` (Token Identifier) isn't just discarded—it is stamped into Redis with a TTL replicating its remaining lifespan. Any subsequent backend entry is aggressively intercepted and denied.
+> **The Threat:** Stolen JWTs or "Logout" that doesn't actually invalidate tokens.
+> **The Solution:** **Redis-backed JWT blacklist** — every token's `jti` identifier is stamped into Redis with a TTL matching its remaining lifespan. Every backend entry-point intercepts and denies blacklisted tokens aggressively.
+
+### 🤖 AI Semantic Search (Phase 4 — Live)
+> **The Threat:** Traditional `LIKE '%keyword%'` search fails when users think in sentences, not keywords.
+> **The Solution:** Product descriptions are converted to **384-dimensional mathematical vectors** via HuggingFace AI and stored in PostgreSQL using the `pgvector` extension. Search queries undergo the same transformation, and **cosine similarity** finds products by meaning — not by character matching.
+
+---
+
+## 🤖 Phase 4 — AI Features
+
+### Semantic Vector Search
+
+CognitoCart goes beyond keyword matching. When a product is created, its name + description + tags are converted into a 384-number mathematical "meaning vector" by a HuggingFace AI model. When a user searches, their query is transformed the same way, and PostgreSQL finds the closest vectors using cosine similarity.
+
+**Real Proof — Zero Keyword Overlap:**
+
+| User Searches For | Top Result Returned | Why It Works |
+|---|---|---|
+| `"earphones for blocking noise while studying"` | Noise Cancelling Headphones | AI maps "earphones" → "headphones", "blocking noise" → "noise cancellation" |
+| `"something to brew hot drinks at the office"` | Espresso Coffee Machine | AI maps "brew hot drinks" → "espresso/coffee", "office" → "home-office" |
+| `"comfortable footwear for morning fitness routine"` | Running Shoes | AI maps "footwear" → "shoes", "fitness routine" → "marathon/jogging" |
+
+**None of the search words appear in the product names or descriptions. The AI understands meaning.**
+
+**How to Test:**
+```bash
+# No authentication required — open to all users
+GET /api/v1/products/search/semantic?q=comfortable footwear for morning fitness routine&limit=5
+
+# Response: Returns Running Shoes ranked #1, even though "footwear" ≠ "shoes" in the product name
+```
+
+**How It Works Internally:**
+```
+User Query: "earphones for blocking noise while studying"
+     ↓ HuggingFace all-MiniLM-L6-v2
+Float Vector: [0.021, -0.455, 0.891, ... 384 numbers]
+     ↓ PostgreSQL pgvector
+SELECT * FROM products ORDER BY embedding <=> CAST(:query AS vector) LIMIT 10
+     ↓
+Top Match: "Noise Cancelling Headphones" (cosine distance: 0.12 — very close)
+```
 
 ---
 
 ## ✨ System Capabilities
 
 <details open>
-<summary><b> B2B / B2C Operations</b></summary>
+<summary><b>B2B / B2C Operations</b></summary>
 <br>
 
-- **Multi-Tenant Scopes:** Heavily restricted endpoint logic isolating `ADMIN`, `SELLER`, and `CUSTOMER` payloads natively.
-- **Dynamic Pricing Engine:** 5-stage checkout pipeline applying Base Prices → Coupon Validations → targeted BOGO/Category Discounts → Delivery Offsets → Net Payable.
-- **Seller KYC Pipeline:** Approval lifecycle for third-party sellers gated by global Admins.
+- **Multi-Tenant Scopes:** `ADMIN`, `SELLER`, and `CUSTOMER` endpoint isolation with role-restricted payloads.
+- **Dynamic Pricing Engine:** 5-stage checkout pipeline — Base Price → Coupon Validation → BOGO/Category Discounts → Delivery Offset → Net Payable.
+- **Seller KYC Pipeline:** Approval lifecycle for third-party sellers, gated by global Admins.
+- **Wishlist Intelligence:** Autonomous scheduler cross-referencing wishlists against active sales, sending personalised HTML digest emails.
 
 </details>
 
 <details open>
-<summary><b> Performance & Scale</b></summary>
+<summary><b>Performance & Scale</b></summary>
 <br>
 
-- **Autonomous Background Masterminds:** Engineered a highly aggressive Spring `@Scheduled` thread that scans PostgreSQL every 10 seconds for Flash Sales, dynamically generating native HTML FOMO tables via Thymeleaf, and blasting emails to Users with exact timestamp-locks to prevent spam.
-- **DDoS Mitigation:** Active per-IP Token Bucket rate limiting via **Bucket4j** built directly into the Spring Security configuration.
-- **Cloud Content Delivery:** Direct binary integration with the **Cloudinary CDN** ensures horizontal container scalability with no local disk dependency.
-- **Sub-Millisecond Caching:** `@Cacheable` directives tied to **Upstash Redis**, dramatically offloading repetitive Product and Category DB queries with native eviction triggers.
+- **AI Semantic Search:** pgvector IVFFlat index for sub-millisecond Approximate Nearest Neighbor cosine similarity across the entire product catalog.
+- **Sub-Millisecond Caching:** `@Cacheable` directives tied to **Upstash Redis**, dramatically offloading product and category DB reads with native eviction triggers.
+- **DDoS Mitigation:** Per-IP Token Bucket rate limiting via **Bucket4j** built into the Spring Security filter chain.
+- **Cloud Content Delivery:** Direct binary integration with the **Cloudinary CDN** — zero local disk dependency.
+- **Background Processing:** Spring `@Scheduled` threads scan for Flash Sales every 10 seconds, generating native HTML FOMO emails via Thymeleaf with timestamp-locks to prevent spam.
 
 </details>
 
 <details open>
-<summary><b> Automated Logistics</b></summary>
+<summary><b>Automated Logistics</b></summary>
 <br>
 
-- **Instant Refund Processing:** Cancellation protocols autonomously invoke Razorpay's Reversal API and instantly dispatch `rfnd_XXXXX` receipts to customers.
-- **Dynamic PDF Rendering:** Heavyweight on-the-fly PDF generation using **iText7**, stamping absolute GSTIN variables, zebra-striped tables, and mathematical delivery dates into clean tax documentation.
-- **Logistics Machine:** Strict mathematical state locks forcing shipments to traverse `PLACED` → `SHIPPED` → `OUT_FOR_DELIVERY` without capability of illegal backward traversals.
+- **Instant Refund Processing:** Cancellation protocols invoke Razorpay's Reversal API and dispatch `rfnd_XXXXX` receipts automatically.
+- **Dynamic PDF Invoices:** On-the-fly PDF generation via **iText7** — GSTIN variables, zebra-striped tables, mathematical delivery dates.
+- **State Machine Enforcement:** Shipments are forced through `PLACED → SHIPPED → OUT_FOR_DELIVERY` — illegal backward state transitions are rejected at the API layer.
 
 </details>
 
@@ -77,90 +122,142 @@ graph TD
     Client((Client App)) --> RL[⚙️ Bucket4j Rate Limiter]
     RL --> JWT[🔒 JWT Auth Filter]
     JWT --> API[REST Controllers]
-    
+
     API --> SVC[Service Layer]
-    
-    SVC <--> Cache[(⚡ Redis Cache)]
-    SVC <--> DB[(🐘 PostgreSQL)]
+
+    SVC <--> Cache[(⚡ Upstash Redis)]
+    SVC <--> DB[(🐘 PostgreSQL + pgvector)]
+    SVC --> AI[🤖 HuggingFace Embeddings API]
     SVC --> ASYNC[🔄 Async Worker Threads]
-    
-    ASYNC -.->|Renders HTML| Email[Mailtrap/Gmail SMTP]
-    ASYNC -.->|Generates Binary| PDF[iText7 Engine]
-    ASYNC -.-> Webhook[Razorpay Webhooks]
+
+    AI -->|float384 vector| DB
+    DB -->|Cosine Similarity| SEARCH[Semantic Search Results]
+
+    ASYNC -.->|HTML Email| Email[Gmail SMTP]
+    ASYNC -.->|PDF Invoice| PDF[iText7 Engine]
+    ASYNC -.-> Webhook[Razorpay Webhooks DLQ]
 ```
 
 ---
 
 ## 💻 Tech Stack
 
-- **Framework:** `Java 21` / `Spring Boot 3.4` (LTS stability & Virtual Threads readiness)
-- **Persistance:** `PostgreSQL 15` (ACID rigor, JSONB) & `Flyway` (Determinative Schema Migrations)
-- **State & Scalability:** `Upstash Redis` (JWT Blacklists, OTPs, Idempotency Locks, Sub-ms Read Caching)
-- **Media:** `Cloudinary CDN SDK`
-- **Render Engine:** `iText7` & `Thymeleaf`
+| Layer | Technology | Purpose |
+|---|---|---|
+| **Runtime** | Java 21 / Spring Boot 3.4 | LTS stability, Virtual Threads readiness |
+| **Database** | PostgreSQL 18 + pgvector | ACID transactions + vector similarity search |
+| **AI Embeddings** | HuggingFace `all-MiniLM-L6-v2` | Free 384-dim semantic text embeddings |
+| **Migrations** | Flyway | Deterministic, version-controlled schema evolution |
+| **Cache & State** | Upstash Redis | JWT blacklists, OTPs, idempotency locks, read caching |
+| **Payments** | Razorpay SDK | Orders, webhooks, instant refunds |
+| **Media CDN** | Cloudinary | Scalable image storage & delivery |
+| **Render Engine** | iText7 + Thymeleaf | PDF invoices + HTML email templates |
+| **Security** | Spring Security + Bucket4j | JWT auth + per-IP rate limiting |
+| **API Docs** | SpringDoc OpenAPI (Swagger) | Interactive documentation |
 
 ---
 
 ## 🚀 Quick Start Guide
 
 ### 1. Prerequisites
-You will need **Java 21+**, **Maven 3.8+**, and an active instance of **PostgreSQL** & **Redis**.
+- **Java 21+**, **Maven 3.8+**
+- **PostgreSQL** (with `pgvector` extension installed — see below)
+- **Redis** (Upstash free tier works)
+- **HuggingFace** free account for semantic search
 
-### 2. Initialization
+### 2. Install pgvector (Required for AI Search)
+```sql
+-- Run as PostgreSQL superuser (postgres) in pgAdmin:
+CREATE EXTENSION IF NOT EXISTS vector;
+```
+> Download the pgvector binary for your OS from [github.com/pgvector/pgvector/releases](https://github.com/pgvector/pgvector/releases)
+
+### 3. Clone & Configure
 ```bash
 git clone https://github.com/manish5200/CognitoCart.git
 cd CognitoCart/smartcart
 
-# Instantiate PostgreSQL Database
+# Create the database
 psql -U postgres -c "CREATE DATABASE cognitocart;"
 ```
-*Note: You must construct your own `application.yml` incorporating your private Redis URL, Email SMTP keys, Cloudinary tokens, and Razorpay Sandbox Keys.*
 
-### 3. Server Ignition
+Copy `application-demo.yml` → `application.yml` and fill in your credentials:
+- PostgreSQL connection details
+- Redis (Upstash) URL
+- Gmail SMTP App Password
+- Razorpay sandbox keys
+- Cloudinary API credentials
+- **HuggingFace API token** (free at [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens))
+
+### 4. Run
 ```bash
 ./mvnw spring-boot:run
 ```
-> *On server start, Flyway will hijack the boot process, aggressively injecting 18 Database migrations, seeding global Admins, dropping anti-spam columns, and populating 61 category nodes.*
+> On startup, Flyway runs **20 migrations** — enabling pgvector, seeding the Admin account, building category tree (61 nodes), and initialising all tables.
 
-### 4. Direct Testing
-Navigate directly to **`http://localhost:8080/swagger-ui.html`** to browse over 50+ thoroughly structured OpenAPI endpoints.
+### 5. Explore
+Navigate to **`http://localhost:8080/swagger-ui.html`** — 50+ OpenAPI endpoints across 10 functional domains.
+
+**Quick test the AI search (no login required):**
+```bash
+curl "http://localhost:8080/api/v1/products/search/semantic?q=wireless earphones for travel&limit=5"
+```
 
 ---
 
 ## 🛣️ Engineering Roadmap
 
 <details>
-<summary><b>View Completed Phases (1-3.9)</b></summary>
+<summary><b>✅ Completed Phases (1 → 4.1)</b></summary>
 
-- **Phase 1 — Auth Hardening:** Redis JWT Blacklists, Pessimistic Stock Locks, Secure OTP verifications.
-- **Phase 2 — Fulfillment:** Automated Razorpay refunds, iText7 PDFs, Logistical state machines.
-- **Phase 3 — Scale:** Cloudinary Integration, Robust Data modeling, Advanced JPQL analytics.
-- **Phase 3.5 — Operations:** DLQs for failed webhooks, Guest-to-User cart migrations.
-- **Phase 3.9 — Pre-AI Architecture:** Global `@SoftDelete`, Idempotency Locks, BOGO Targeted Engine, and autonomous Wishlist HTML Schedulers synced with Daily Rotated Appenders.
+- **Phase 1 — Auth Hardening:** Redis JWT Blacklists · Pessimistic Stock Locks · Secure OTP verification
+- **Phase 2 — Fulfillment:** Razorpay refunds · iText7 PDF invoices · Logistical state machines
+- **Phase 3 — Scale:** Cloudinary CDN · Advanced JPQL analytics · Seller dashboards
+- **Phase 3.5 — Operations:** DLQs for failed webhooks · Guest-to-User cart migrations
+- **Phase 3.9 — Pre-AI:** Global `@SoftDelete` · Idempotency Locks · BOGO Engine · Wishlist HTML Schedulers
+- **Phase 4.1 — Semantic Search ✅:** pgvector + HuggingFace AI embeddings · Cosine similarity search · Zero-keyword matching
+
 </details>
 
-**Phase 4 — Artificial Intelligence & Advanced Algorithms** 🤖 (In Progress)
-- [ ] **Semantic Vector Search**: Integrate PostgreSQL `pgvector` to allow users to search by numerical mathematical meaning rather than exact strings.
-- [ ] **Collaborative Filtering**: "Customers who bought this item also bought..." mathematical recommendation clusters.
-- [ ] **AI Review Summarization**: Transmit heavy review clusters to an LLM to render instant bullet-point sentiment takeaways.
+**Phase 4 (In Progress) — Artificial Intelligence 🤖**
+- [x] **Semantic Vector Search** — pgvector + HuggingFace `all-MiniLM-L6-v2` · Products indexed as float[384] vectors · Cosine similarity endpoint
+- [ ] **Collaborative Filtering** — "Customers who bought this also bought..." co-purchase frequency matrix
+- [ ] **AI Review Summarization** — LLM-generated bullet-point sentiment summaries from raw review clusters
 
-**Phase 5 — Cloud DevOps & Distributed Systems** ☁️ (Upcoming)
-- [ ] **Distributed Schedulers**: Upgrade native `@Scheduled` jobs with `ShedLock` to coordinate the Wishlist background engine safely across multiple load-balanced AWS EC2 nodes.
-- [ ] **High-Availability**: Full backend containerization via Docker.
-- [ ] **CI/CD Pipeline**: GitHub Actions auto-build, audit, and image deployment.
+**Phase 5 — Cloud & DevOps ☁️**
+- [ ] **Distributed Schedulers:** `ShedLock` to safely coordinate background jobs across multiple EC2 nodes
+- [ ] **Containerization:** Full Docker + docker-compose setup
+- [ ] **CI/CD Pipeline:** GitHub Actions → build → test → push image
+
+---
+
+## 📡 API Infrastructure
+
+| Domain | Endpoints | Auth |
+|---|---|---|
+| Authentication | Register · Login · Refresh · Logout · OTP | Public / JWT |
+| Products | CRUD · Slug · Category · **AI Semantic Search** 🤖 | Public GET / Seller POST |
+| Search | Keyword + Filter (price, category, name) | Public |
+| Orders | Place · Track · Cancel · Invoice PDF | Customer JWT |
+| Payments | Razorpay Create · Webhook · Verify | Public Webhook |
+| Cart | Guest Cart · Auth Cart · Merge on Login | Mixed |
+| Reviews | Submit · List · Approve | Customer JWT |
+| Wishlist | Add · Remove · List · Email Digest | Customer JWT |
+| Seller | Dashboard · Analytics · KYC | Seller JWT |
+| Admin | User Management · Reports · Promotions | Admin JWT |
 
 ---
 
 ## 👨‍💻 Primary Engineer
 
-**Manish Kumar Singh**  
-*Backend Systems Engineer | Java · Spring Boot · Microservices*
+**Manish Kumar Singh**
+*Backend Systems Engineer · Java · Spring Boot · AI Integration · Distributed Systems*
 
-I engineer resilient software capable of surviving heavy abuse and dynamic scaling bounds. This API stands as a testament to my ability to blueprint and command complex architecture from raw schema definitions directly to network deployment.
+I engineer resilient software capable of surviving heavy load and dynamic scaling requirements. CognitoCart demonstrates the full spectrum — from raw PostgreSQL schema design and distributed transaction management, to integrating live AI embeddings and vector similarity search into a production REST API.
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/maniish5200/)
 [![GitHub](https://img.shields.io/badge/GitHub-Follow-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/manish5200)
 
 <div align="center">
-  <sub>⭐ Leave a star if you appreciate rigorous software design standards!</sub>
+  <sub>⭐ Star this repo if you appreciate rigorous, production-grade software engineering!</sub>
 </div>

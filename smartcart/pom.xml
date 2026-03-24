@@ -170,6 +170,10 @@
             <version>1.39.0</version>
         </dependency>
 
+        <!-- ===== OPENAI via RestTemplate (Embeddings + AI Review Summary) ===== -->
+        <!-- CONCEPT: We call the OpenAI REST API directly using Spring's built-in RestTemplate.
+             This approach has ZERO extra dependencies and avoids ALL OkHttp version conflicts.
+             RestTemplate is already included via spring-boot-starter-web. -->
 
 
     </dependencies>

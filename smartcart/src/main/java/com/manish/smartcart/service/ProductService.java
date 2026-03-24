@@ -9,8 +9,10 @@ import com.manish.smartcart.model.product.Product;
 import com.manish.smartcart.repository.CategoryRepository;
 import com.manish.smartcart.repository.ProductRepository;
 import com.manish.smartcart.repository.specifications.ProductSpecifications;
+import com.manish.smartcart.util.VectorAttributeConverter;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
@@ -23,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class ProductService {
@@ -31,6 +34,7 @@ public class ProductService {
     private final CategoryRepository categoryRepository;
     private final ProductMapper productMapper;
     private final CategoryService categoryService;
+    private final EmbeddingService embeddingService;
 
     /**
      * ACTIVITY: Onboarding (Creation)
@@ -77,7 +81,39 @@ public class ProductService {
             product.setSku(productRequest.getSku());
         }
 
+        // STEP 1: Save the product first without the embedding.
+        // JPA handles all regular columns (price, name, stock, etc.) cleanly here.
         Product savedProduct = productRepository.save(product);
+
+        // STEP 2: Generate the embedding and write it via a separate native UPDATE.
+        // CONCEPT: We do this AFTER save() because we need the product's DB-generated ID.
+        // We use a native UPDATE with CAST(:value AS vector) because JPA would otherwise
+        // bind the string as VARCHAR which PostgreSQL's vector column rejects.
+        try {
+            String tagsText = savedProduct.getTags() != null
+                    ? String.join(" ", savedProduct.getTags()) : "";
+            String textToEmbed = savedProduct.getProductName() + " " +
+                    (savedProduct.getDescription() != null ? savedProduct.getDescription() : "") +
+                    " " + tagsText;
+
+            float[] embedding = embeddingService.generateEmbedding(textToEmbed);
+
+            // Convert float[] → "[0.021,-0.455,...]" using our VectorAttributeConverter
+            String vectorString = new VectorAttributeConverter()
+                    .convertToDatabaseColumn(embedding);
+
+            // Native UPDATE with explicit CAST — bypasses JPA's VARCHAR binding
+            productRepository.updateEmbedding(savedProduct.getId(), vectorString);
+            log.info("✅ Embedding saved for product ID {}", savedProduct.getId());
+
+        } catch (Exception e) {
+            // CONCEPT: We catch and log but do NOT re-throw.
+            // If OpenAI is temporarily down, product creation still succeeds.
+            // The embedding column will be NULL — our backfill scheduler (future) fills it later.
+            log.warn("⚠️ Could not generate embedding for product '{}': {}",
+                    savedProduct.getProductName(), e.getMessage());
+        }
+
         return productMapper.toProductResponse(savedProduct);
     }
 
