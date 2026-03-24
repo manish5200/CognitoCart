@@ -292,5 +292,21 @@ public class ProductController {
                 return ResponseEntity.ok(response);
         }
 
+        // ─── PRODUCT RECOMMENDATIONS ───────────────────────────────────────
+        @Operation(summary = "Get Recommendations", description =
+                "Return frequently bought together product")
+        @GetMapping("/{productId}/recommendations")
+        public ResponseEntity<List<ProductResponse>>getRecommendations(@PathVariable Long productId,
+                                                   @RequestParam(defaultValue = "5") int limit){
+                List<Product>recommendations = productRepository
+                        .findFrequentlyBoughtTogether(productId, limit);
+
+                List<ProductResponse> responses = recommendations.stream()
+                        .map(productMapper::toProductResponse)
+                        .toList();
+
+                return ResponseEntity.ok(responses);
+        }
+
 }
 

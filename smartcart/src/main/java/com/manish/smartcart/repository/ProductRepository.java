@@ -132,4 +132,21 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
                 nativeQuery = true
         )
         void updateEmbedding(@Param("productId") Long productId, @Param("vectorString") String vectorString);
+
+        /**
+         * PHASE 4.2: Collaborative Filtering (MVP)
+         * Finds products frequently bought together with the given productId.
+         */
+        @Query(value =
+                "SELECT p.* FROM products p" +
+                        " JOIN order_items oi2 ON p.id = oi2.product_id " +
+                        "JOIN order_items oi1 ON oi1.order_id = oi2.order_id" +
+                        " WHERE oi1.product_id = :productId " +
+                        "AND oi2.product_id != :productId " +
+                        "GROUP BY p.id " +
+                        "ORDER BY COUNT(oi2.product_id) DESC " +
+                        "LIMIT :limit",
+                nativeQuery = true)
+        List<Product>findFrequentlyBoughtTogether(@Param("productId")Long productId,
+                                                  @Param("limit") int limit);
 }

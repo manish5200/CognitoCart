@@ -221,7 +221,7 @@ curl "http://localhost:8080/api/v1/products/search/semantic?q=wireless earphones
 
 **Phase 4 (In Progress) — Artificial Intelligence 🤖**
 - [x] **Semantic Vector Search** — pgvector + HuggingFace `all-MiniLM-L6-v2` · Products indexed as float[384] vectors · Cosine similarity endpoint
-- [ ] **Collaborative Filtering** — "Customers who bought this also bought..." co-purchase frequency matrix
+- [x] **Collaborative Filtering** — "Customers who bought this also bought..." MVP native PostgreSQL self-join implementation
 - [ ] **AI Review Summarization** — LLM-generated bullet-point sentiment summaries from raw review clusters
 
 **Phase 5 — Cloud & DevOps ☁️**
