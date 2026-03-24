@@ -5,6 +5,7 @@ import com.manish.smartcart.dto.product.ProductResponse;
 import com.manish.smartcart.dto.product.ProductSearchDTO;
 import com.manish.smartcart.model.product.Category;
 import com.manish.smartcart.model.product.Product;
+import com.manish.smartcart.model.product.ProductInsights;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -45,6 +46,11 @@ public class ProductMapper {
             productResponse.setCategoryName(product.getCategory().getName());
         } else {
             productResponse.setCategoryName("Uncategorized");
+        }
+        ProductInsights insights = product.getInsights(); // after adding @OneToOne to Product
+        if (insights != null) {
+            productResponse.setAiSummary(insights.getAiSummary());
+            productResponse.setInsightLastGenerated(insights.getLastGenerated());
         }
         return productResponse;
     }
