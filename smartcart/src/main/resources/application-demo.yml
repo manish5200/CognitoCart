@@ -130,3 +130,19 @@ cloudinary:
   cloud-name: your-cloud-name
   api-key: your-api-key
   api-secret: your-api-secret
+
+# ─── HuggingFace AI Configuration (Phase 4 — Semantic Search) ───────────────
+# Used for: Generating 384-dimensional text embeddings for products and search queries.
+# Model: sentence-transformers/all-MiniLM-L6-v2 — free, fast, excellent for semantic similarity.
+#
+# Setup (takes 60 seconds, completely free):
+#   1. Create account at https://huggingface.co/
+#   2. Go to https://huggingface.co/settings/tokens
+#   3. Click "New token" → copy the token (starts with hf_...)
+#   4. Paste it below
+#
+# Free tier: 1,000 requests/day — more than enough for development and testing.
+# The pgvector extension must also be installed on your PostgreSQL instance.
+huggingface:
+  api-key: hf_your_token_here
+  model: sentence-transformers/all-MiniLM-L6-v2

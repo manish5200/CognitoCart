@@ -55,6 +55,7 @@ public class SecurityConfig {
                                                 "/api/v1/categories",
                                                 "/api/v1/products/{slug}",
                                                 "/api/v1/products/category/{categoryId}",
+                                                "/api/v1/products/search/semantic",
                                                 "/api/v1/reviews/**")
                                                 .permitAll()
                                                 .anyRequest().authenticated())
