@@ -4,6 +4,11 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+### Logs ###
+*.log
+logs/
+log/
+
 ### STS ###
 .apt_generated
 .classpath
@@ -31,7 +36,12 @@ build/
 
 ### VS Code ###
 .vscode/
-## Ignore Spring Boot config
+
+### OS ###
+.DS_Store
+Thumbs.db
+
+### Environment ###
 .env
 
 ### Project-specific ###
@@ -45,6 +55,5 @@ docker-compose.yml
 ### Secret Configuration Files ###
 # Real config files with DB/JWT/Mail credentials — NEVER commit these.
 # Only application-demo.yml (fake placeholder data) is safe to push.
-src/main/resources/application.yml
-src/main/resources/application-dev.yml
-src/main/resources/application-temp.yml
+smartcart/src/main/resources/application.yml
+smartcart/src/main/resources/application-dev.yml
