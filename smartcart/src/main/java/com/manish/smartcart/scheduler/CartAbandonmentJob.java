@@ -6,6 +6,7 @@ import com.manish.smartcart.service.EmailService;
 import com.manish.smartcart.service.email.EmailTemplateBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +31,8 @@ public class CartAbandonmentJob {
     //For Testing - 30 sec == "*/30 * * * * *"
     @Scheduled(cron = "0 0 2 * * *")
     @Transactional(readOnly = true)
+    @SchedulerLock(name = "cartAbandonmentEmailJob",
+            lockAtLeastFor = "PT1M", lockAtMostFor = "PT10M")
     public void scanAndEmailAbandonedCarts(){
         log.info("⏰ Starting Cart Abandonment Job...");
 

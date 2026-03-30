@@ -4,7 +4,9 @@ import com.manish.smartcart.enums.OrderStatus;
 import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.repository.OrderRepository;
 import com.manish.smartcart.service.OrderService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -13,21 +15,19 @@ import java.util.List;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class OrderCleanupScheduler{
 
     private final OrderRepository orderRepository;
     private final OrderService orderService;
-    public OrderCleanupScheduler(OrderRepository orderRepository,
-                                 OrderService orderService) {
-        this.orderRepository = orderRepository;
-        this.orderService = orderService;
-    }
 
     /**
      * Runs every hour to clean up orders payment_pending for more than 24 hours.
      * Cron expression: "0 0 * * * *" (Second Minute Hour Day Month DayOfWeek)
      */
     @Scheduled(cron = "0 0 * * * *" )
+    @SchedulerLock(name = "orderCleanupJob",
+            lockAtLeastFor = "PT30S", lockAtMostFor = "PT5M")
     public void processStalePendingOrders(){
         log.info("Starting scheduled cleanup of stale pending orders...");
 

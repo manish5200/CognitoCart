@@ -170,10 +170,19 @@
             <version>1.39.0</version>
         </dependency>
 
-        <!-- ===== OPENAI via RestTemplate (Embeddings + AI Review Summary) ===== -->
-        <!-- CONCEPT: We call the OpenAI REST API directly using Spring's built-in RestTemplate.
-             This approach has ZERO extra dependencies and avoids ALL OkHttp version conflicts.
-             RestTemplate is already included via spring-boot-starter-web. -->
+        <!-- ===== SHEDLOCK (Distributed Locking for Schedulers) ===== -->
+        <!-- Core ShedLock Spring integration -->
+        <dependency>
+            <groupId>net.javacrumbs.shedlock</groupId>
+            <artifactId>shedlock-spring</artifactId>
+            <version>5.13.0</version>
+        </dependency>
+        <!-- The JDBC Provider so ShedLock can use our PostgreSQL Database -->
+        <dependency>
+            <groupId>net.javacrumbs.shedlock</groupId>
+            <artifactId>shedlock-provider-jdbc-template</artifactId>
+            <version>5.13.0</version>
+        </dependency>
 
 
     </dependencies>

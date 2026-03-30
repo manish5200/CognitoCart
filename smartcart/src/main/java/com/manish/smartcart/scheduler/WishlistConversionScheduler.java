@@ -7,6 +7,7 @@ import com.manish.smartcart.service.EmailService;
 import com.manish.smartcart.service.email.EmailTemplateBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,9 +28,12 @@ public class WishlistConversionScheduler {
 
     // Run every 10 seconds for testing purposes
     //@Scheduled(fixedRate = 10000)
-
     //Runs at 2AM
     @Scheduled(cron = "0 0 2 * * *")
+    // name: Unique ID for this specific task in the DB
+    // lockAtLeastFor: Lock won't be released for at least 1 min, preventing rapid double-execution
+    @SchedulerLock(name = "wishlistPriceDropJob",
+            lockAtLeastFor = "PT1M", lockAtMostFor = "PT5M")
     @Transactional
     public void processWishlistPriceDrops() {
         // Calculate the exact database time for 14 days in the past

@@ -241,9 +241,10 @@ curl "http://localhost:8080/api/v1/products/search/semantic?q=wireless earphones
 - [ ] **Visual Reverse Image Search** — CLIP Embeddings + pgvector image similarity
 
 **Phase 5 — Cloud & DevOps ☁️**
-- [ ] **Distributed Schedulers:** `ShedLock` to safely coordinate background jobs across multiple EC2 nodes
-- [ ] **Containerization:** Full Docker + docker-compose setup
-- [ ] **CI/CD Pipeline:** GitHub Actions → build → test → push image
+- [x] **Distributed Schedulers (Completed):** `ShedLock` to safely coordinate background jobs across multiple nodes.
+- [ ] **Enterprise Asynchrony:** Event-Driven messages via RabbitMQ.
+- [ ] **Observability:** Prometheus + Grafana metrics via Spring Boot Actuator.
+- [ ] **Containerization:** Full Docker + docker-compose setup.
 
 ---
 

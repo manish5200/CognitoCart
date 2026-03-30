@@ -9,6 +9,7 @@ import com.manish.smartcart.service.AiSummarizationService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -26,8 +27,10 @@ public class ReviewSummarizationScheduler{
 
 
     @Transactional
-    @Scheduled(fixedRate = 10000) // for testing purpose
-    //@Scheduled(cron = "0 0 3 * * ?")  // every night at 3 AM
+    //@Scheduled(fixedRate = 10000) // for testing purpose
+    @Scheduled(cron = "0 0 3 * * ?")  // every night at 3 AM
+    @SchedulerLock(name = "aiReviewSummarizationJob",
+            lockAtLeastFor = "PT5S", lockAtMostFor = "PT10M")
     public void generateSummaries(){
         log.info("=== AI Review Summarization Job STARTED ===");
         long start =  System.currentTimeMillis();
