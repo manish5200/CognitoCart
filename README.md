@@ -1,7 +1,7 @@
 <div align="center">
 
 # 🛒 CognitoCart
-### **Enterprise-Grade E-Commerce API · AI Search · RabbitMQ Event-Driven · Distributed Systems**
+### **Enterprise-Grade E-Commerce API · AI Search · RabbitMQ Event-Driven · Prometheus Observability · Distributed Systems**
 
 [![Java](https://img.shields.io/badge/Java_21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://openjdk.org/)
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot_3.4-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
@@ -10,9 +10,11 @@
 [![HuggingFace](https://img.shields.io/badge/HuggingFace_AI-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black)](https://huggingface.co/)
 [![Razorpay](https://img.shields.io/badge/Razorpay_API-072654?style=for-the-badge&logo=razorpay&logoColor=white)](https://razorpay.com/)
 [![RabbitMQ](https://img.shields.io/badge/RabbitMQ-FF6600?style=for-the-badge&logo=rabbitmq&logoColor=white)](https://www.rabbitmq.com/)
+[![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?style=for-the-badge&logo=prometheus&logoColor=white)](https://prometheus.io/)
+[![Grafana](https://img.shields.io/badge/Grafana-F46800?style=for-the-badge&logo=grafana&logoColor=white)](https://grafana.com/)
 
 > Most portfolio projects stop at basic CRUD.
-> **CognitoCart** tackles the brutal edge cases that define real production systems — preventing stock manipulation under concurrency, surviving double-charge payment failures, scaling with Redis, and now, finding products by **mathematical meaning** using AI embeddings and pgvector.
+> **CognitoCart** tackles the brutal edge cases that define real production systems — preventing stock manipulation under concurrency, surviving double-charge payment failures, decoupling heavy work via RabbitMQ event streams, monitoring every JVM metric live on Grafana Cloud, and finding products by **mathematical meaning** using AI embeddings and pgvector.
 
 [Core Architecture](#️-the-engineering) · [AI Features](#-phase-4--ai-features) · [API Domains](#-api-infrastructure) · [Quick Start](#-quick-start-guide)
 
@@ -162,7 +164,7 @@ graph TD
 |---|---|---|
 | **Runtime** | Java 21 / Spring Boot 3.4 | LTS stability, Virtual Threads readiness |
 | **Database** | PostgreSQL + pgvector | ACID transactions + vector similarity search |
-| **Message Broker** | RabbitMQ (CloudAMQP) | Async event-driven PDF & email processing |
+| **Message Broker** | RabbitMQ (CloudAMQP) + DLQ | Async event-driven PDF & email processing, zero message loss |
 | **Distributed Lock** | ShedLock + JDBC | Safe multi-instance scheduler coordination |
 | **AI Embeddings** | HuggingFace `all-MiniLM-L6-v2` | Free 384-dim semantic text embeddings |
 | **Migrations** | Flyway | Deterministic, version-controlled schema evolution |
@@ -171,6 +173,7 @@ graph TD
 | **Media CDN** | Cloudinary | Scalable image storage & delivery |
 | **Render Engine** | iText7 + Thymeleaf | PDF invoices + HTML email templates |
 | **Security** | Spring Security + Bucket4j | JWT auth + per-IP rate limiting |
+| **Observability** | Micrometer + Prometheus + Grafana Cloud | 200+ live metrics — JVM, DB pool, RabbitMQ, HTTP latency, custom counters |
 | **API Docs** | SpringDoc OpenAPI (Swagger) | Interactive documentation |
 
 ---
@@ -246,9 +249,10 @@ curl "http://localhost:8080/api/v1/products/search/semantic?q=wireless earphones
 
 **Phase 5 — Cloud & DevOps ☁️**
 - [x] **Distributed Schedulers ✅:** `ShedLock` + PostgreSQL ACID locking across 4 background jobs in multi-instance deployments.
-- [x] **Event-Driven Architecture ✅:** RabbitMQ (CloudAMQP) decouples PDF invoice generation & email dispatch from the HTTP thread — response time dropped from ~4s to <50ms.
-- [ ] **Observability:** Prometheus + Grafana metrics via Spring Boot Actuator.
-- [ ] **Containerization:** Full Docker + docker-compose setup.
+- [x] **Event-Driven Architecture ✅:** RabbitMQ (CloudAMQP) decouples PDF invoice generation & email dispatch from the HTTP thread — response time dropped from ~4s to <50ms. Dead Letter Queue (DLQ) ensures zero message loss on failures.
+- [x] **Observability ✅:** Micrometer + Prometheus + Grafana Cloud — 200+ live metrics (JVM heap, GC cycles, HikariCP DB pool, RabbitMQ throughput, HTTP latency, custom order counters) scraped every 15s via Grafana Alloy with live dashboards.
+- [ ] **Containerization:** Full Docker + docker-compose setup for one-command local stack.
+- [ ] **CI/CD Pipeline:** GitHub Actions — automated build, test, and container image push on every commit.
 
 ---
 
