@@ -7,6 +7,7 @@ import com.manish.smartcart.enums.PaymentStatus;
 import com.manish.smartcart.mapper.OrderMapper;
 import com.manish.smartcart.model.cart.Cart;
 import com.manish.smartcart.model.cart.CartItem;
+import com.manish.smartcart.model.order.Coupon;
 import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.model.order.OrderItem;
 import com.manish.smartcart.model.order.UserCouponUsage;
@@ -18,6 +19,7 @@ import com.manish.smartcart.repository.ShipmentRepository;
 import com.manish.smartcart.repository.UserCouponUsageRepository;
 import com.manish.smartcart.repository.UsersRepository;
 import com.manish.smartcart.service.notifications.OrderNotificationService;
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +46,7 @@ public class OrderService {
     private final UsersRepository usersRepository;
     private final RazorpayRefundService razorpayRefundService;
     private final ShipmentRepository shipmentRepository;
+    private final MeterRegistry meterRegistry;
 
     @Transactional
     public OrderResponse placeOrder(Long userId, OrderRequest orderRequest) {
@@ -157,7 +160,7 @@ public class OrderService {
 
             // --- Track Per-User Usage Limit ---
             // Fetch the Coupon entity - validation was already done when coupon was applied to cart
-            com.manish.smartcart.model.order.Coupon coupon = couponService.getCouponByCode(cart.getCouponCode());
+            Coupon coupon = couponService.getCouponByCode(cart.getCouponCode());
 
             // Check if they already have a usage record, otherwise create one
             UserCouponUsage usage = userCouponUsageRepository.findByUserIdAndCouponId(userId, coupon.getId())
@@ -186,6 +189,11 @@ public class OrderService {
         String razorpayOrderId = paymentService.createRazorpayOrder(savedOrder);
         savedOrder.setRazorpayOrderId(razorpayOrderId);
         savedOrder = orderRepository.save(savedOrder);
+
+        //Prometheus
+        meterRegistry.counter("cognitocart.orders.placed").increment();
+        // ↑ Every time an order is placed, this counter ticks up by 1.
+        // In Grafana you can graph: "How many orders per hour?"
 
         cartService.clearTheCart(userId);
 

@@ -86,10 +86,23 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
+
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+
+        <!-- ===== OBSERVABILITY (Micrometer + Prometheus) ===== -->
+        <!-- Micrometer translates Spring metrics into Prometheus format -->
+        <!-- This single dependency unlocks /actuator/prometheus endpoint -->
+        <!-- No version needed: spring-boot-starter-parent manages the compatible version -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+
+
 
         <dependency>
             <groupId>org.springframework.retry</groupId>
