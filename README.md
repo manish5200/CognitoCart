@@ -7,6 +7,7 @@
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot_3.4-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL_pgvector-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Redis](https://img.shields.io/badge/Redis_Upstash-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://upstash.com/)
+[![OAuth2](https://img.shields.io/badge/OAuth_2.0-Google_Identity-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://developers.google.com/identity/protocols/oauth2)
 [![HuggingFace](https://img.shields.io/badge/HuggingFace_AI-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black)](https://huggingface.co/)
 [![Razorpay](https://img.shields.io/badge/Razorpay_API-072654?style=for-the-badge&logo=razorpay&logoColor=white)](https://razorpay.com/)
 [![RabbitMQ](https://img.shields.io/badge/RabbitMQ-FF6600?style=for-the-badge&logo=rabbitmq&logoColor=white)](https://www.rabbitmq.com/)
@@ -14,7 +15,7 @@
 [![Grafana](https://img.shields.io/badge/Grafana-F46800?style=for-the-badge&logo=grafana&logoColor=white)](https://grafana.com/)
 
 > Most portfolio projects stop at basic CRUD.
-> **CognitoCart** tackles the brutal edge cases that define real production systems — preventing stock manipulation under concurrency, surviving double-charge payment failures, decoupling heavy work via RabbitMQ event streams, monitoring every JVM metric live on Grafana Cloud, and finding products by **mathematical meaning** using AI embeddings and pgvector.
+> **CognitoCart** tackles the brutal edge cases that define real production systems — preventing stock manipulation under concurrency, surviving double-charge payment failures, decoupling heavy work via RabbitMQ event streams, finding products by **mathematical meaning** using AI embeddings, and actively mitigating Out-Of-Memory (OOM) JVM crashes via strictly-enforced backend architecture.
 
 [Core Architecture](#️-the-engineering) · [AI Features](#-phase-4--ai-features) · [API Domains](#-api-infrastructure) · [Quick Start](#-quick-start-guide)
 
@@ -27,20 +28,20 @@
 CognitoCart rejects simplified logic in favor of robust, distributed architecture. Here is exactly what it handles gracefully:
 
 ### 🛡️ Transactional Integrity & Concurrency
-> **The Threat:** Two users click 'Checkout' on the last unit simultaneously.
-> **The Solution:** **Pessimistic Locking (`SELECT FOR UPDATE`)** in PostgreSQL — the checkout flow mathematically locks the row, evaluates promotions, deducts stock, and generates the invoice within a single immutable `@Transactional` boundary.
+> **The Threat:** Two users click 'Checkout' on the last unit simultaneously during a Flash Sale.
+> **The Solution:** **Pessimistic Locking (`SELECT FOR UPDATE`)** in PostgreSQL — the checkout flow mathematically locks the row, evaluates promotions, deducts stock, and generates the invoice within a single immutable `@Transactional` boundary, preventing race conditions entirely.
 
 ### 💳 Webhook Idempotency & Resiliency
 > **The Threat:** A user's internet drops after paying Razorpay, or the webhook fires twice simultaneously.
 > **The Solution:** Dual lifecycle modeling (`orderStatus` & `paymentStatus`) + a strictly **idempotent Redis `SETNX` lock layer**. An async DLQ processes HMAC-SHA256 verified webhooks — if a node fails mid-transaction, it retries safely without double-charging.
 
-### 🔒 Enterprise Identity Architecture (True Logout)
-> **The Threat:** Stolen JWTs or "Logout" that doesn't actually invalidate tokens.
-> **The Solution:** **Redis-backed JWT blacklist** — every token's `jti` identifier is stamped into Redis with a TTL matching its remaining lifespan. Every backend entry-point intercepts and denies blacklisted tokens aggressively.
+### 🔐 OAuth 2.0 Identity Server & Enterprise Defenses (Phase 6)
+> **The Threat:** Malicious actors attempting to bypass password restrictions via social login vector endpoints.
+> **The Solution:** A locked-down Spring Security filter chain tightly coupling **Google OAuth 2.0** profiles with internal `CustomerProfiles`. It autonomously denies cross-hijacking attempts from LOCAL providers, dynamically assigns permissions, and registers dual-token JWT Lifetimes natively without relying on a stateful frontend to handle complex redirects.
 
 ### 🤖 AI Semantic Search (Phase 4 — Live)
 > **The Threat:** Traditional `LIKE '%keyword%'` search fails when users think in sentences, not keywords.
-> **The Solution:** Product descriptions are converted to **384-dimensional mathematical vectors** via HuggingFace AI and stored in PostgreSQL using the `pgvector` extension. Search queries undergo the same transformation, and **cosine similarity** finds products by meaning — not by character matching.
+> **The Solution:** Product descriptions are converted to **384-dimensional mathematical vectors** via HuggingFace AI and stored in PostgreSQL using the `pgvector` extension. Search queries undergo the same transformation, and **cosine similarity** finds products by meaning — not by exact character matching.
 
 ---
 
@@ -58,25 +59,10 @@ CognitoCart goes beyond keyword matching. When a product is created, its name + 
 | `"something to brew hot drinks at the office"` | Espresso Coffee Machine | AI maps "brew hot drinks" → "espresso/coffee", "office" → "home-office" |
 | `"comfortable footwear for morning fitness routine"` | Running Shoes | AI maps "footwear" → "shoes", "fitness routine" → "marathon/jogging" |
 
-**None of the search words appear in the product names or descriptions. The AI understands meaning.**
-
 **How to Test:**
 ```bash
 # No authentication required — open to all users
 GET /api/v1/products/search/semantic?q=comfortable footwear for morning fitness routine&limit=5
-
-# Response: Returns Running Shoes ranked #1, even though "footwear" ≠ "shoes" in the product name
-```
-
-**How It Works Internally:**
-```
-User Query: "earphones for blocking noise while studying"
-     ↓ HuggingFace all-MiniLM-L6-v2
-Float Vector: [0.021, -0.455, 0.891, ... 384 numbers]
-     ↓ PostgreSQL pgvector
-SELECT * FROM products ORDER BY embedding <=> CAST(:query AS vector) LIMIT 10
-     ↓
-Top Match: "Noise Cancelling Headphones" (cosine distance: 0.12 — very close)
 ```
 
 ### AI Review Summarization (Sentiment Insights)
@@ -86,12 +72,6 @@ Users don't have time to read hundreds of reviews. CognitoCart uses the **Huggin
 - **Intelligence:** Automatically identifies recurring pros/cons (e.g., "Loved the bass, but the ear-tips are stiff").
 - **Performance:** Summaries are pre-computed by a Spring `@Scheduled` background worker and saved to a dedicated `ProductInsights` table for instant retrieval.
 - **Scale:** Uses a `@Transactional` + `JOIN FETCH` optimized repository query to process the entire catalog in a single SQL operation, avoiding N+1 bottlenecks.
-
-**How to Test:**
-```bash
-# Check the 'aiSummary' field in any product response payload
-GET /api/v1/products/{slug}
-```
 
 ---
 
@@ -112,11 +92,11 @@ GET /api/v1/products/{slug}
 <summary><b>Performance & Scale</b></summary>
 <br>
 
+- **OOM-Protected APIs (Phase 6):** Aggressive Spring Data `Pageable` enforcement across product catalogs and heavy order repositories. Implements native HQL `countQuery` logic to force PostgreSQL to slice rows safely—bypassing Hibernate's highly-dangerous in-memory collection mappings.
 - **AI Semantic Search:** pgvector IVFFlat index for sub-millisecond Approximate Nearest Neighbor cosine similarity across the entire product catalog.
 - **Sub-Millisecond Caching:** `@Cacheable` directives tied to **Upstash Redis**, dramatically offloading product and category DB reads with native eviction triggers.
 - **DDoS Mitigation:** Per-IP Token Bucket rate limiting via **Bucket4j** built into the Spring Security filter chain.
 - **Cloud Content Delivery:** Direct binary integration with the **Cloudinary CDN** — zero local disk dependency.
-- **Background Processing:** Spring `@Scheduled` threads scan for Flash Sales every 10 seconds, generating native HTML FOMO emails via Thymeleaf with timestamp-locks to prevent spam.
 
 </details>
 
@@ -137,7 +117,7 @@ GET /api/v1/products/{slug}
 ```mermaid
 graph TD
     Client((Client App)) --> RL[⚙️ Bucket4j Rate Limiter]
-    RL --> JWT[🔒 JWT Auth Filter]
+    RL --> JWT[🔒 JWT / OAuth2 Auth]
     JWT --> API[REST Controllers]
 
     API --> SVC[Service Layer]
@@ -172,9 +152,8 @@ graph TD
 | **Payments** | Razorpay SDK | Orders, webhooks, instant refunds |
 | **Media CDN** | Cloudinary | Scalable image storage & delivery |
 | **Render Engine** | iText7 + Thymeleaf | PDF invoices + HTML email templates |
-| **Security** | Spring Security + Bucket4j | JWT auth + per-IP rate limiting |
+| **Security** | Spring Security + Bucket4j + OAuth2 | Google SSO + JWT auth + per-IP rate limiting |
 | **Observability** | Micrometer + Prometheus + Grafana Cloud | 200+ live metrics — JVM, DB pool, RabbitMQ, HTTP latency, custom counters |
-| **API Docs** | SpringDoc OpenAPI (Swagger) | Interactive documentation |
 
 ---
 
@@ -182,16 +161,16 @@ graph TD
 
 ### 1. Prerequisites
 - **Java 21+**, **Maven 3.8+**
-- **PostgreSQL** (with `pgvector` extension installed — see below)
+- **PostgreSQL** (with `pgvector` extension installed)
 - **Redis** (Upstash free tier works)
 - **HuggingFace** free account for semantic search
+- **Google Cloud Console** (OAuth2 Web Client Credentials)
 
 ### 2. Install pgvector (Required for AI Search)
 ```sql
 -- Run as PostgreSQL superuser (postgres) in pgAdmin:
 CREATE EXTENSION IF NOT EXISTS vector;
 ```
-> Download the pgvector binary for your OS from [github.com/pgvector/pgvector/releases](https://github.com/pgvector/pgvector/releases)
 
 ### 3. Clone & Configure
 ```bash
@@ -202,34 +181,27 @@ cd CognitoCart/smartcart
 psql -U postgres -c "CREATE DATABASE cognitocart;"
 ```
 
-Copy `application-demo.yml` → `application.yml` and fill in your credentials:
-- PostgreSQL connection details
+Copy `application-demo.yml` → `application.yml` and explicitly define your credentials:
+- PostgreSQL Connection Details
 - Redis (Upstash) URL
 - Gmail SMTP App Password
-- Razorpay sandbox keys
-- Cloudinary API credentials
-- **HuggingFace API token** (free at [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens))
+- HuggingFace API Token
+- **Google Client ID & Secret** for OAuth2 Authorization
 
-### 4. Run
+### 4. Run & Explore
 ```bash
 ./mvnw spring-boot:run
 ```
-> On startup, Flyway runs **20 migrations** — enabling pgvector, seeding the Admin account, building category tree (61 nodes), and initialising all tables.
+> Flyway will forcefully execute **20+ migrations** to map relations, inject pgvector structures, build the Category tree, and establish your default Admin account prior to Tomcat startup.
 
-### 5. Explore
-Navigate to **`http://localhost:8080/swagger-ui.html`** — 50+ OpenAPI endpoints across 10 functional domains.
-
-**Quick test the AI search (no login required):**
-```bash
-curl "http://localhost:8080/api/v1/products/search/semantic?q=wireless earphones for travel&limit=5"
-```
+Navigate directly to **`http://localhost:8080/swagger-ui.html`** to test your endpoints. Or, test the new Google OAuth2 implementation natively through your browser by visiting: `http://localhost:8080/oauth2/authorization/google`
 
 ---
 
 ## 🛣️ Engineering Roadmap
 
 <details>
-<summary><b>✅ Completed Phases (1 → 4.1)</b></summary>
+<summary><b>✅ Completed Phases (1 → 4.3)</b></summary>
 
 - **Phase 1 — Auth Hardening:** Redis JWT Blacklists · Pessimistic Stock Locks · Secure OTP verification
 - **Phase 2 — Fulfillment:** Razorpay refunds · iText7 PDF invoices · Logistical state machines
@@ -241,39 +213,19 @@ curl "http://localhost:8080/api/v1/products/search/semantic?q=wireless earphones
 
 </details>
 
-**Phase 4 (In Progress) — Artificial Intelligence 🤖**
-- [x] **Semantic Vector Search** — pgvector + HuggingFace · Cosine similarity endpoint
-- [x] **AI Review Summarization** — HuggingFace BART Large CNN · Automated sentiment insights
-- [ ] **Collaborative Filtering** — "Customers who bought this also bought..." co-purchase frequency matrix
-- [ ] **Visual Reverse Image Search** — CLIP Embeddings + pgvector image similarity
-
 **Phase 5 — Cloud & DevOps ☁️**
 - [x] **Distributed Schedulers ✅:** `ShedLock` + PostgreSQL ACID locking across 4 background jobs in multi-instance deployments.
-- [x] **Event-Driven Architecture ✅:** RabbitMQ (CloudAMQP) decouples PDF invoice generation & email dispatch from the HTTP thread — response time dropped from ~4s to <50ms. Dead Letter Queue (DLQ) ensures zero message loss on failures.
-- [x] **Observability ✅:** Micrometer + Prometheus + Grafana Cloud — 200+ live metrics (JVM heap, GC cycles, HikariCP DB pool, RabbitMQ throughput, HTTP latency, custom order counters) scraped every 15s via Grafana Alloy with live dashboards.
-- [ ] **Containerization:** Full Docker + docker-compose setup for one-command local stack.
-- [ ] **CI/CD Pipeline:** GitHub Actions — automated build, test, and container image push on every commit.
+- [x] **Event-Driven Architecture ✅:** RabbitMQ (CloudAMQP) decouples PDF invoice generation & email dispatch — response time dropped from ~4s to <50ms. Dead Letter Queue (DLQ) ensures zero message loss.
+- [x] **Observability ✅:** Micrometer + Prometheus + Grafana Cloud — 200+ live metrics scraped every 15s via Grafana Alloy with live dashboards.
+
+**Phase 6 — Global Scale & Auth Hardening 🔐**
+- [x] **Google OAuth 2.0 Delegation ✅:** Dynamic CustomerProfile decoupling without relying on frontend redirect domains.
+- [x] **Native API Pagination ✅:** OOM-protected scalable REST layouts for high-density DB rows.
+- [x] **Enterprise Exception Hierarchy ✅:** `@RestControllerAdvice` standardization across logic boundaries (explicitly throwing ResourceNotFound, InsufficientStock algorithms).
 
 ---
 
-## 📡 API Infrastructure
-
-| Domain | Endpoints | Auth |
-|---|---|---|
-| Authentication | Register · Login · Refresh · Logout · OTP | Public / JWT |
-| Products | CRUD · Slug · Category · **AI Semantic Search** 🤖 | Public GET / Seller POST |
-| Search | Keyword + Filter (price, category, name) | Public |
-| Orders | Place · Track · Cancel · Invoice PDF | Customer JWT |
-| Payments | Razorpay Create · Webhook · Verify | Public Webhook |
-| Cart | Guest Cart · Auth Cart · Merge on Login | Mixed |
-| Reviews | Submit · List · Approve | Customer JWT |
-| Wishlist | Add · Remove · List · Email Digest | Customer JWT |
-| Seller | Dashboard · Analytics · KYC | Seller JWT |
-| Admin | User Management · Reports · Promotions | Admin JWT |
-
----
-
-## 👨‍💻 Primary Engineer
+## 👨‍💻 Primary Architect
 
 **Manish Kumar Singh**
 *Backend Systems Engineer · Java · Spring Boot · AI Integration · Distributed Systems*
