@@ -20,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -46,13 +47,14 @@ public class ProductController {
         private final EmbeddingService embeddingService;
         private final ProductMapper productMapper;
 
-        // Get All products
-        @GetMapping
-        public ResponseEntity<?> getAllProducts() {
-                return ResponseEntity
-                                .status(HttpStatus.OK)
-                                .body(Map.of("List of Products", productService.getAllProducts()));
-        }
+    // Get All products natively paginated
+    @GetMapping
+    public ResponseEntity<?> getAllProducts(
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(productService.getAllProducts(pageable));
+    }
 
         /**
          * POST: Create a new product (Seller only as for now)
@@ -85,15 +87,16 @@ public class ProductController {
          * GET: Products by Category Tree (Public)
          * Finds products in the category and all its sub-categories recursively.
          */
-        @GetMapping("/category/{categoryId}")
-        public ResponseEntity<?> getProductByCategoryId(@PathVariable Long categoryId) {
-                List<Long> allCategoryIds = categoryService.getAllChildCategoryIds(categoryId);
-                List<ProductResponse> products = productService.getProductsByCategoryIds(allCategoryIds);
+    @GetMapping("/category/{categoryId}")
+    public ResponseEntity<?> getProductByCategoryId(
+            @PathVariable Long categoryId,
+            @PageableDefault(size = 20) Pageable pageable) {
+        
+        List<Long> allCategoryIds = categoryService.getAllChildCategoryIds(categoryId);
+        Page<ProductResponse> products = productService.getProductsByCategoryIds(allCategoryIds, pageable);
 
-                // Return 200 OK with empty list if no products,
-                // OR handle the case where the parent category ID itself doesn't exist.
-                return ResponseEntity.status(HttpStatus.OK).body(products);
-        }
+        return ResponseEntity.status(HttpStatus.OK).body(products);
+    }
 
         /**
          * PATCH: Toggle Visibility (Seller/Admin Only)

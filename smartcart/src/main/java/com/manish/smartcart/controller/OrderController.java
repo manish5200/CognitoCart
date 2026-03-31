@@ -9,24 +9,26 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import java.util.List;
 
 @RestController
+@RequiredArgsConstructor
 @Tag(name = "6. Order Processing", description = "Checkout, history, and order cancellation")
 @SecurityRequirement(name = "bearerAuth")
 @RequestMapping("/api/v1/orders")
 public class OrderController {
 
         private final OrderService orderService;
-
-        public OrderController(OrderService orderService) {
-                this.orderService = orderService;
-        }
 
         @Operation(summary = "Checkout and place order", description = "Processes the cart and creates a permanent order record. "
                         +
@@ -44,12 +46,15 @@ public class OrderController {
 
         @Operation(summary = "Get order history", description = "Retrieves all past orders for the authenticated user.")
         @GetMapping("/history")
-        public ResponseEntity<?> getOrderHistory(Authentication authentication) {
+        public ResponseEntity<?> getOrderHistory(
+                Authentication authentication,
+                @PageableDefault(size = 10, sort = "orderDate", direction = Sort.Direction.DESC) Pageable pageable) {
+                
                 CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
                 assert userDetails != null;
                 Long userId = userDetails.getUser().getId();
 
-                List<OrderResponse> history = orderService.getOrderHistoryForUser(userId);
+                Page<OrderResponse> history = orderService.getOrderHistoryForUser(userId, pageable);
                 return ResponseEntity.ok(history);
         }
 

@@ -1,5 +1,6 @@
 package com.manish.smartcart.model.user;
 
+import com.manish.smartcart.enums.AuthProvider;
 import com.manish.smartcart.enums.Gender;
 import com.manish.smartcart.enums.Role;
 import com.manish.smartcart.model.base.BaseEntity;
@@ -28,15 +29,19 @@ public class Users extends BaseEntity {
     @NotBlank
     private String email;
 
-    @Column(nullable = false)
     @Size(min = 4)
     private String password;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private AuthProvider authProvider = AuthProvider.LOCAL;
 
     // --- PHASE 1: HOISTED IDENTITY FIELDS ---
     @NotBlank
     private String fullName;
 
-    @Column(nullable = false, length = 20, unique = true)
+    @Column(length = 20, unique = true)
     private String phone;
 
     private LocalDate dateOfBirth;
@@ -78,5 +83,6 @@ public class Users extends BaseEntity {
         this.email = email;
         this.password = password;
         this.role = role;
+        this.authProvider = AuthProvider.LOCAL;
     }
 }

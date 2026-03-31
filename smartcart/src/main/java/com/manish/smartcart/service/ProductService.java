@@ -12,6 +12,7 @@ import com.manish.smartcart.repository.specifications.ProductSpecifications;
 import com.manish.smartcart.util.VectorAttributeConverter;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import com.manish.smartcart.exception.ResourceNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -56,7 +57,7 @@ public class ProductService {
         if (productRequest.getCategoryId() != null) {
             // Fetch the separate Category entity from its repository
             Category category = categoryRepository.findById(productRequest.getCategoryId())
-                    .orElseThrow(() -> new RuntimeException(
+                    .orElseThrow(() -> new ResourceNotFoundException(
                             "Category not found with ID: " + productRequest.getCategoryId()));
 
             // Map the full entity to the Product's @ManyToOne field
@@ -169,14 +170,10 @@ public class ProductService {
      */
 
     @Transactional
-    @Cacheable(value = "products", key = "'all'")
-    public List<ProductResponse> getAllProducts() {
-        List<ProductResponse> body = new ArrayList<>();
-        for (Product product : productRepository.findAll()) {
-            ProductResponse productResponse = productMapper.toProductResponse(product);
-            body.add(productResponse);
-        }
-        return body;
+    // Removed @Cacheable for paginated dynamic fetching
+    public Page<ProductResponse> getAllProducts(Pageable pageable) {
+        return productRepository.findAll(pageable)
+                .map(productMapper::toProductResponse);
     }
 
     /**
@@ -184,12 +181,10 @@ public class ProductService {
      * Returns DTOs (not raw entities) so Redis can serialize them safely.
      */
     @Transactional
-    @Cacheable(value = "products", key = "#p0.hashCode()")
-    public List<ProductResponse> getProductsByCategoryIds(List<Long> categoryId) {
-        return productRepository.findByCategoryIdIn(categoryId)
-                .stream()
-                .map(productMapper::toProductResponse)
-                .collect(java.util.stream.Collectors.toList());
+    // Removed @Cacheable for paginated dynamic fetching
+    public Page<ProductResponse> getProductsByCategoryIds(List<Long> categoryId, Pageable pageable) {
+        return productRepository.findByCategoryIdIn(categoryId, pageable)
+                .map(productMapper::toProductResponse);
     }
 
     /**

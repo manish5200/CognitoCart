@@ -17,21 +17,20 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-    // 1. SECURITY: Handles login failures (Wrong password/email)
+
+    // 1. SECURITY: Handles login failures
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex) {
-        return buildErrorResponse(HttpStatus.UNAUTHORIZED, "AUTH_FAILED",
-                "Invalid email or password", null);
+        return buildErrorResponse(HttpStatus.UNAUTHORIZED, "AUTH_FAILED", "Invalid email or password", null);
     }
 
-    // 2. SECURITY: Handles blocked/disabled accounts
+    // 2. SECURITY: Handles disabled accounts
     @ExceptionHandler(DisabledException.class)
     public ResponseEntity<ErrorResponse> handleDisabledAccount(DisabledException ex) {
-        return buildErrorResponse(HttpStatus.FORBIDDEN, "ACCOUNT_DISABLED",
-                "Your account has been deactivated. Please contact support.", null);
+        return buildErrorResponse(HttpStatus.FORBIDDEN, "ACCOUNT_DISABLED", "Your account has been deactivated.", null);
     }
 
-    // 3. VALIDATION: Handles @Valid failures
+    // 3. VALIDATION: Handles @Valid failures (e.g., missing email in DTO)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
@@ -43,29 +42,43 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, "VALIDATION_FAILED", "Input validation failed", errors);
     }
 
-    // 4. DATA INTEGRITY: Handles unique constraint violations (Email/Phone)
+    // 4. DATA INTEGRITY: Handles unique DB constraints
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrity(DataIntegrityViolationException e) {
-        // Real-world: In production, we parse the DB message to tell the user EXACTLY what's duplicated
-        String message = "A record with this data already exists (Duplicate Email/Phone).";
-        return buildErrorResponse(HttpStatus.CONFLICT, "DUPLICATE_RESOURCE", message, null);
+        return buildErrorResponse(HttpStatus.CONFLICT, "DUPLICATE_RESOURCE", "A record with this unique data already exists.", null);
     }
 
-    // 5. BUSINESS LOGIC: Catch-all for service-layer RuntimeExceptions
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException ex) {
-        // If it's a Refresh Token error, we use 403 Forbidden
-        if (ex.getMessage().contains("Refresh token")) {
-            return buildErrorResponse(HttpStatus.FORBIDDEN, "TOKEN_EXPIRED", ex.getMessage(), null);
-        }
+    // 5. RESOURCE NOT FOUND (HTTP 404)
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex) {
+        return buildErrorResponse(HttpStatus.NOT_FOUND, "RESOURCE_NOT_FOUND", ex.getMessage(), null);
+    }
+
+    // 6. BUSINESS LOGIC ERRORS (HTTP 400)
+    @ExceptionHandler(BusinessLogicException.class)
+    public ResponseEntity<ErrorResponse> handleBusinessLogic(BusinessLogicException ex) {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, "BUSINESS_ERROR", ex.getMessage(), null);
     }
 
-    // 6. SYSTEM FALLBACK
+    // 7. INSUFFICIENT STOCK / CONFLICTS (HTTP 409)
+    @ExceptionHandler(InsufficientStockException.class)
+    public ResponseEntity<ErrorResponse> handleStockConflict(InsufficientStockException ex) {
+        return buildErrorResponse(HttpStatus.CONFLICT, "STOCK_CONFLICT", ex.getMessage(), null);
+    }
+
+    // 8. CATCH-ALL FOR RAW RUNTIME EXCEPTIONS (Usually Token Expirations or lazy dev throws)
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException ex) {
+        if (ex.getMessage() != null && ex.getMessage().contains("Refresh token")) {
+            return buildErrorResponse(HttpStatus.FORBIDDEN, "TOKEN_EXPIRED", ex.getMessage(), null);
+        }
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, "RUNTIME_ERROR", ex.getMessage(), null);
+    }
+
+    // 9. THE ULTIMATE FALLBACK: 500 Internal Server Error (Database unreachable, NullPointerExceptions)
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
-        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "SYSTEM_ERROR",
-                "An unexpected internal error occurred.", null);
+        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "SYSTEM_ERROR", "An unexpected internal error occurred on the server.", null);
     }
 
     private ResponseEntity<ErrorResponse> buildErrorResponse(HttpStatus status, String code, String message, Map<String, String> validationErrors) {

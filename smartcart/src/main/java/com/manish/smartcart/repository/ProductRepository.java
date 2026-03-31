@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.Optional;
@@ -37,7 +38,7 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
         // FIX: Use 'category.id' instead of 'categoryId'
         // -> because its transient in category
         @Query("SELECT p FROM Product p WHERE p.category.id IN :categoryIds")
-        List<Product> findByCategoryIdIn(@Param("categoryIds") List<Long> categoryIds);
+        Page<Product> findByCategoryIdIn(@Param("categoryIds") List<Long> categoryIds, Pageable pageable);
 
         // Returns the full list of products that need restocking
         List<Product> findByStockQuantityLessThan(int threshold);
