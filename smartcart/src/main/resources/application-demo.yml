@@ -146,3 +146,62 @@ cloudinary:
 huggingface:
   api-key: hf_your_token_here
   model: sentence-transformers/all-MiniLM-L6-v2
+
+# ─── RabbitMQ Configuration (Event-Driven Architecture) ─────────────────────
+# Used for: Async PDF invoice generation + email dispatch off the HTTP thread.
+# This drops payment API response from ~4.5s → <50ms.
+#
+# Setup (free CloudAMQP account):
+#   1. Sign up at https://www.cloudamqp.com/ → create a "Little Lemur" (free) instance
+#   2. Go to your instance → Details tab
+#   3. Copy: Host, Username, Password, Virtual Host
+#   4. Port 5671 = secure AMQPS (required by CloudAMQP free tier)
+#
+# Dead Letter Queue (DLQ):
+#   - queue.order.paid        → main queue (processes payment events)
+#   - queue.order.paid.dlq    → fallback queue (catches failed events after 3 retries)
+#   Both queues are auto-created by RabbitMQConfig.java on first startup.
+spring:
+  rabbitmq:
+    host: your-instance.rmq.cloudamqp.com
+    port: 5671
+    username: your_cloudamqp_username
+    password: your_cloudamqp_password
+    virtual-host: your_cloudamqp_vhost
+    ssl:
+      enabled: true   # Required for CloudAMQP AMQPS connections
+
+# ================================
+# OBSERVABILITY — Actuator + Prometheus + Grafana Cloud
+# ================================
+# Used for: Live production monitoring — JVM heap, GC cycles, DB pool,
+# RabbitMQ throughput, HTTP latency, custom business counters.
+#
+# Setup:
+#   1. No extra signup needed — /actuator/prometheus is auto-exposed
+#   2. For Grafana Cloud: sign up free at https://grafana.com/
+#   3. Install Grafana Alloy (local agent) — scrapes localhost:8080/actuator/prometheus
+#      and pushes metrics to Grafana Cloud every 15 seconds
+#   4. Import dashboard ID 19004 for instant Spring Boot monitoring panels
+management:
+  endpoints:
+    web:
+      exposure:
+        # Exposed endpoints:
+        # prometheus → scraped by Grafana Alloy → pushed to Grafana Cloud
+        # health     → /actuator/health shows db/redis/rabbit status
+        # metrics    → raw metric browser for debugging
+        include: health, metrics, prometheus, info
+  endpoint:
+    health:
+      # Returns full component details: { db: UP, redis: UP, rabbit: UP }
+      show-details: always
+    prometheus:
+      enabled: true
+  metrics:
+    tags:
+      # Tags all metrics with app name for Grafana dashboard filtering
+      application: cognitocart
+    export:
+      prometheus:
+        enabled: true
