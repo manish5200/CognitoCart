@@ -52,8 +52,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT SUM(o.totalAmount) FROM Order o WHERE o.user.id = :userId AND o.orderStatus = 'DELIVERED'")
     BigDecimal calculateTotalSpentByUser(@Param("userId") Long userId);
 
-    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.orderItems WHERE o.user.id = :userId ORDER BY o.orderDate DESC")
-    List<Order> findByUserIdAndOrderItems(@Param("userId") Long userId);
+    @Query(value = "SELECT o FROM Order o LEFT JOIN FETCH o.orderItems WHERE o.user.id = :userId",
+           countQuery = "SELECT COUNT(o) FROM Order o WHERE o.user.id = :userId")
+    Page<Order> findByUserIdAndOrderItems(@Param("userId") Long userId, Pageable pageable);
 
     @Query("SELECT o FROM Order o LEFT JOIN FETCH o.orderItems " +
             "WHERE o.orderStatus = :status AND o.orderDate < :threshold")

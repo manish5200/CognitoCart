@@ -11,6 +11,9 @@ import com.manish.smartcart.repository.CartRepository;
 import com.manish.smartcart.repository.ProductRepository;
 import com.manish.smartcart.model.order.Coupon;
 import com.manish.smartcart.repository.UsersRepository;
+import com.manish.smartcart.exception.BusinessLogicException;
+import com.manish.smartcart.exception.InsufficientStockException;
+import com.manish.smartcart.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -43,7 +46,7 @@ public class CartService {
 
         // 2. Find Product & Check stock
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
         // 3. Update existing item or add new one
         CartItem cartItem = cartItemRepository.findByCartIdAndProductId(cart.getId(), productId).orElse(new CartItem());
@@ -52,7 +55,7 @@ public class CartService {
         // Request)
         int requestedQuantity = (cartItem.getId() == null) ? quantity : cartItem.getQuantity() + quantity;
         if (requestedQuantity > product.getStockQuantity()) {
-            throw new RuntimeException("Insufficient stock. Available: " + product.getStockQuantity());
+            throw new InsufficientStockException("Insufficient stock. Available: " + product.getStockQuantity());
         }
 
         // 4. check if are getting else add to the new one
@@ -86,12 +89,12 @@ public class CartService {
     @Transactional
     public Cart getCartForUser(Long userId) {
         return cartRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Cart not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
     }
 
     @Transactional
     public void clearTheCart(Long userId) {
-        Cart cart = cartRepository.findByUserId(userId).orElseThrow(() -> new RuntimeException("Cart not found"));
+        Cart cart = cartRepository.findByUserId(userId).orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
         // 1. Clear the list (JPA orphanRemoval deletes the rows in DB)
         cart.getItems().clear();
         // 2. Reset the total to zero
@@ -105,10 +108,10 @@ public class CartService {
     @Transactional
     public Cart applyCoupon(Long userId, String code) {
 
-        Cart cart = cartRepository.findByUserId(userId).orElseThrow(() -> new RuntimeException("Cart not found"));
+        Cart cart = cartRepository.findByUserId(userId).orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
 
         if (cart.getItems().isEmpty()) {
-            throw new RuntimeException("Cannot apply coupon to an empty cart.");
+            throw new BusinessLogicException("Cannot apply coupon to an empty cart.");
         }
 
         // 1. Calculate Gross Subtotal first to pass to validation
@@ -200,12 +203,12 @@ public class CartService {
     // Remove a specific item from the cart
     @Transactional
     public Cart removeItemFromCart(Long userId, Long productId) {
-        Cart cart = cartRepository.findByUserId(userId).orElseThrow(() -> new RuntimeException("Cart not found"));
+        Cart cart = cartRepository.findByUserId(userId).orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
 
         CartItem itemToRemove = cart.getItems().stream()
                 .filter(item -> item.getProduct().getId().equals(productId))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Item not in the cart"));
+                .orElseThrow(() -> new ResourceNotFoundException("Item not in the cart"));
 
         cart.removeCartItem(itemToRemove);
 

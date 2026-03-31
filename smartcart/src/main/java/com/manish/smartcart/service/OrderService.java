@@ -18,6 +18,9 @@ import com.manish.smartcart.repository.ProductRepository;
 import com.manish.smartcart.repository.ShipmentRepository;
 import com.manish.smartcart.repository.UserCouponUsageRepository;
 import com.manish.smartcart.repository.UsersRepository;
+import com.manish.smartcart.exception.BusinessLogicException;
+import com.manish.smartcart.exception.InsufficientStockException;
+import com.manish.smartcart.exception.ResourceNotFoundException;
 import com.manish.smartcart.service.notifications.OrderNotificationService;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.transaction.Transactional;
@@ -54,24 +57,23 @@ public class OrderService {
         // CHECKOUT GUARD: Unverified accounts cannot place orders.
         // This forces email ownership confirmation before any money moves.
         Users user = usersRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
 
         // GUARD: Email must be verified before any order can be placed.
         // CONCEPT: Email verification guard — same pattern used by Amazon, Flipkart.
         // If the user hasn't verified their email, we block checkout entirely.
         // Why here and not in the controller? Because business rules belong in the service layer. 
         if(!user.isEmailVerified()){
-            throw new RuntimeException(
+            throw new BusinessLogicException(
                     "Please verify your email before placing an order. " +
                             "Check your inbox for the OTP, or use /auth/resend-otp to get a new one."
             );
-
         }
 
         // 1. Get the user's cart
         Cart cart = cartService.getCartForUser(userId);
         if (cart == null || cart.getItems().isEmpty()) {
-            throw new RuntimeException("Cannot place order with an empty cart");
+            throw new BusinessLogicException("Cannot place order with an empty cart");
         }
         // 2. Create the Order "Header"
         Order order = new Order();
@@ -100,7 +102,7 @@ public class OrderService {
             // Fall back to saved primary address
             var shippingAddr = cart.getUser().getPrimaryAddress();
             if (shippingAddr == null) {
-                throw new RuntimeException("Please provide a shipping address or save one in your profile.");
+                throw new BusinessLogicException("Please provide a shipping address or save one in your profile.");
             }
             order.setShippingFullName(shippingAddr.getFullName());
             order.setShippingPhone(shippingAddr.getPhoneNumber());
@@ -122,12 +124,12 @@ public class OrderService {
             // Without this, both could read stockQuantity = 1 and both would pass the
             // stock check — resulting in stock going to -1 (oversell).
             Product product = productRepository.findByIdForUpdate(cartItem.getProduct().getId())
-                    .orElseThrow(() -> new RuntimeException(
+                    .orElseThrow(() -> new ResourceNotFoundException(
                             "Product not found: " + cartItem.getProduct().getId()));
 
             // CRITICAL: Re-check stock on the freshly locked row
             if (product.getStockQuantity() < cartItem.getQuantity()) {
-                throw new RuntimeException("Insufficient stock for: " + product.getProductName());
+                throw new InsufficientStockException("Insufficient stock for: " + product.getProductName());
             }
             // Deduct stock — safe because we hold the row lock
             product.setStockQuantity(product.getStockQuantity() - cartItem.getQuantity());
@@ -210,19 +212,17 @@ public class OrderService {
     }
 
     // Order History feature.
-    public List<OrderResponse> getOrderHistoryForUser(Long userId) {
-        List<Order> orders = orderRepository.findByUserIdAndOrderItems(userId);
+    public org.springframework.data.domain.Page<OrderResponse> getOrderHistoryForUser(Long userId, org.springframework.data.domain.Pageable pageable) {
+        org.springframework.data.domain.Page<Order> orders = orderRepository.findByUserIdAndOrderItems(userId, pageable);
 
         // Map each Entity to a DTO and — for shipped orders — inject tracking info.
         // CONCEPT: mapShipment is null-safe. Orders without a shipment remain unaffected.
-        return orders.stream()
-                .map(order -> {
-                    OrderResponse response = orderMapper.toOrderResponse(order);
-                    shipmentRepository.findByOrder_Id(order.getId())
-                            .ifPresent(shipment -> orderMapper.mapShipment(response, shipment));
-                    return response;
-                })
-                .collect(Collectors.toList());
+        return orders.map(order -> {
+            OrderResponse response = orderMapper.toOrderResponse(order);
+            shipmentRepository.findByOrder_Id(order.getId())
+                    .ifPresent(shipment -> orderMapper.mapShipment(response, shipment));
+            return response;
+        });
     }
 
     /*
