@@ -1,21 +1,20 @@
 package com.manish.smartcart.controller;
 
+import com.manish.smartcart.config.RabbitMQConfig;
+import com.manish.smartcart.dto.event.OrderPaidEvent;
 import com.manish.smartcart.dto.order.PaymentVerificationRequest;
-import com.manish.smartcart.dto.order.OrderResponse;
 import com.manish.smartcart.enums.OrderStatus;
 import com.manish.smartcart.enums.PaymentStatus;
-import com.manish.smartcart.mapper.OrderMapper;
 import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.repository.OrderRepository;
-import com.manish.smartcart.service.InvoiceService;
 import com.manish.smartcart.service.PaymentService;
 import com.manish.smartcart.service.WebhookDlqService;
-import com.manish.smartcart.service.notifications.OrderNotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,10 +34,8 @@ public class PaymentController {
 
     private final PaymentService paymentService;
     private final OrderRepository orderRepository;
-    private final OrderMapper orderMapper;
-    private final OrderNotificationService orderNotificationService;
-    private final InvoiceService  invoiceService;
     private final WebhookDlqService  webhookDlqService;
+    private final RabbitTemplate rabbitTemplate;
 
     @Value("${razorpay.webhook-secret}")
     private String webhookSecret;
@@ -79,12 +76,11 @@ public class PaymentController {
         orderRepository.save(order);
 
         // 5. Fire exactly one Order Confirmation Email now that money is secured
-        OrderResponse orderResponse = orderMapper.toOrderResponse(order);
-        orderNotificationService.sendEmailNotification(orderResponse);
-
-        // Generate and email PDF invoice now that payment is confirmed
-        byte[] invoicePdf = invoiceService.generateInvoice(orderResponse);
-        orderNotificationService.sendInvoiceEmail(orderResponse, invoicePdf);
+        // Publish an Event to RabbitMQ so the background worker builds the PDF and sends the Email!
+        OrderPaidEvent event = new OrderPaidEvent(order.getId());
+        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_ORDER,
+                RabbitMQConfig.ROUTING_KEY_ORDER_PAID, event);
+        log.info("📤 Published OrderPaidEvent to RabbitMQ for Order {}", order.getId());
 
         return ResponseEntity.ok(Map.of(
                 "message", "Payment verified successfully",
@@ -95,7 +91,7 @@ public class PaymentController {
     /**
      * BACKEND-TO-BACKEND WEBHOOK
      * Razorpay calls this URL directly if the user's browser closes early.
-     * Webhook URL format: https://your-domain.ngrok.io/api/v1/payments/webhook
+     * Webhook URL format: <a href="https://your-domain.ngrok.io/api/v1/payments/webhook">...</a>
      */
     @PostMapping("/webhook")
     @Operation(summary = "Razorpay Webhook Listener")
@@ -125,7 +121,7 @@ public class PaymentController {
                 String razorpayOrderId = paymentEntity.getString("order_id");
                 String razorpayPaymentId = paymentEntity.getString("id");
 
-                // Find local order and promote to PAID if not already done by frontend
+                // Find local order and promote to "PAID" if not already done by frontend
                 orderRepository.findByRazorpayOrderId(razorpayOrderId).ifPresent(order -> {
                     if (order.getOrderStatus() != OrderStatus.PAID) {
                         log.info("Webhook: promoting Order {} to PAID", razorpayOrderId);
@@ -134,12 +130,10 @@ public class PaymentController {
                         order.setRazorpayPaymentId(razorpayPaymentId);
                         orderRepository.save(order);
 
-                        OrderResponse orderResponse = orderMapper.toOrderResponse(order);
-                        orderNotificationService.sendEmailNotification(orderResponse);
+                        OrderPaidEvent event = new OrderPaidEvent(order.getId());
+                        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_ORDER, RabbitMQConfig.ROUTING_KEY_ORDER_PAID, event);
+                        log.info("📤 Webhook published OrderPaidEvent to RabbitMQ for Order {}", order.getId());
 
-                        // Generate and email PDF invoice now that payment is confirmed
-                        byte[] invoicePdf = invoiceService.generateInvoice(orderResponse);
-                        orderNotificationService.sendInvoiceEmail(orderResponse, invoicePdf);
                     } else {
                         log.info("Webhook ignored: Order {} already PAID by frontend.", razorpayOrderId);
                     }

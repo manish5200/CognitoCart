@@ -108,4 +108,10 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "ORDER BY CAST(o.orderDate AS date) ASC")
     List<DailyRevenueDTO> getDailyRevenueTrend(@Param("startDate") java.time.LocalDateTime startDate);
 
+
+    // Eagerly fetches Order details AND Items AND Products in a single SQL query
+    // This is required for our async RabbitMQ worker to safely map the Order to OrderResponse
+    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.orderItems oi LEFT JOIN FETCH oi.product WHERE o.id = :id")
+    Optional<Order> findByIdWithItems(@Param("id") Long id);
+
 }

@@ -184,6 +184,12 @@
             <version>5.13.0</version>
         </dependency>
 
+        <!-- ===== RABBITMQ (Event-Driven Architecture) ===== -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+        </dependency>
+
 
     </dependencies>
 
