@@ -13,7 +13,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,7 +23,7 @@ import java.util.Map;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/auth")
-@Tag(name = "1. Authentication", description = "Endpoints for user registration and login")
+@Tag(name = "Authentication", description = "Endpoints for user registration and login")
 public class AuthController {
 
     private final AuthService authService;
@@ -35,7 +34,6 @@ public class AuthController {
     private final EmailService emailService;
 
     // --- REGISTRATION ---
-
     @Operation(summary = "Register new customer", description = "Creates a customer account. Name, email, password (min 8 chars), and phone are required. DOB and gender are optional.")
     @ApiResponse(responseCode = "201", description = "Customer registered successfully")
     @ApiResponse(responseCode = "400", description = "Validation failed or duplicate email/phone")
@@ -55,7 +53,6 @@ public class AuthController {
     }
 
     // --- AUTHENTICATION ---
-
     @Operation(summary = "Login", description = "Returns a stateless access token (15 min) and a stateful refresh token (1 hr).")
     @ApiResponse(responseCode = "200", description = "Authentication successful")
     @ApiResponse(responseCode = "401", description = "Invalid email or password")
@@ -89,7 +86,6 @@ public class AuthController {
     @PostMapping("/forgot-password")
     public ResponseEntity<Map<String, String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         passwordResetService.initiatePasswordReset(request.getEmail());
-
         // Same message whether email exists or not — prevents user enumeration
         return ResponseEntity.ok(Map.of(
                 "message", "If that email is registered, a reset link has been sent."

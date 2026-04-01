@@ -4,6 +4,7 @@ import com.manish.smartcart.config.CustomUserDetails;
 import com.manish.smartcart.dto.seller.SellerDashboardResponse;
 import com.manish.smartcart.service.SellerService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +34,7 @@ public class SellerController {
     @GetMapping("/dashboard")
     @PreAuthorize("hasRole('SELLER')")
     @Operation(summary = "Seller dashboard", description = "Returns product stats, revenue, order stats and top products for the authenticated seller")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved seller dashboard")
     public ResponseEntity<SellerDashboardResponse> getDashboard(Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         Long sellerId = userDetails.getUser().getId();

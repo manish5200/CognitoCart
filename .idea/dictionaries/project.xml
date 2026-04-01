@@ -2,6 +2,7 @@
   <dictionary name="project">
     <words>
       <w>cognitocart</w>
+      <w>pgvector</w>
       <w>smartcart</w>
     </words>
   </dictionary>
