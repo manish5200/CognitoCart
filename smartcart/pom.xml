@@ -209,6 +209,12 @@
             <artifactId>spring-boot-starter-oauth2-client</artifactId>
         </dependency>
 
+        <!-- ===== OPENCSV (Analytics Exports) ===== -->
+        <dependency>
+            <groupId>com.opencsv</groupId>
+            <artifactId>opencsv</artifactId>
+            <version>5.9</version>
+        </dependency>
 
     </dependencies>
 
