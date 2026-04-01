@@ -75,6 +75,23 @@ Users don't have time to read hundreds of reviews. CognitoCart uses the **Huggin
 
 ---
 
+## 📊 Seller Analytics Streaming (Phase 7 — Live)
+
+CognitoCart now supports massive data exports using a non-blocking, memory-efficient streaming architecture. This allows sellers to download thousands of orders without impacting system performance.
+
+### 🚀 Technical Highlights
+- **Zero-Memory Streaming:** Uses JPA `Stream<Order>` with a database cursor (Fetch Size: 500) and manual `EntityManager.detach()` to keep the JVM memory footprint flat, regardless of file size.
+- **Asynchronous I/O:** Leveraged `StreamingResponseBody` to offload CSV generation to background threads, keeping the main request thread free to serve other users.
+- **Security Context Propagation:** Implemented `RequestAttributeSecurityContextRepository` to ensure the user's legacy identity is safely restored during the final Tomcat async re-dispatch.
+- **Excel Optimized:** Injects a UTF-8 BOM (Byte Order Mark) automatically so the CSV opens perfectly in Microsoft Excel with correct character encoding.
+
+### 🛠️ How to Use
+- **Endpoint:** `GET /api/v1/sellers/reports/revenue.csv`
+- **Security:** Requires `ROLE_SELLER` authority (each seller only sees their own data).
+- **Execution:** Try it via Swagger UI or directly in your browser.
+
+---
+
 ## ✨ System Capabilities
 
 <details open>

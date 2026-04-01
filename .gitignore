@@ -57,3 +57,4 @@ docker-compose.yml
 # Only application-demo.yml (fake placeholder data) is safe to push.
 smartcart/src/main/resources/application.yml
 smartcart/src/main/resources/application-dev.yml
+logs
