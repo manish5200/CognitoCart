@@ -12,6 +12,7 @@ import com.manish.smartcart.util.AppConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +34,7 @@ import jakarta.validation.Valid;
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/admin")
 @PreAuthorize("hasRole('ADMIN')")
-@Tag(name = "2. Admin Controller", description = "Restricted administrative operations for system management")
+@Tag(name = "Admin Controller", description = "Restricted administrative operations for system management")
 @SecurityRequirement(name = "bearerAuth") // Every method in this class requires a JWT
 public class AdminController {
 
@@ -64,6 +65,7 @@ public class AdminController {
         }
     }
 
+
     @Operation(summary = "Update Order Status", description = "Change the lifecycle state of an order (e.g., PENDING to SHIPPED). Access restricted to Admin.")
     @ApiResponse(responseCode = "200", description = "Order status updated successfully")
     @ApiResponse(responseCode = "404", description = "Order ID not found", content = @Content)
@@ -80,47 +82,62 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
-    // --- COUPON MANAGEMENT ---
 
+    // --- COUPON MANAGEMENT ---
     @PostMapping("/coupons")
     @Operation(summary = "Create a new platform-wide discount coupon")
+    @ApiResponse(responseCode = "200", description = "Coupon created successfully")
     public ResponseEntity<CouponResponse> createCoupon(@Valid
                                                            @RequestBody
                                                            CouponRequest couponRequest) {
         return ResponseEntity.ok(couponService.createCoupon(couponRequest));
     }
 
+
     @GetMapping("/coupons")
     @Operation(summary = "View all global coupons")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved all coupons")
     public ResponseEntity<List<CouponResponse>> getAllCoupons() {
         return ResponseEntity.ok(couponService.getAllCoupons());
     }
 
+
     @PatchMapping("/coupons/{couponId}/toggle")
     @Operation(summary = "Activate or deactivate a coupon quickly")
+    @ApiResponse(responseCode = "200", description = "Coupon status toggled successfully")
     public ResponseEntity<String> toggleCouponStatus(@PathVariable Long couponId) {
         couponService.toggleActive(couponId);
         return ResponseEntity.ok("Coupon status toggled successfully.");
     }
 
+
     // POST /api/v1/admin/{orderId}/shipment
     // Called once the admin has physically packed and handed the order to the courier
     @PostMapping("/{orderId}/shipment")
     @Operation(summary = "Attach shipment tracking to an order and mark it as SHIPPED")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Shipment attached and Order marked SHIPPED"),
+        @ApiResponse(responseCode = "404", description = "Order not found")
+    })
     public ResponseEntity<?> attachShipment(
             @PathVariable Long orderId,
             @Valid @RequestBody ShipmentRequest request) {
         return ResponseEntity.ok(shipmentService.attachShipmentAndShip(orderId, request));
     }
 
+
     // --- WEBHOOK DLQ MANAGEMENT ---
     @GetMapping("/webhooks/dlq/pending")
     @Operation(summary = "View broken webhooks", description = "Retrieves all failed Razorpay webhooks that need manual admin intervention.")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved DLQ items")
     public ResponseEntity<?> getPendingWebhooks() {
         return ResponseEntity.ok(webhookDlqService.getPendingFailures());
     }
+
+
     @PostMapping("/webhooks/dlq/{eventId}/replay")
     @Operation(summary = "Re-Play a failed webhook", description = "Simulates Razorpay re-sending the exact JSON payload to your server to fix a dropped payment.")
+    @ApiResponse(responseCode = "200", description = "Webhook replayed successfully")
     public ResponseEntity<String> replayFailedWebhook(@PathVariable Long eventId) {
         String result = webhookDlqService.replayFailedWebhook(eventId);
         return ResponseEntity.ok(result);

@@ -95,6 +95,7 @@ Users don't have time to read hundreds of reviews. CognitoCart uses the **Huggin
 - **OOM-Protected APIs (Phase 6):** Aggressive Spring Data `Pageable` enforcement across product catalogs and heavy order repositories. Implements native HQL `countQuery` logic to force PostgreSQL to slice rows safely—bypassing Hibernate's highly-dangerous in-memory collection mappings.
 - **AI Semantic Search:** pgvector IVFFlat index for sub-millisecond Approximate Nearest Neighbor cosine similarity across the entire product catalog.
 - **Sub-Millisecond Caching:** `@Cacheable` directives tied to **Upstash Redis**, dramatically offloading product and category DB reads with native eviction triggers.
+- **Ultra-Fast CSV Streaming:** Implements non-blocking `StreamingResponseBody` with JPA cursors and manual entity detachment. This allows sellers to export millions of orders with constant, near-zero JVM memory usage.
 - **DDoS Mitigation:** Per-IP Token Bucket rate limiting via **Bucket4j** built into the Spring Security filter chain.
 - **Cloud Content Delivery:** Direct binary integration with the **Cloudinary CDN** — zero local disk dependency.
 
@@ -218,10 +219,12 @@ Navigate directly to **`http://localhost:8080/swagger-ui.html`** to test your en
 - [x] **Event-Driven Architecture ✅:** RabbitMQ (CloudAMQP) decouples PDF invoice generation & email dispatch — response time dropped from ~4s to <50ms. Dead Letter Queue (DLQ) ensures zero message loss.
 - [x] **Observability ✅:** Micrometer + Prometheus + Grafana Cloud — 200+ live metrics scraped every 15s via Grafana Alloy with live dashboards.
 
-**Phase 6 — Global Scale & Auth Hardening 🔐**
-- [x] **Google OAuth 2.0 Delegation ✅:** Dynamic CustomerProfile decoupling without relying on frontend redirect domains.
-- [x] **Native API Pagination ✅:** OOM-protected scalable REST layouts for high-density DB rows.
 - [x] **Enterprise Exception Hierarchy ✅:** `@RestControllerAdvice` standardization across logic boundaries (explicitly throwing ResourceNotFound, InsufficientStock algorithms).
+
+**Phase 7 — Advanced Analytics & Infrastructure Hardening 📊**
+- [x] **High-Performance Streaming ✅:** `StreamingResponseBody` + OpenCSV + `TransactionTemplate` for zero-memory background data exports.
+- [x] **Async Security Propagation ✅:** `RequestAttributeSecurityContextRepository` integration for safe user identity inheritance in Tomcat async dispatches.
+- [ ] **Logistics Webhooks:** Carrier status sync (In-Progress).
 
 ---
 

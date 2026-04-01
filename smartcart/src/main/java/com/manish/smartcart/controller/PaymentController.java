@@ -10,6 +10,8 @@ import com.manish.smartcart.repository.OrderRepository;
 import com.manish.smartcart.service.PaymentService;
 import com.manish.smartcart.service.WebhookDlqService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +45,11 @@ public class PaymentController {
     @PostMapping("/verify")
     @Transactional
     @Operation(summary = "Verify Razorpay Payment Signature")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Payment verified successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid signature"),
+        @ApiResponse(responseCode = "404", description = "Order not found")
+    })
     public ResponseEntity<?> verifyPayment(@Valid @RequestBody PaymentVerificationRequest request) {
 
         // 1. Verify the signature cryptographically to prevent spoofing
@@ -95,6 +102,11 @@ public class PaymentController {
      */
     @PostMapping("/webhook")
     @Operation(summary = "Razorpay Webhook Listener")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Webhook received and processed"),
+        @ApiResponse(responseCode = "400", description = "Invalid webhook signature"),
+        @ApiResponse(responseCode = "500", description = "Processing failed, saved to DLQ")
+    })
     public ResponseEntity<?> handleWebhook(
             @RequestBody String payload,
             @RequestHeader("X-Razorpay-Signature") String signature) {

@@ -1,22 +1,20 @@
 package com.manish.smartcart.controller;
 
 import com.manish.smartcart.config.CustomUserDetails;
-import com.manish.smartcart.dto.users.AddressRequest;
-import com.manish.smartcart.dto.users.AddressResponse;
-import com.manish.smartcart.model.user.Address;
+import com.manish.smartcart.dto.users.*;
 import com.manish.smartcart.service.AddressService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.*;
+import io.swagger.v3.oas.annotations.responses.*;
+import io.swagger.v3.oas.annotations.tags.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
 
 @RestController
 @RequestMapping("/api/v1/addresses") // Versioned API
@@ -29,6 +27,10 @@ public class AddressController {
     // ─── POST: Add Address
     @PostMapping
     @Operation(summary = "Add a new address")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Address created successfully"),
+        @ApiResponse(responseCode = "400", description = "Validation failed")
+    })
     public ResponseEntity<AddressResponse> addAddress(@Valid @RequestBody
                                                           AddressRequest request) {
         // In a real app, extract userId from the JWT token
@@ -40,6 +42,7 @@ public class AddressController {
     // ─── GET: List Addresses
     @GetMapping
     @Operation(summary = "Get all addresses for authenticated user")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved addresses")
     public ResponseEntity<List<AddressResponse>> getMyAddresses() {
         Long userId = getAuthenticatedUserId();
         return ResponseEntity.ok(addressService.getUserAddresses(userId));
@@ -48,6 +51,10 @@ public class AddressController {
     // ─── PUT: Update Address
     @PutMapping("/{addressId}")
     @Operation(summary = "Update an existing address")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Address updated successfully"),
+        @ApiResponse(responseCode = "404", description = "Address not found")
+    })
     public ResponseEntity<AddressResponse> updateAddress(
             @PathVariable Long addressId,
             @Valid @RequestBody AddressRequest request){
@@ -59,6 +66,10 @@ public class AddressController {
     // ─── DELETE: Delete Address
     @DeleteMapping("/{addressId}")
     @Operation(summary = "Delete an address")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Address deleted successfully"),
+        @ApiResponse(responseCode = "404", description = "Address not found")
+    })
     public ResponseEntity<?> deleteAddress(
             @PathVariable Long addressId) {
 
@@ -70,6 +81,10 @@ public class AddressController {
     // ─── PATCH: Set as Default
     @PatchMapping("/{addressId}/default")
     @Operation(summary = "Set a specific address as the default primary address")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Primary address updated successfully"),
+        @ApiResponse(responseCode = "404", description = "Address not found")
+    })
     public ResponseEntity<?> setPrimaryAddress(
             @PathVariable Long addressId) {
         Long userId = getAuthenticatedUserId();

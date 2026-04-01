@@ -12,6 +12,8 @@ import com.manish.smartcart.util.AppConstants;
 import com.manish.smartcart.util.FileValidator;
 import com.manish.smartcart.util.VectorAttributeConverter;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -28,7 +30,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -36,18 +38,20 @@ import java.util.Objects;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/products")
-@Tag(name = "4. Product Management", description = "Browse, search, and manage products")
+@Tag(name = "Product Management", description = "Browse, search, and manage products")
 public class ProductController {
 
         private final ProductService productService;
         private final CategoryService categoryService;
         private final ProductRepository productRepository;
-        private final FileService fileService;
         private final CloudinaryService cloudinaryService;
         private final EmbeddingService embeddingService;
         private final ProductMapper productMapper;
 
+
     // Get All products natively paginated
+    @Operation(summary = "Get all products", description = "Retrieves a paginated list of all products in the catalog.")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved products")
     @GetMapping
     public ResponseEntity<?> getAllProducts(
             @PageableDefault(size = 20) Pageable pageable) {
@@ -61,6 +65,10 @@ public class ProductController {
          * Returns 201 Created with the finalized Product (with Slug/SKU)
          */
         @Operation(summary = "Add Product (Seller Only)", description = "Creates a new product in the catalog.")
+        @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Product created successfully"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - Seller access required")
+        })
         @SecurityRequirement(name = "bearerAuth") // Marks this specific method as protected
         @PostMapping
         @PreAuthorize("hasRole('SELLER')")
@@ -76,6 +84,11 @@ public class ProductController {
         /**
          * GET: Product Detail by Slug (Public)
          */
+        @Operation(summary = "Get product by slug", description = "Finds a specific product using its SEO-friendly slug.")
+        @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Product found"),
+            @ApiResponse(responseCode = "404", description = "Product not found")
+        })
         @GetMapping("/{slug}")
         public ResponseEntity<?> getProductBySlug(@PathVariable String slug) {
                 return ResponseEntity.status(HttpStatus.OK)
@@ -87,6 +100,8 @@ public class ProductController {
          * GET: Products by Category Tree (Public)
          * Finds products in the category and all its sub-categories recursively.
          */
+    @Operation(summary = "Get products by category", description = "Finds products inside a category and its recursive sub-categories using hierarchy traversal.")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved category products")
     @GetMapping("/category/{categoryId}")
     public ResponseEntity<?> getProductByCategoryId(
             @PathVariable Long categoryId,
@@ -101,6 +116,11 @@ public class ProductController {
         /**
          * PATCH: Toggle Visibility (Seller/Admin Only)
          */
+        @Operation(summary = "Toggle product availability", description = "Allows a seller or admin to hide/show a product from the public catalog.")
+        @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Visibility toggled successfully"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - User does not own this product")
+        })
         @PatchMapping("/{id}/toggle")
         @PreAuthorize("hasAnyRole('SELLER','ADMIN')")
         public ResponseEntity<?> toggleVisibility(@PathVariable Long id,
@@ -117,6 +137,11 @@ public class ProductController {
         /**
          * DELETE: Remove Product (Seller/Admin Only)
          */
+        @Operation(summary = "Delete product", description = "Soft DELETES a product from the database.")
+        @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Product deleted successfully"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - User does not own this product")
+        })
         @DeleteMapping("/{id}")
         @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
         public ResponseEntity<?> deleteProduct(@PathVariable Long id,
@@ -139,6 +164,7 @@ public class ProductController {
 
         @Operation(summary = "Search Products", description = "Search products by name, " +
                         "category, or price range with pagination.")
+        @ApiResponse(responseCode = "200", description = "Search operation successful")
         @GetMapping("/search")
         public ResponseEntity<?> searchProduct(
                         @Valid ProductSearchDTO searchDTO,
@@ -157,11 +183,16 @@ public class ProductController {
         }
 
         // Image upload
+        @Operation(summary = "Upload product image", description = "Validates and uploads an image straight to the Cloudinary CDN.")
+        @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Image uploaded and CDN URL returned"),
+            @ApiResponse(responseCode = "400", description = "Invalid file type or size limits exceeded")
+        })
         @PostMapping("/{productId}/upload-image")
         @PreAuthorize("hasRole('SELLER')")
         public ResponseEntity<?> uploadProductImage(
                         @PathVariable Long productId,
-                        @RequestParam("file") MultipartFile file) throws IOException {
+                        @RequestParam("file") MultipartFile file){
 
                 // STEP 1. Validate the file (Security First!)
                 FileValidator.validateImage(file);
@@ -214,6 +245,8 @@ public class ProductController {
         // The caller passes the Cloudinary publicId (received from the upload response
         // or
         // the Cloudinary Dashboard). We handle CDN deletion + DB cleanup here.
+        @Operation(summary = "Delete product image", description = "Erases the image from the Cloudinary CDN using its public ID and updates the database.")
+        @ApiResponse(responseCode = "200", description = "Image deleted successfully")
         @DeleteMapping("/{productId}/images")
         @PreAuthorize("hasRole('SELLER')")
         public ResponseEntity<?> deleteProductImage(
@@ -260,10 +293,8 @@ public class ProductController {
         /**
          * PHASE 4 — AI Semantic Vector Search
          * GET /api/v1/products/search/semantic?q=your query&limit=10
-         *
          * Unlike keyword search (LIKE '%word%'), this finds products by MEANING.
          * "earphones for studying" → finds "Noise Cancelling Headphones" even with no matching words.
-         *
          * Flow: query text → HuggingFace float[384] vector → pgvector cosine similarity → top N results
          */
         @Operation(
@@ -271,6 +302,7 @@ public class ProductController {
                 description = "Find products by meaning using HuggingFace AI + pgvector. " +
                         "Example: 'earphones for noisy cafe' finds noise-cancelling headphones."
         )
+        @ApiResponse(responseCode = "200", description = "Top N closest semantic matches determined by cosine distance")
         @GetMapping("/search/semantic")
         public ResponseEntity<List<ProductResponse>> semanticSearch(
                         @RequestParam String q,

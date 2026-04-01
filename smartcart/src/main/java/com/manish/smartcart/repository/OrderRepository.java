@@ -4,10 +4,13 @@ import com.manish.smartcart.dto.admin.DailyRevenueDTO;
 import com.manish.smartcart.enums.OrderStatus;
 import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.model.user.Users;
+import jakarta.persistence.QueryHint;
+import org.hibernate.jpa.HibernateHints;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -15,6 +18,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
@@ -102,7 +106,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     // ── Seller Dashboard Queries ────────────────────────────────────────────
     // COMPLEX JPQL: Groups orders by Date and sums the revenue.
     // Highly optimized DB-level aggregation for rendering charts.
-    @Query("SELECT new com.manish.smartcart.dto.admin.DailyRevenueDTO(CAST(o.orderDate AS date), SUM(o.totalAmount)) " +
+    @Query("SELECT DailyRevenueDTO(CAST(o.orderDate AS date), SUM(o.totalAmount)) " +
             "FROM Order o " +
             "WHERE o.paymentStatus = 'PAID' AND o.orderDate >= :startDate " +
             "GROUP BY CAST(o.orderDate AS date) " +
@@ -114,5 +118,23 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     // This is required for our async RabbitMQ worker to safely map the Order to OrderResponse
     @Query("SELECT o FROM Order o LEFT JOIN FETCH o.orderItems oi LEFT JOIN FETCH oi.product WHERE o.id = :id")
     Optional<Order> findByIdWithItems(@Param("id") Long id);
+
+    /**
+     * ULTRA-PRODUCTION: True Data Streaming.
+     * Uses a cursor to fetch 500 rows at a time, keeping JVM memory footprint near zero.
+     * Note: Uses org.hibernate.jpa.HibernateHints for Spring Boot 3 / Hibernate 6 compatibility.
+     */
+    @QueryHints(value = {
+            @QueryHint(name = HibernateHints.HINT_FETCH_SIZE, value = "500"),
+            @QueryHint(name = HibernateHints.HINT_CACHEABLE, value = "false"),
+            @QueryHint(name = HibernateHints.HINT_READ_ONLY, value = "true")
+    })
+    @Query("SELECT DISTINCT o FROM Order o JOIN o.orderItems oi WHERE oi.product.sellerId = :sellerId AND o.orderStatus = :status")
+    Stream<Order> streamBySellerIdAndOrderStatus(
+            @Param("sellerId") Long sellerId,
+            @Param("status") OrderStatus status);
+
+
+
 
 }

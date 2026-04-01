@@ -4,25 +4,31 @@ import com.manish.smartcart.config.CustomUserDetails;
 import com.manish.smartcart.dto.feedback.ReviewRequestDTO;
 import com.manish.smartcart.service.ReviewService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+@RequiredArgsConstructor
 @RestController
-@Tag(name = "8. Feedback & Reviews", description = "Product rating and review system")
+@Tag(name = "Feedback & Reviews", description = "Product rating and review system")
 @RequestMapping("/api/v1/reviews")
 public class ReviewController {
 
     private final ReviewService reviewService;
 
-    public ReviewController(ReviewService reviewService) {
-        this.reviewService = reviewService;
-    }
 
     @Operation(summary = "Post or update review", description = "Customer only. Submits a star rating and comment for a product.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Review posted successfully"),
+        @ApiResponse(responseCode = "400", description = "User has not purchased this product"),
+        @ApiResponse(responseCode = "404", description = "Product not found")
+    })
     @SecurityRequirement(name = "bearerAuth")
     @PostMapping("/{productId}")
     @PreAuthorize("hasRole('CUSTOMER')")
