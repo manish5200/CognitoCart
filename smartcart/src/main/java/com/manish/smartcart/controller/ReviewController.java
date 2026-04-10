@@ -17,10 +17,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RequiredArgsConstructor
 @RestController
-@Tag(name = "Feedback & Reviews", description = "Product rating and review system with verified purchase enforcement")
+@Tag(name = "Feedback & Reviews", description = "Verified purchase review system with rating distribution analytics")
 @RequestMapping("/api/v1/reviews")
 public class ReviewController {
 
@@ -32,15 +33,32 @@ public class ReviewController {
     // ─────────────────────────────────────────────────────────────────────────
     @Operation(
             summary = "Get reviews for a product",
-            description = "Returns all reviews for a product, sorted by newest first. No authentication required."
+            description = "Returns reviews sorted by newest first. Each review includes the reviewer's " +
+                    "abbreviated name, star rating, comment, date, and verified purchase badge. " +
+                    "No authentication required."
     )
     @ApiResponse(responseCode = "200", description = "Reviews retrieved successfully")
     @GetMapping("/{productId}")
     public ResponseEntity<List<ReviewResponseDTO>> getReviewsForProduct(@PathVariable Long productId) {
-        // CONCEPT: Product reviews are public data. Anyone browsing the store
-        // should see ratings without needing to log in.
         return ResponseEntity.ok(reviewService.getReviewsForProduct(productId));
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Star rating endpoint
+    // ─────────────────────────────────────────────────────────────────────────
+    @Operation(
+            summary = "Get star rating breakdown for a product",
+            description = "Returns the count of 1★ through 5★ reviews using a single database aggregate query. " +
+                    "Suitable for rendering a rating histogram widget. No authentication required."
+    )
+    @ApiResponse(responseCode = "200", description = "Rating distribution retrieved successfully")
+    @GetMapping("/{productId}/distribution")
+    public ResponseEntity<?> getRatingDistribution(@PathVariable Long productId) {
+        return ResponseEntity.ok(reviewService.getRatingDistribution(productId));
+    }
+
+
+    // ─── CUSTOMER ENDPOINTS — Requires CUSTOMER role ─────────────────────────
 
     // ─────────────────────────────────────────────────────────────────────────
     // PROTECTED ENDPOINT: Only verified customers who bought the product
@@ -71,6 +89,47 @@ public class ReviewController {
                         userId,
                         productId,
                         reviewRequestDTO));
+    }
+
+    //Deletion Endpoint
+    @Operation(
+            summary = "Delete your own review",
+            description = "CUSTOMER only. Permanently removes your review. " +
+                    "The product's average rating is mathematically corrected immediately. " +
+                    "You can only delete your own review — attempting to delete another user's review returns 404."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Review deleted successfully"),
+            @ApiResponse(responseCode = "404", description = "Review not found or does not belong to you")
+    })
+    @SecurityRequirement(name = "bearerAuth")
+    @DeleteMapping("/{reviewId}")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<?> deleteMyReview(
+            @PathVariable Long reviewId,
+            Authentication authentication) {
+        Long userId = extractUserId(authentication);
+        reviewService.deleteMyReview(reviewId, userId);
+        return ResponseEntity.ok(Map.of("message", "Your review has been removed successfully."));
+    }
+
+
+    // ─── ADMIN ENDPOINTS — Requires ADMIN role ────────────────────────────────
+    @Operation(
+            summary = "Admin: Force-delete any review",
+            description = "ADMIN only. Removes abusive, spam, or fake reviews from the platform. " +
+                    "Product rating is automatically corrected after deletion."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Review removed by admin"),
+            @ApiResponse(responseCode = "404", description = "Review not found")
+    })
+    @SecurityRequirement(name = "bearerAuth")
+    @DeleteMapping("/admin/{reviewId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> adminDeleteReview(@PathVariable Long reviewId) {
+        reviewService.adminDeleteReview(reviewId);
+        return ResponseEntity.ok(Map.of("message", "Review has been removed by admin."));
     }
 
 

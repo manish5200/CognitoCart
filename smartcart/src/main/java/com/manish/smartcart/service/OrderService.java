@@ -26,12 +26,14 @@ import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -212,17 +214,29 @@ public class OrderService {
     }
 
     // Order History feature.
-    public org.springframework.data.domain.Page<OrderResponse> getOrderHistoryForUser(Long userId, org.springframework.data.domain.Pageable pageable) {
-        org.springframework.data.domain.Page<Order> orders = orderRepository.findByUserIdAndOrderItems(userId, pageable);
+    public Page<OrderResponse> getOrderHistoryForUser(Long userId, Pageable pageable) {
 
-        // Map each Entity to a DTO and — for shipped orders — inject tracking info.
-        // CONCEPT: mapShipment is null-safe. Orders without a shipment remain unaffected.
-        return orders.map(order -> {
-            OrderResponse response = orderMapper.toOrderResponse(order);
-            shipmentRepository.findByOrder_Id(order.getId())
-                    .ifPresent(shipment -> orderMapper.mapShipment(response, shipment));
-            return response;
-        });
+        // Step 1: Get paginated order IDs from the database (no join, perfect pagination)
+        Page<Long> orderIdPage = orderRepository.findOrderIdsByUserId(userId, pageable);
+
+        if (orderIdPage.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        // Step 2: Fetch complete order data (with items) only for this page's IDs
+        List<Order> orders = orderRepository.findOrdersWithItemsByIds(orderIdPage.getContent());
+
+        // Map to response DTOs
+        List<OrderResponse> orderResponses = orders.stream()
+                .map(orderMapper::toOrderResponse)
+                .toList();
+
+        // This ensures correct pagination metadata (totalElements, totalPages) in the response
+        return new PageImpl<>(
+                orderResponses,
+                pageable,
+                orderIdPage.getTotalElements()
+        );
     }
 
     /*

@@ -16,7 +16,13 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @SuperBuilder
 @Entity
-@Table(name = "reviews")
+@Table(
+        name = "reviews",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uq_review_user_product",
+                columnNames = {"user_id", "product_id"}
+        )
+)
 public class Review extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.EAGER)
