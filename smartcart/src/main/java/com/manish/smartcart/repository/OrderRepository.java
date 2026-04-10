@@ -119,6 +119,18 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT o FROM Order o LEFT JOIN FETCH o.orderItems oi LEFT JOIN FETCH oi.product WHERE o.id = :id")
     Optional<Order> findByIdWithItems(@Param("id") Long id);
 
+
+    // Step 1: Get a paginated slice of ORDER IDs only — no joins, perfect for pagination
+    @Query(value = "SELECT o.id FROM Order o WHERE o.user.id = :userId ORDER BY o.orderDate DESC",
+            countQuery = "SELECT COUNT(o) FROM Order o WHERE o.user.id = :userId")
+    Page<Long> findOrderIdsByUserId(@Param("userId") Long userId, Pageable pageable);
+
+    // Step 2: Fetch full order data WITH items for a specific set of IDs
+// IN clause is safe here because it's bounded to the page size (e.g., 10 IDs max)
+    @Query("SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.orderItems oi LEFT JOIN FETCH oi.product " +
+            "WHERE o.id IN :orderIds ORDER BY o.orderDate DESC")
+    List<Order> findOrdersWithItemsByIds(@Param("orderIds") List<Long> orderIds);
+
     /**
      * ULTRA-PRODUCTION: True Data Streaming.
      * Uses a cursor to fetch 500 rows at a time, keeping JVM memory footprint near zero.
