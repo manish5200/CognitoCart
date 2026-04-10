@@ -3,6 +3,7 @@ package com.manish.smartcart.controller;
 import com.manish.smartcart.config.CustomUserDetails;
 import com.manish.smartcart.dto.order.OrderRequest;
 import com.manish.smartcart.dto.order.OrderResponse;
+import com.manish.smartcart.exception.BusinessLogicException;
 import com.manish.smartcart.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -41,12 +42,11 @@ public class OrderController {
         @PostMapping("/checkout")
         public ResponseEntity<?> placeOrder(@Valid @RequestBody OrderRequest orderRequest,
                         Authentication authentication) {
-                CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-                assert userDetails != null;
-                Long userId = userDetails.getUser().getId();
+                Long userId = extractUserId(authentication);
                 OrderResponse orderResponse = orderService.placeOrder(userId, orderRequest);
                 return ResponseEntity.status(HttpStatus.CREATED).body(orderResponse);
         }
+
 
         @Operation(summary = "Get order history", description = "Retrieves paginated past orders for the authenticated user.")
         @ApiResponses(value = {
@@ -55,15 +55,15 @@ public class OrderController {
         @GetMapping("/history")
         public ResponseEntity<?> getOrderHistory(
                 Authentication authentication,
-                @PageableDefault(size = 10, sort = "orderDate", direction = Sort.Direction.DESC) Pageable pageable) {
-                
-                CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-                assert userDetails != null;
-                Long userId = userDetails.getUser().getId();
-
+                @PageableDefault(
+                        size = 10,
+                        sort = "orderDate",
+                        direction = Sort.Direction.DESC) Pageable pageable) {
+                Long userId = extractUserId(authentication);
                 Page<OrderResponse> history = orderService.getOrderHistoryForUser(userId, pageable);
                 return ResponseEntity.ok(history);
         }
+
 
         @Operation(summary = "Cancel order", description = "Allows a user to cancel an order if it has not yet been processed for shipping.")
         @ApiResponses(value = {
@@ -73,11 +73,18 @@ public class OrderController {
         })
         @PutMapping("/{orderId}/cancel")
         public ResponseEntity<?> cancelOrder(@PathVariable Long orderId,
-                                             Authentication authentication) {
-                CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-                assert userDetails != null;
-                Long userId = userDetails.getUser().getId();
+                                             Authentication authentication){
+                Long userId = extractUserId(authentication);
                 OrderResponse orderResponse = orderService.cancelOrder(userId, orderId);
                 return ResponseEntity.ok(orderResponse);
+        }
+
+        //HELPER FUNCTION TO EXTRACT UserId
+        private long extractUserId(Authentication authentication) {
+                CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+                if(customUserDetails == null){
+                        throw new BusinessLogicException("Authentication context is missing. Please log in again.");
+                }
+                return customUserDetails.getUser().getId();
         }
 }

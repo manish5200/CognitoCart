@@ -65,3 +65,4 @@ smartcart/src/main/resources/application-dev.yml
 # Ignore any directory named logs anywhere (nested)
 **/logs/
 
+**/.code-review-graph/
