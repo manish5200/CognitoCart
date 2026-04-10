@@ -4,6 +4,7 @@ import com.manish.smartcart.config.CustomUserDetails;
 import com.manish.smartcart.dto.cart.CartResponse;
 import com.manish.smartcart.dto.product.ProductResponse;
 import com.manish.smartcart.dto.product.WishlistSummaryDTO;
+import com.manish.smartcart.exception.BusinessLogicException;
 import com.manish.smartcart.service.WishlistService;
 import com.manish.smartcart.util.AppConstants;
 import io.swagger.v3.oas.annotations.Operation;
@@ -30,30 +31,31 @@ public class WishlistController {
         private final WishlistService wishlistService;
 
 
-        @Operation(summary = "Toggle Wishlist Item", description = "Adds a product to the wishlist if it's not present, or removes it if it already exists.")
+        @Operation(summary = "Toggle Wishlist Item",
+                description = "Idempotent toggle — adds the product if not in wishlist, removes it if already saved. " +
+                        "Returns a message indicating the action taken.")
         @ApiResponse(responseCode = "200", description = "Wishlist updated successfully")
         @PostMapping("/toggle/{productId}")
         @PreAuthorize("hasRole('CUSTOMER')")
         public ResponseEntity<?> toggleWishlist(@PathVariable Long productId,
                                                 Authentication authentication) {
-                CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
-                assert customUserDetails != null;
-                Long userId = customUserDetails.getUser().getId();
+                Long userId = extractUserId(authentication);
                 String message = wishlistService.toggleWishlist(userId, productId);
                 return ResponseEntity.ok().body(Map.of("Status", message));
         }
 
-        @Operation(summary = "Get My Wishlist", description = "Retrieves all products currently saved in the user's wishlist.")
+        @Operation(summary = "Get My Wishlist",
+                description = "Returns all products currently saved in the user's wishlist as full product cards.")
         @ApiResponse(responseCode = "200", description = "Successfully retrieved wishlist items")
         @GetMapping
         public ResponseEntity<List<ProductResponse>> getMyWishlist(Authentication authentication) {
-                CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-                assert userDetails != null;
-                List<ProductResponse> wishlist = wishlistService.getWishlistForUser(userDetails.getUser().getId());
+                Long userId = extractUserId(authentication);
+                List<ProductResponse> wishlist = wishlistService.getWishlistForUser(userId);
                 return ResponseEntity.ok(wishlist);
         }
 
-        @Operation(summary = "Move Item to Cart", description = "Adds a wishlisted product to the cart and removes it from the wishlist.")
+        @Operation(summary = "Move Item to Cart",
+                description = "Adds a wishlisted product to the cart and removes it from the wishlist.")
         @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Item moved to cart successfully"),
             @ApiResponse(responseCode = "404", description = "Product not found in wishlist")
@@ -63,21 +65,30 @@ public class WishlistController {
                 @PathVariable Long productId,
                         @RequestParam(name = "quantity", defaultValue = AppConstants.PRODUCT_QUANTITY) Integer quantity,
                         Authentication authentication) {
-                CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
-                assert customUserDetails != null;
-                Long userId = customUserDetails.getUser().getId();
+                Long userId = extractUserId(authentication);
                 CartResponse cartResponse = wishlistService.wishlistToCart(userId, productId, quantity);
                 return ResponseEntity.ok(Map.of("Item moved to cart successfully", cartResponse));
         }
 
-        @Operation(summary = "Get Wishlist Summary", description = "Returns all wishlisted items with a calculated total value.")
+        @Operation(
+                summary = "Get Wishlist Summary",
+                description = "Returns all wishlisted items with a calculated total value."
+        )
         @ApiResponse(responseCode = "200", description = "Successfully retrieved wishlist summary")
         @GetMapping("/summary")
         public ResponseEntity<?> getWishlistSummary(Authentication authentication) {
-                CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
-                assert customUserDetails != null;
-                Long userId = customUserDetails.getUser().getId();
+                Long userId = extractUserId(authentication);
                 WishlistSummaryDTO wishlistSummaryDTO = wishlistService.getWishlistSummary(userId);
                 return ResponseEntity.ok(Map.of("Wishlist Summary", wishlistSummaryDTO));
         }
+
+
+        private Long extractUserId(Authentication authentication) {
+                CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+                if (userDetails == null) {
+                        throw new BusinessLogicException("Authentication context is missing. Please log in again.");
+                }
+                return userDetails.getUser().getId();
+        }
+
 }

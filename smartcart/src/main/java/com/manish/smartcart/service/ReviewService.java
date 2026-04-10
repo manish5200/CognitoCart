@@ -1,6 +1,7 @@
 package com.manish.smartcart.service;
 
 import com.manish.smartcart.dto.feedback.ReviewRequestDTO;
+import com.manish.smartcart.dto.feedback.ReviewResponseDTO;
 import com.manish.smartcart.enums.OrderStatus;
 import com.manish.smartcart.mapper.ReviewMapper;
 import com.manish.smartcart.model.feedback.Review;
@@ -10,13 +11,15 @@ import com.manish.smartcart.repository.OrderRepository;
 import com.manish.smartcart.repository.ProductRepository;
 import com.manish.smartcart.repository.ReviewRepository;
 import com.manish.smartcart.repository.UsersRepository;
-import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -32,14 +35,14 @@ public class ReviewService {
 
 
     @Recover
-    public Map<String,Object>recover(org.springframework.orm.ObjectOptimisticLockingFailureException e){
+    public Map<String,Object>recover(ObjectOptimisticLockingFailureException e){
         // This runs if all 3 attempts fail
         throw new RuntimeException("Server is too busy to process your review. Please try again in a moment.");
     }
 
     @Transactional
     @Retryable(
-            retryFor = {org.springframework.orm.ObjectOptimisticLockingFailureException.class},
+            retryFor = {ObjectOptimisticLockingFailureException.class},
             maxAttempts = 3,
             backoff = @Backoff(delay =  500)// Wait 500ms before trying again
     )
@@ -144,5 +147,21 @@ public class ReviewService {
           productRepository.save(product);
           reviewRepository.delete(review);
 
+    }
+
+    /**
+     * Fetches all reviews for a given product, sorted newest first.
+     * CONCEPT: This is a READ-ONLY operation — we don't modify anything.
+     * Using @Transactional(readOnly = true) tells the database:
+     * "Don't bother acquiring write locks. Just give me the data fast."
+     * This improves performance under high concurrency (e.g., product detail page
+     * being hit by 500 users simultaneously).
+     */
+    @Transactional(readOnly = true)
+    public List<ReviewResponseDTO>getReviewsForProduct(Long productId){
+        return reviewRepository.findByProductIdOrderByCreatedAtDesc(productId)
+                .stream()
+                .map(reviewMapper::toReviewResponseDTO)
+                .toList();
     }
 }

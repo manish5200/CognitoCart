@@ -3,6 +3,7 @@ package com.manish.smartcart.controller;
 import com.manish.smartcart.config.CustomUserDetails;
 import com.manish.smartcart.dto.cart.CartRequest;
 import com.manish.smartcart.dto.cart.CartResponse;
+import com.manish.smartcart.exception.BusinessLogicException;
 import com.manish.smartcart.model.cart.Cart;
 import com.manish.smartcart.service.CartService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,6 +28,13 @@ public class CartController {
 
         private final CartService cartService;
 
+        private long extractUserId(Authentication authentication) {
+                CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+                if(customUserDetails == null){
+                        throw new BusinessLogicException("Authentication context is missing. Please log in again.");
+                }
+                return customUserDetails.getUser().getId();
+        }
 
         // POST: Add item to cart
         // Request Body: { "productId": 1, "quantity": 2 }
@@ -39,10 +47,9 @@ public class CartController {
         @PostMapping("/add")
         public ResponseEntity<?> addItemToCart(@RequestBody @Valid CartRequest cartRequest,
                         Authentication authentication) {
-                CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-                assert userDetails != null;
+                Long userId = extractUserId(authentication);
                 Cart updatedCart = cartService.addItemToCart(
-                                userDetails.getUser().getId(),
+                                userId,
                                 cartRequest.getProductId(),
                                 cartRequest.getQuantity());
                 CartResponse cartResponse = new CartResponse().getCartResponse(updatedCart);
@@ -58,9 +65,8 @@ public class CartController {
         })
         @GetMapping("/summary")
         public ResponseEntity<?> getCartSummary(Authentication authentication) {
-                CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-                assert userDetails != null;
-                Cart cart = cartService.getCartForUser(userDetails.getUser().getId());
+                Long userId = extractUserId(authentication);
+                Cart cart = cartService.getCartForUser(userId);
                 CartResponse cartResponse = new CartResponse().getCartResponse(cart);
                 return ResponseEntity.ok().body(cartResponse);
 
@@ -73,9 +79,7 @@ public class CartController {
         })
         @DeleteMapping("/clear")
         public ResponseEntity<?> clearCart(Authentication authentication) {
-                CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-                assert userDetails != null;
-                Long userId = userDetails.getUser().getId();
+                Long userId = extractUserId(authentication);
                 cartService.clearTheCart(userId);
                 return ResponseEntity.ok().body(Map.of("message", "Cart cleared successfully✅"));
         }
@@ -90,10 +94,7 @@ public class CartController {
         public ResponseEntity<?> applyCoupon(
                         @RequestParam("code") String code,
                         Authentication authentication) {
-
-                CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-                assert userDetails != null;
-                Long userId = userDetails.getUser().getId();
+                Long userId = extractUserId(authentication);
                 Cart cart = cartService.applyCoupon(userId, code);
 
                 CartResponse cartResponse = new CartResponse().getCartResponse(cart);
@@ -110,9 +111,7 @@ public class CartController {
         @DeleteMapping("/item/{productId}")
         public ResponseEntity<?> deleteItemFromCart(@PathVariable Long productId,
                         Authentication auth) {
-                CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
-                assert userDetails != null;
-                Long userId = userDetails.getUser().getId();
+                Long userId = extractUserId(auth);
                 Cart cart = cartService.removeItemFromCart(userId, productId);
                 CartResponse cartResponse = new CartResponse().getCartResponse(cart);
                 return ResponseEntity.ok().body(cartResponse);
