@@ -107,7 +107,7 @@ public class EmailTemplateBuilder {
         Context context = new Context();
         context.setVariable("name", user.getFullName());
         context.setVariable("email", user.getEmail());
-        // Human-readable timestamp: "March 13, 2026 at 10:30 AM IST"
+        // Human-readable timestamp: "March 13, 2026, at 10:30 AM IST"
         context.setVariable("changedAt", LocalDateTime.now().format(SECURITY_FORMATTER));
         return templateEngine.process("emails/password-changed", context);
     }
@@ -146,6 +146,28 @@ public class EmailTemplateBuilder {
         context.setVariable("products", products);
         context.setVariable("frontendUrl", frontendUrl);
         return templateEngine.process("emails/wishlist-sale", context);
+    }
+
+    /**
+     * Builds the delivery confirmation email — reuses the existing order-status template
+     * and passes showReviewCta=true to render the "Rate your purchase" button.
+
+     * CONCEPT — Template reuse:
+     * No need for a brand-new HTML file. The existing emails/order-status.html
+     * already renders a beautiful green DELIVERED banner.
+     * We just pass extra context variables to conditionally show the review CTA.
+     */
+    public String buildDeliveryConfirmationEmail(OrderResponse order) {
+        Context context = new Context();
+        context.setVariable("customerName", order.getCustomerName());
+        context.setVariable("orderId", order.getOrderId());
+        context.setVariable("status", order.getStatus().name()); // "DELIVERED" → green banner ✅
+        context.setVariable("statusMessage",
+                "Your order has been delivered! We hope you love your purchase. 🎉 " +
+                        "Leave a review and help other shoppers.");
+        // Tells order-status.html to render the green "Rate your purchase" button
+        context.setVariable("showReviewCta", true);
+        return templateEngine.process("emails/order-status", context);
     }
 
 }

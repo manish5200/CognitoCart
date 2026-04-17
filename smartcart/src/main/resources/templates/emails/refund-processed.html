@@ -38,19 +38,21 @@
           </td>
         </tr>
 
-        <!-- ══ REFUND AMOUNT BADGE ════════════════════════════════════════ -->
+        <!-- ══ REFUND AMOUNT HERO ════════════════════════════════════════ -->
         <tr>
-          <td style="background:#1a1a2e;padding:0 48px 24px;text-align:center;">
-            <div style="display:inline-block;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.35);border-radius:12px;padding:16px 32px;">
-              <p style="margin:0 0 4px 0;font-size:12px;font-weight:600;color:#93c5fd;text-transform:uppercase;letter-spacing:1px;">
-                Refund Amount
+          <td style="background:#1a1a2e;padding:0 48px 28px;text-align:center;">
+            <div style="display:inline-block;background:rgba(59,130,246,0.08);border-radius:16px;padding:28px 44px;border-width:1px;border-style:solid;border-color:rgba(59,130,246,0.35);">
+              <p style="margin:0 0 6px 0;font-size:13px;font-weight:700;color:#93c5fd;text-transform:uppercase;letter-spacing:2px;">
+                ✓ &nbsp;Refund Initiated
               </p>
-              <p style="margin:0;font-size:26px;font-weight:800;color:#ffffff;">
+              <p style="margin:0 0 12px 0;font-size:38px;font-weight:900;color:#ffffff;letter-spacing:-1px;">
                 ₹<span th:text="${#numbers.formatDecimal(refundAmount, 1, 'COMMA', 2, 'POINT')}">1,499.00</span>
               </p>
-              <p style="margin:16px 0 0 0;font-size:12px;color:#93c5fd;font-family:monospace;">
-                Transaction ID: <span th:text="${refundId}">rfnd_XXXXXXXXX</span>
-              </p>
+              <div style="display:inline-block;background:rgba(59,130,246,0.12);border-radius:8px;padding:7px 18px;border-width:1px;border-style:solid;border-color:rgba(59,130,246,0.25);">
+                <p style="margin:0;font-size:11px;color:#93c5fd;font-family:monospace;letter-spacing:0.5px;">
+                  Txn ID: <span th:text="${refundId}">rfnd_XXXXXXXXX</span>
+                </p>
+              </div>
             </div>
           </td>
         </tr>

@@ -7,41 +7,71 @@
     <title>Order Update — CognitoCart</title>
 </head>
 
-<body
-    style="margin:0;padding:0;background:#f0f4f8;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#1a202c;">
+<!--
+  order-status.html — CognitoCart Premium Order Status Email
+  ─────────────────────────────────────────────────────────────
+  Context variables expected from EmailTemplateBuilder:
+    • customerName   (String)       — e.g. "Manish Kumar"
+    • orderId        (Long)         — e.g. 42
+    • status         (String)       — OrderStatus.name() e.g. "SHIPPED"
+    • statusMessage  (String)       — Human-readable description from switch()
+    • showReviewCta  (Boolean)      — true only when status = DELIVERED
+  ─────────────────────────────────────────────────────────────
+  EMAIL CLIENT RULES followed here:
+    • No <style> block — Gmail strips it. All CSS is inline.
+    • No CSS shorthand (border: 1px solid red) — use longhand.
+    • th:style REPLACES style attr entirely — never use both on same element.
+    • No flexbox or grid — use <table> for layout.
+    • Single ${} ternary block per th:style — no nesting within nesting.
+-->
 
-    <table width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f0f4f8;padding:40px 0;">
+<body style="margin:0;padding:0;background:#0f0f1a;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#1a202c;">
+
+    <!-- Outer wrapper table -->
+    <table width="100%" cellspacing="0" cellpadding="0" border="0"
+           style="background:#0f0f1a;padding:40px 0;">
         <tr>
             <td align="center">
-                <table width="600" cellspacing="0" cellpadding="0" border="0"
-                    style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
 
-                    <!-- Brand Header (color changes per status — one ${} block, no nesting) -->
+                <!-- Card container — 600px, dark glass effect -->
+                <table width="600" cellspacing="0" cellpadding="0" border="0"
+                       style="background:#1a1a2e;border-radius:20px;overflow:hidden;border-width:1px;border-style:solid;border-color:#2d2d44;">
+
+                    <!-- ══════════════════════════════════════════════ -->
+                    <!-- HEADER — Dynamic gradient per order status     -->
+                    <!-- ══════════════════════════════════════════════ -->
                     <tr>
                         <td th:style="${#strings.equals(status,'DELIVERED')
-                              ? 'background:linear-gradient(135deg,#38a169 0%,#276749 100%);padding:0;'
-                              : (#strings.equals(status,'SHIPPED')
-                              ? 'background:linear-gradient(135deg,#3182ce 0%,#2c5282 100%);padding:0;'
-                              : (#strings.equals(status,'CONFIRMED')
-                              ? 'background:linear-gradient(135deg,#805ad5 0%,#553c9a 100%);padding:0;'
-                              : (#strings.equals(status,'CANCELLED')
-                              ? 'background:linear-gradient(135deg,#e53e3e 0%,#9b2c2c 100%);padding:0;'
-                              : 'background:linear-gradient(135deg,#dd6b20 0%,#9c4221 100%);padding:0;')))}"
-                            style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:0;">
+                                  ? 'background:linear-gradient(135deg,#0a7c59 0%,#0d9e73 50%,#0a7c59 100%);padding:0;'
+                                  : (#strings.equals(status,'OUT_FOR_DELIVERY')
+                                  ? 'background:linear-gradient(135deg,#1a6b9a 0%,#1e90d4 50%,#1a6b9a 100%);padding:0;'
+                                  : (#strings.equals(status,'SHIPPED')
+                                  ? 'background:linear-gradient(135deg,#2156a8 0%,#2d6fd6 50%,#2156a8 100%);padding:0;'
+                                  : (#strings.equals(status,'CONFIRMED')
+                                  ? 'background:linear-gradient(135deg,#5b2da6 0%,#7b4fd6 50%,#5b2da6 100%);padding:0;'
+                                  : (#strings.equals(status,'PACKED')
+                                  ? 'background:linear-gradient(135deg,#b35a00 0%,#e57300 50%,#b35a00 100%);padding:0;'
+                                  : (#strings.equals(status,'CANCELLED')
+                                  ? 'background:linear-gradient(135deg,#9b1c1c 0%,#c53030 50%,#9b1c1c 100%);padding:0;'
+                                  : 'background:linear-gradient(135deg,#2d3748 0%,#4a5568 50%,#2d3748 100%);padding:0;')))))}"
+                             style="background:linear-gradient(135deg,#2156a8 0%,#2d6fd6 50%,#2156a8 100%);padding:0;">
+
                             <table width="100%" cellspacing="0" cellpadding="0" border="0">
                                 <tr>
-                                    <td style="padding:32px 40px 28px 40px;">
-                                        <p
-                                            style="margin:0;font-size:22px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;">
-                                            🛒 CognitoCart</p>
-                                        <p style="margin:4px 0 0 0;font-size:13px;color:rgba(255,255,255,0.7);">Order
-                                            Status Update</p>
+                                    <!-- Logo -->
+                                    <td style="padding:28px 36px 24px 36px;">
+                                        <p style="margin:0;font-size:20px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">
+                                            ⚡ CognitoCart
+                                        </p>
+                                        <p style="margin:3px 0 0 0;font-size:12px;color:rgba(255,255,255,0.65);font-weight:400;letter-spacing:0.3px;">
+                                            Smart Shopping. Real-Time Tracking.
+                                        </p>
                                     </td>
-                                    <td align="right" style="padding:32px 40px 28px 0;">
-                                        <div
-                                            style="background:rgba(255,255,255,0.20);border-radius:50px;padding:8px 18px;display:inline-block;">
-                                            <p style="margin:0;font-size:13px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:1px;"
-                                                th:text="${status}">SHIPPED</p>
+                                    <!-- Live Status Badge -->
+                                    <td align="right" style="padding:28px 36px 24px 0;">
+                                        <div style="background:rgba(255,255,255,0.15);border-radius:50px;padding:7px 16px;display:inline-block;border-width:1px;border-style:solid;border-color:rgba(255,255,255,0.25);">
+                                            <p style="margin:0;font-size:11px;font-weight:700;color:#ffffff;text-transform:uppercase;letter-spacing:1.5px;"
+                                               th:text="${status}">SHIPPED</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -49,97 +79,329 @@
                         </td>
                     </tr>
 
-                    <!-- Content -->
+                    <!-- ══════════════════════════════════════════════ -->
+                    <!-- BIG STATUS HERO — Icon + Label + Status Name  -->
+                    <!-- ══════════════════════════════════════════════ -->
                     <tr>
-                        <td style="padding:36px 40px 24px 40px;">
-                            <h2 style="margin:0 0 6px 0;font-size:22px;font-weight:700;color:#1a202c;">
-                                Hi <span th:text="${customerName}">Customer</span>! 👋
-                            </h2>
-                            <p style="margin:0;font-size:15px;color:#718096;line-height:1.7;">
-                                We have an update on your CognitoCart order
-                                <strong style="color:#2d3748;" th:text="${'#CC-' + orderId}">#CC-001</strong>.
+                        <td style="padding:36px 36px 0 36px;text-align:center;">
+
+                            <!-- Animated-look status circle with glow ring -->
+                            <div th:style="${#strings.equals(status,'DELIVERED')
+                                        ? 'display:inline-block;width:80px;height:80px;border-radius:50%;background:rgba(10,124,89,0.18);border-width:2px;border-style:solid;border-color:#0d9e73;text-align:center;line-height:80px;'
+                                        : (#strings.equals(status,'OUT_FOR_DELIVERY')
+                                        ? 'display:inline-block;width:80px;height:80px;border-radius:50%;background:rgba(26,107,154,0.18);border-width:2px;border-style:solid;border-color:#1e90d4;text-align:center;line-height:80px;'
+                                        : (#strings.equals(status,'SHIPPED')
+                                        ? 'display:inline-block;width:80px;height:80px;border-radius:50%;background:rgba(33,86,168,0.18);border-width:2px;border-style:solid;border-color:#2d6fd6;text-align:center;line-height:80px;'
+                                        : (#strings.equals(status,'CANCELLED')
+                                        ? 'display:inline-block;width:80px;height:80px;border-radius:50%;background:rgba(197,48,48,0.18);border-width:2px;border-style:solid;border-color:#c53030;text-align:center;line-height:80px;'
+                                        : 'display:inline-block;width:80px;height:80px;border-radius:50%;background:rgba(90,103,216,0.18);border-width:2px;border-style:solid;border-color:#7b4fd6;text-align:center;line-height:80px;')))}"
+                                 style="display:inline-block;width:80px;height:80px;border-radius:50%;background:rgba(33,86,168,0.18);border-width:2px;border-style:solid;border-color:#2d6fd6;text-align:center;line-height:80px;">
+                                <span style="font-size:34px;line-height:80px;display:inline-block;vertical-align:middle;"
+                                      th:text="${#strings.equals(status,'DELIVERED') ? '✅'
+                                              : (#strings.equals(status,'OUT_FOR_DELIVERY') ? '🛵'
+                                              : (#strings.equals(status,'SHIPPED') ? '🚚'
+                                              : (#strings.equals(status,'CONFIRMED') ? '✔️'
+                                              : (#strings.equals(status,'PACKED')  ? '📦'
+                                              : (#strings.equals(status,'CANCELLED') ? '✖️'
+                                              : '🔄')))))}">🚚</span>
+                            </div>
+
+                            <!-- Label above the status name -->
+                            <p style="margin:18px 0 4px 0;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#6b7280;">
+                                ORDER STATUS
+                            </p>
+
+                            <!-- The big status word -->
+                            <h1 th:style="${'margin:0 0 6px 0;font-size:34px;font-weight:900;letter-spacing:-1px;'
+                                          + (#strings.equals(status,'DELIVERED')      ? 'color:#0d9e73;'
+                                          : (#strings.equals(status,'OUT_FOR_DELIVERY') ? 'color:#1e90d4;'
+                                          : (#strings.equals(status,'SHIPPED')        ? 'color:#5b8fe8;'
+                                          : (#strings.equals(status,'CANCELLED')      ? 'color:#fc8181;'
+                                          : 'color:#a78bfa;'))))}"
+                                style="margin:0 0 6px 0;font-size:34px;font-weight:900;letter-spacing:-1px;color:#5b8fe8;"
+                                th:text="${status}">SHIPPED</h1>
+
+                            <!-- Greeting -->
+                            <p style="margin:10px 0 0 0;font-size:15px;color:#9ca3af;line-height:1.6;">
+                                Hi <strong style="color:#e2e8f0;" th:text="${customerName}">Customer</strong>,
+                                here's your latest order update.
                             </p>
                         </td>
                     </tr>
 
-                    <!-- Status Badge Card (color changes per status — single ${} block) -->
+                    <!-- ══════════════════════════════════════════════ -->
+                    <!-- ORDER ID CHIP                                  -->
+                    <!-- ══════════════════════════════════════════════ -->
                     <tr>
-                        <td style="padding:0 40px 28px 40px;">
-                            <table width="100%" cellspacing="0" cellpadding="0" border="0"
-                                th:style="${#strings.equals(status,'DELIVERED')
-                                    ? 'background:#f0fff4;border:1.5px solid #9ae6b4;border-radius:14px;text-align:center;'
-                                    : (#strings.equals(status,'SHIPPED')
-                                    ? 'background:#ebf8ff;border:1.5px solid #90cdf4;border-radius:14px;text-align:center;'
-                                    : (#strings.equals(status,'CANCELLED')
-                                    ? 'background:#fff5f5;border:1.5px solid #feb2b2;border-radius:14px;text-align:center;'
-                                    : 'background:#faf5ff;border:1.5px solid #d6bcfa;border-radius:14px;text-align:center;'))}"
-                                style="background:#f7fafc;border:1.5px solid #e2e8f0;border-radius:14px;text-align:center;">
-                                <tr>
-                                    <td style="padding:32px 24px;">
-                                        <!-- Status Icon — single ${} block with chained ternary -->
-                                        <p style="margin:0 0 10px 0;font-size:40px;"
-                                            th:text="${#strings.equals(status,'DELIVERED') ? '✅'
-                                                : (#strings.equals(status,'SHIPPED') ? '🚚'
-                                                : (#strings.equals(status,'CONFIRMED') ? '✅'
-                                                : (#strings.equals(status,'PACKED') ? '📦'
-                                                : (#strings.equals(status,'CANCELLED') ? '❌'
-                                                : '🔄'))))}">🚚</p>
+                        <td style="padding:20px 36px 0 36px;text-align:center;">
+                            <div style="display:inline-block;background:#252540;border-radius:8px;padding:10px 20px;border-width:1px;border-style:solid;border-color:#3d3d5c;">
+                                <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:#6b7280;">Order</span>
+                                &nbsp;
+                                <span style="font-size:15px;font-weight:800;color:#818cf8;"
+                                      th:text="${'#CC-' + orderId}">#CC-042</span>
+                            </div>
+                        </td>
+                    </tr>
 
-                                        <p
-                                            style="margin:0 0 8px 0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#a0aec0;">
-                                            New Status</p>
-                                        <!-- CONCEPT: th:style REPLACES the style attribute entirely.
-                                             So we concatenate the base styles + dynamic color in one expression.
-                                             Never have both style="" and th:style="" on the same element! -->
-                                        <h2 th:style="${'margin:0;font-size:28px;font-weight:800;letter-spacing:-0.5px;'
-                                               + (#strings.equals(status,'DELIVERED') ? 'color:#276749;'
-                                               : (#strings.equals(status,'SHIPPED')   ? 'color:#2b6cb0;'
-                                               : (#strings.equals(status,'CANCELLED') ? 'color:#c53030;'
-                                               : 'color:#553c9a;')))}"
-                                            th:text="${status}">SHIPPED</h2>
+                    <!-- ══════════════════════════════════════════════ -->
+                    <!-- ORDER JOURNEY TIMELINE                         -->
+                    <!-- 5-step tracker — filled dynamically by status  -->
+                    <!-- ══════════════════════════════════════════════ -->
+                    <tr>
+                        <td style="padding:32px 36px 8px 36px;">
+                            <p style="margin:0 0 16px 0;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#6b7280;text-align:center;">
+                                ORDER JOURNEY
+                            </p>
+
+                            <table width="100%" cellspacing="0" cellpadding="0" border="0">
+                                <tr>
+                                    <!--
+                                      TIMELINE LOGIC:
+                                      Each step dot goes GREEN (done) or GREY (pending).
+                                      We compare the current status string to determine which steps are "done".
+                                      Steps in order: CONFIRMED → PACKED → SHIPPED → OUT_FOR_DELIVERY → DELIVERED
+                                    -->
+
+                                    <!-- Step 1: CONFIRMED -->
+                                    <td width="20%" style="text-align:center;vertical-align:top;">
+                                        <!-- Dot -->
+                                        <div th:style="${(#strings.equals(status,'CONFIRMED')
+                                                       || #strings.equals(status,'PACKED')
+                                                       || #strings.equals(status,'SHIPPED')
+                                                       || #strings.equals(status,'OUT_FOR_DELIVERY')
+                                                       || #strings.equals(status,'DELIVERED'))
+                                                   ? 'width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#0d9e73,#0a7c59);margin:0 auto;border-width:2px;border-style:solid;border-color:#0d9e73;'
+                                                   : 'width:28px;height:28px;border-radius:50%;background:#252540;margin:0 auto;border-width:2px;border-style:dashed;border-color:#3d3d5c;'}"
+                                             style="width:28px;height:28px;border-radius:50%;background:#252540;margin:0 auto;border-width:2px;border-style:dashed;border-color:#3d3d5c;">
+                                            <span th:style="${(#strings.equals(status,'CONFIRMED')
+                                                            || #strings.equals(status,'PACKED')
+                                                            || #strings.equals(status,'SHIPPED')
+                                                            || #strings.equals(status,'OUT_FOR_DELIVERY')
+                                                            || #strings.equals(status,'DELIVERED'))
+                                                        ? 'display:block;text-align:center;font-size:13px;line-height:28px;color:#fff;'
+                                                        : 'display:block;text-align:center;font-size:13px;line-height:28px;color:#4b5563;'}"
+                                                  style="display:block;text-align:center;font-size:13px;line-height:28px;color:#4b5563;">✓</span>
+                                        </div>
+                                        <p style="margin:6px 0 0 0;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#6b7280;">
+                                            Confirmed</p>
+                                    </td>
+
+                                    <!-- Connector 1→2 -->
+                                    <td style="vertical-align:top;padding-top:14px;">
+                                        <div th:style="${(#strings.equals(status,'PACKED')
+                                                       || #strings.equals(status,'SHIPPED')
+                                                       || #strings.equals(status,'OUT_FOR_DELIVERY')
+                                                       || #strings.equals(status,'DELIVERED'))
+                                                   ? 'height:2px;background:linear-gradient(90deg,#0d9e73,#2d6fd6);'
+                                                   : 'height:2px;background:#2d2d44;'}"
+                                             style="height:2px;background:#2d2d44;">&nbsp;</div>
+                                    </td>
+
+                                    <!-- Step 2: PACKED -->
+                                    <td width="20%" style="text-align:center;vertical-align:top;">
+                                        <div th:style="${(#strings.equals(status,'PACKED')
+                                                       || #strings.equals(status,'SHIPPED')
+                                                       || #strings.equals(status,'OUT_FOR_DELIVERY')
+                                                       || #strings.equals(status,'DELIVERED'))
+                                                   ? 'width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#0d9e73,#0a7c59);margin:0 auto;border-width:2px;border-style:solid;border-color:#0d9e73;'
+                                                   : 'width:28px;height:28px;border-radius:50%;background:#252540;margin:0 auto;border-width:2px;border-style:dashed;border-color:#3d3d5c;'}"
+                                             style="width:28px;height:28px;border-radius:50%;background:#252540;margin:0 auto;border-width:2px;border-style:dashed;border-color:#3d3d5c;">
+                                            <span th:style="${(#strings.equals(status,'PACKED')
+                                                            || #strings.equals(status,'SHIPPED')
+                                                            || #strings.equals(status,'OUT_FOR_DELIVERY')
+                                                            || #strings.equals(status,'DELIVERED'))
+                                                        ? 'display:block;text-align:center;font-size:13px;line-height:28px;color:#fff;'
+                                                        : 'display:block;text-align:center;font-size:13px;line-height:28px;color:#4b5563;'}"
+                                                  style="display:block;text-align:center;font-size:13px;line-height:28px;color:#4b5563;">✓</span>
+                                        </div>
+                                        <p style="margin:6px 0 0 0;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#6b7280;">
+                                            Packed</p>
+                                    </td>
+
+                                    <!-- Connector 2→3 -->
+                                    <td style="vertical-align:top;padding-top:14px;">
+                                        <div th:style="${(#strings.equals(status,'SHIPPED')
+                                                       || #strings.equals(status,'OUT_FOR_DELIVERY')
+                                                       || #strings.equals(status,'DELIVERED'))
+                                                   ? 'height:2px;background:linear-gradient(90deg,#0d9e73,#2d6fd6);'
+                                                   : 'height:2px;background:#2d2d44;'}"
+                                             style="height:2px;background:#2d2d44;">&nbsp;</div>
+                                    </td>
+
+                                    <!-- Step 3: SHIPPED -->
+                                    <td width="20%" style="text-align:center;vertical-align:top;">
+                                        <div th:style="${(#strings.equals(status,'SHIPPED')
+                                                       || #strings.equals(status,'OUT_FOR_DELIVERY')
+                                                       || #strings.equals(status,'DELIVERED'))
+                                                   ? 'width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#2156a8,#2d6fd6);margin:0 auto;border-width:2px;border-style:solid;border-color:#2d6fd6;'
+                                                   : 'width:28px;height:28px;border-radius:50%;background:#252540;margin:0 auto;border-width:2px;border-style:dashed;border-color:#3d3d5c;'}"
+                                             style="width:28px;height:28px;border-radius:50%;background:#252540;margin:0 auto;border-width:2px;border-style:dashed;border-color:#3d3d5c;">
+                                            <span th:style="${(#strings.equals(status,'SHIPPED')
+                                                            || #strings.equals(status,'OUT_FOR_DELIVERY')
+                                                            || #strings.equals(status,'DELIVERED'))
+                                                        ? 'display:block;text-align:center;font-size:13px;line-height:28px;color:#fff;'
+                                                        : 'display:block;text-align:center;font-size:13px;line-height:28px;color:#4b5563;'}"
+                                                  style="display:block;text-align:center;font-size:13px;line-height:28px;color:#4b5563;">✓</span>
+                                        </div>
+                                        <p style="margin:6px 0 0 0;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#6b7280;">
+                                            Shipped</p>
+                                    </td>
+
+                                    <!-- Connector 3→4 -->
+                                    <td style="vertical-align:top;padding-top:14px;">
+                                        <div th:style="${(#strings.equals(status,'OUT_FOR_DELIVERY')
+                                                       || #strings.equals(status,'DELIVERED'))
+                                                   ? 'height:2px;background:linear-gradient(90deg,#2d6fd6,#1e90d4);'
+                                                   : 'height:2px;background:#2d2d44;'}"
+                                             style="height:2px;background:#2d2d44;">&nbsp;</div>
+                                    </td>
+
+                                    <!-- Step 4: OUT FOR DELIVERY -->
+                                    <td width="20%" style="text-align:center;vertical-align:top;">
+                                        <div th:style="${(#strings.equals(status,'OUT_FOR_DELIVERY')
+                                                       || #strings.equals(status,'DELIVERED'))
+                                                   ? 'width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#1a6b9a,#1e90d4);margin:0 auto;border-width:2px;border-style:solid;border-color:#1e90d4;'
+                                                   : 'width:28px;height:28px;border-radius:50%;background:#252540;margin:0 auto;border-width:2px;border-style:dashed;border-color:#3d3d5c;'}"
+                                             style="width:28px;height:28px;border-radius:50%;background:#252540;margin:0 auto;border-width:2px;border-style:dashed;border-color:#3d3d5c;">
+                                            <span th:style="${(#strings.equals(status,'OUT_FOR_DELIVERY')
+                                                            || #strings.equals(status,'DELIVERED'))
+                                                        ? 'display:block;text-align:center;font-size:13px;line-height:28px;color:#fff;'
+                                                        : 'display:block;text-align:center;font-size:13px;line-height:28px;color:#4b5563;'}"
+                                                  style="display:block;text-align:center;font-size:13px;line-height:28px;color:#4b5563;">✓</span>
+                                        </div>
+                                        <p style="margin:6px 0 0 0;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#6b7280;">
+                                            Out For Del.</p>
+                                    </td>
+
+                                    <!-- Connector 4→5 -->
+                                    <td style="vertical-align:top;padding-top:14px;">
+                                        <div th:style="${#strings.equals(status,'DELIVERED')
+                                                   ? 'height:2px;background:linear-gradient(90deg,#1e90d4,#0d9e73);'
+                                                   : 'height:2px;background:#2d2d44;'}"
+                                             style="height:2px;background:#2d2d44;">&nbsp;</div>
+                                    </td>
+
+                                    <!-- Step 5: DELIVERED -->
+                                    <td width="20%" style="text-align:center;vertical-align:top;">
+                                        <div th:style="${#strings.equals(status,'DELIVERED')
+                                                   ? 'width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#0a7c59,#0d9e73);margin:0 auto;border-width:2px;border-style:solid;border-color:#0d9e73;'
+                                                   : 'width:28px;height:28px;border-radius:50%;background:#252540;margin:0 auto;border-width:2px;border-style:dashed;border-color:#3d3d5c;'}"
+                                             style="width:28px;height:28px;border-radius:50%;background:#252540;margin:0 auto;border-width:2px;border-style:dashed;border-color:#3d3d5c;">
+                                            <span th:style="${#strings.equals(status,'DELIVERED')
+                                                        ? 'display:block;text-align:center;font-size:13px;line-height:28px;color:#fff;'
+                                                        : 'display:block;text-align:center;font-size:13px;line-height:28px;color:#4b5563;'}"
+                                                  style="display:block;text-align:center;font-size:13px;line-height:28px;color:#4b5563;">✓</span>
+                                        </div>
+                                        <p style="margin:6px 0 0 0;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#6b7280;">
+                                            Delivered</p>
                                     </td>
                                 </tr>
                             </table>
                         </td>
                     </tr>
 
-                    <!-- Status Message -->
+                    <!-- ══════════════════════════════════════════════ -->
+                    <!-- STATUS MESSAGE CARD                            -->
+                    <!-- ══════════════════════════════════════════════ -->
                     <tr>
-                        <td style="padding:0 40px 28px 40px;">
-                            <p style="margin:0;font-size:15px;color:#4a5568;line-height:1.8;text-align:center;"
-                                th:text="${statusMessage}">
-                                Your order has been shipped and is on its way to you. You'll receive it soon!
-                            </p>
+                        <td style="padding:28px 36px 8px 36px;">
+                            <table width="100%" cellspacing="0" cellpadding="0" border="0"
+                                   th:style="${#strings.equals(status,'DELIVERED')
+                                          ? 'background:#0a1f17;border-radius:14px;border-width:1px;border-style:solid;border-color:#0d9e73;'
+                                          : (#strings.equals(status,'CANCELLED')
+                                          ? 'background:#1f0a0a;border-radius:14px;border-width:1px;border-style:solid;border-color:#c53030;'
+                                          : 'background:#111827;border-radius:14px;border-width:1px;border-style:solid;border-color:#2d2d44;')}"
+                                   style="background:#111827;border-radius:14px;border-width:1px;border-style:solid;border-color:#2d2d44;">
+                                <tr>
+                                    <td style="padding:22px 24px;">
+                                        <p style="margin:0;font-size:14px;color:#d1d5db;line-height:1.8;text-align:center;"
+                                           th:text="${statusMessage}">
+                                            Your order has shipped and is on its way to you!
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
                         </td>
                     </tr>
 
-                    <!-- CTA -->
+                    <!-- ══════════════════════════════════════════════ -->
+                    <!-- PRIMARY CTA — View Order                       -->
+                    <!-- ══════════════════════════════════════════════ -->
                     <tr>
-                        <td style="padding:0 40px 36px 40px;text-align:center;">
+                        <td style="padding:28px 36px 8px 36px;text-align:center;">
                             <a href="https://cognitocart.com/orders" target="_blank"
-                                style="display:inline-block;background:linear-gradient(135deg,#667eea,#764ba2);color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 36px;border-radius:50px;letter-spacing:0.3px;box-shadow:0 4px 14px rgba(102,126,234,0.35);">
+                               th:style="${#strings.equals(status,'DELIVERED')
+                                      ? 'display:inline-block;background:linear-gradient(135deg,#0a7c59,#0d9e73);color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;padding:14px 40px;border-radius:50px;letter-spacing:0.5px;'
+                                      : (#strings.equals(status,'CANCELLED')
+                                      ? 'display:inline-block;background:linear-gradient(135deg,#9b1c1c,#c53030);color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;padding:14px 40px;border-radius:50px;letter-spacing:0.5px;'
+                                      : 'display:inline-block;background:linear-gradient(135deg,#2156a8,#2d6fd6);color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;padding:14px 40px;border-radius:50px;letter-spacing:0.5px;')}"
+                               style="display:inline-block;background:linear-gradient(135deg,#2156a8,#2d6fd6);color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;padding:14px 40px;border-radius:50px;letter-spacing:0.5px;">
                                 View Order Details →
                             </a>
                         </td>
                     </tr>
 
-                    <!-- Footer -->
+                    <!-- ══════════════════════════════════════════════ -->
+                    <!-- REVIEW CTA — Only shown on DELIVERED emails    -->
+                    <!-- Triggered by showReviewCta=true from           -->
+                    <!-- EmailTemplateBuilder.buildDeliveryConfirmation -->
+                    <!-- ══════════════════════════════════════════════ -->
+                    <tr th:if="${showReviewCta}">
+                        <td style="padding:20px 36px 8px 36px;">
+                            <table width="100%" cellspacing="0" cellpadding="0" border="0"
+                                   style="background:linear-gradient(135deg,#1a1040,#0f1a40);border-radius:16px;border-width:1px;border-style:solid;border-color:#4c5fbe;">
+                                <tr>
+                                    <td style="padding:28px 24px;text-align:center;">
+                                        <p style="margin:0 0 4px 0;font-size:22px;">⭐⭐⭐⭐⭐</p>
+                                        <h3 style="margin:10px 0 6px 0;font-size:18px;font-weight:800;color:#ffffff;">
+                                            How was your experience?
+                                        </h3>
+                                        <p style="margin:0 0 20px 0;font-size:13px;color:#9ca3af;line-height:1.7;">
+                                            Your review takes 30 seconds and helps thousands of shoppers
+                                            make better decisions. Every word counts. 🙏
+                                        </p>
+                                        <a href="https://cognitocart.com/reviews"
+                                           target="_blank"
+                                           style="display:inline-block;background:linear-gradient(135deg,#667eea,#764ba2);color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;padding:13px 32px;border-radius:50px;letter-spacing:0.5px;">
+                                            ✍️ Write a Review
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- ══════════════════════════════════════════════ -->
+                    <!-- DIVIDER SPACER                                 -->
+                    <!-- ══════════════════════════════════════════════ -->
                     <tr>
-                        <td
-                            style="background:#f7fafc;border-top:1px solid #e2e8f0;padding:24px 40px;text-align:center;">
-                            <p style="margin:0 0 6px 0;font-size:14px;color:#718096;">Questions? Reply to this email or
-                                contact <a href="https://cognitocart.com/support"
-                                    style="color:#5a67d8;text-decoration:none;font-weight:500;">Support</a>.</p>
-                            <p style="margin:0;font-size:12px;color:#a0aec0;">&copy; 2026 CognitoCart. All rights
-                                reserved.</p>
+                        <td style="padding:24px 36px 0 36px;">
+                            <div style="height:1px;background:#2d2d44;">&nbsp;</div>
+                        </td>
+                    </tr>
+
+                    <!-- ══════════════════════════════════════════════ -->
+                    <!-- FOOTER                                         -->
+                    <!-- ══════════════════════════════════════════════ -->
+                    <tr>
+                        <td style="padding:24px 36px 32px 36px;text-align:center;">
+                            <p style="margin:0 0 6px 0;font-size:13px;color:#6b7280;">
+                                Questions? Reply to this email or contact
+                                <a href="https://cognitocart.com/support"
+                                   style="color:#818cf8;text-decoration:none;font-weight:600;">Support</a>.
+                            </p>
+                            <p style="margin:0;font-size:11px;color:#4b5563;letter-spacing:0.3px;">
+                                &copy; 2026 CognitoCart &nbsp;|&nbsp; Bangalore, India
+                            </p>
                         </td>
                     </tr>
 
                 </table>
+                <!-- end card -->
+
             </td>
         </tr>
     </table>
 
 </body>
-
 </html>
