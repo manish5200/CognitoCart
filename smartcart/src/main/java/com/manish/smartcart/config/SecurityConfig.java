@@ -79,6 +79,7 @@ public class SecurityConfig {
                                         "/api/v1/guest-cart/**",     // Shopping before login
                                         "/api/v1/payments/verify",   // Razorpay frontend callback
                                         "/api/v1/payments/webhook",  // Razorpay backend webhook
+                                        "/api/v1/webhooks/logistics", // Logistics carrier status pushes — no JWT needed
                                         "/oauth2/**",                // OAuth2 authorization flow initiation
                                         "/login/oauth2/**",          // OAuth2 callback from Google
                                         "/swagger-ui/**",            // API documentation UI

@@ -1,97 +1,164 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Cart is Waiting | CognitoCart</title>
-    <style>
-        /* Base Resets for Email Clients */
-        body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f3f4f6; -webkit-font-smoothing: antialiased; }
-        table { border-spacing: 0; width: 100%; }
-        td { padding: 0; }
-        img { border: 0; }
-
-        /* Container */
-        .wrapper { width: 100%; table-layout: fixed; background-color: #f3f4f6; padding-top: 40px; padding-bottom: 40px; }
-        .main { background-color: #ffffff; margin: 0 auto; width: 100%; max-width: 600px; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-
-        /* Hero Section (Gradient) */
-        .hero { background: linear-gradient(135deg, #1e1e1e 0%, #000000 100%); padding: 40px 30px; text-align: center; }
-        .hero-title { color: #ffffff; font-size: 28px; font-weight: 700; margin: 0; letter-spacing: -0.5px; }
-        .hero-subtitle { color: #a1a1aa; font-size: 16px; margin-top: 10px; font-weight: 300; }
-
-        /* Body Content */
-        .content { padding: 40px 30px; text-align: center; }
-        .greeting { font-size: 20px; color: #111827; font-weight: 600; margin-bottom: 20px; }
-        .message { font-size: 16px; color: #4b5563; line-height: 1.6; margin-bottom: 30px; }
-
-        /* The "Urgency" Box */
-        .urgency-box { background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 20px; margin-bottom: 35px; }
-        .urgency-text { color: #b91c1c; font-size: 15px; font-weight: 500; margin: 0; }
-
-        /* The CTA Button */
-        .btn-container { text-align: center; margin-bottom: 30px; }
-        .btn { display: inline-block; background-color: #4f46e5; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600; padding: 16px 36px; border-radius: 8px; text-transform: uppercase; letter-spacing: 1px; transition: background-color 0.3s; box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2); }
-
-        /* Footer */
-        .footer { background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb; }
-        .footer-logo { font-size: 18px; font-weight: 800; color: #111827; margin-bottom: 15px; letter-spacing: -0.5px; }
-        .footer-text { color: #6b7280; font-size: 13px; margin: 0 0 10px 0; }
-
-        /* Mobile Responsiveness */
-        @media screen and (max-width: 600px) {
-            .hero { padding: 30px 20px; }
-            .hero-title { font-size: 24px; }
-            .content { padding: 30px 20px; }
-            .btn { width: 100%; box-sizing: border-box; }
-        }
-    </style>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Your Cart is Waiting — CognitoCart</title>
 </head>
-<body>
-<div class="wrapper">
-    <table class="main">
-        <!-- Hero Header -->
-        <tr>
-            <td class="hero">
-                <h1 class="hero-title">You left something behind.</h1>
-                <p class="hero-subtitle">Don't let it slip away.</p>
-            </td>
-        </tr>
+<!--
+  cart-abandonment.html — CognitoCart Premium Cart Recovery Email
+  Variables: name (String), itemCount (Integer), checkoutUrl (String)
+  Email rules: all CSS inline, no <style> block, no flexbox, table layout only.
+  NOTE: Original used <style> block + CSS classes — rewritten to fully inline.
+-->
+<body style="margin:0;padding:0;background:#0a0a14;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
 
-        <!-- Main Content -->
-        <tr>
-            <td class="content">
-                <p class="greeting">Hi <span th:text="${name}">Customer</span>,</p>
+<table width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#0a0a14;padding:40px 0;">
+    <tr>
+        <td align="center">
+            <table width="600" cellspacing="0" cellpadding="0" border="0"
+                   style="border-radius:20px;overflow:hidden;border-width:1px;border-style:solid;border-color:#1e1e30;">
 
-                <p class="message">
-                    We noticed you left <strong><span th:text="${itemCount}">some</span> item(s)</strong> sitting in your CognitoCart. You have great taste, and it would be a shame to miss out on them!
-                </p>
+                <!-- TOP FIRE BAR -->
+                <tr>
+                    <td style="background:linear-gradient(90deg,#ff6b35,#f7931e,#ff6b35);height:4px;font-size:0;line-height:0;">&nbsp;</td>
+                </tr>
 
-                <!-- FOMO / Urgency Trigger -->
-                <div class="urgency-box">
-                    <p class="urgency-text">🔥 <strong>High Demand Alert:</strong> Items in your cart are currently trending and might sell out soon. We cannot guarantee stock indefinitely!</p>
-                </div>
+                <!-- HERO: BIG EMOTIONAL HOOK -->
+                <tr>
+                    <td style="background:linear-gradient(160deg,#1a0a00 0%,#2d1200 60%,#1a0a00 100%);padding:52px 48px 44px 48px;text-align:center;">
 
-                <!-- Call To Action -->
-                <div class="btn-container">
-                    <a th:href="${checkoutUrl}" class="btn">Return to Cart</a>
-                </div>
+                        <p style="margin:0 0 28px 0;font-size:13px;font-weight:700;color:#f97316;letter-spacing:3px;text-transform:uppercase;">
+                            ⚡ COGNITOCART
+                        </p>
 
-                <p class="message" style="font-size: 14px; margin-bottom: 0;">
-                    Need help deciding? Reply to this email and our product experts will be happy to assist you.
-                </p>
-            </td>
-        </tr>
+                        <!-- Cart icon with orange glow -->
+                        <div style="display:inline-block;width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,#ff6b35,#f7931e);text-align:center;line-height:88px;margin-bottom:28px;border-width:3px;border-style:solid;border-color:rgba(255,107,53,0.4);">
+                            <span style="font-size:40px;line-height:88px;display:inline-block;vertical-align:middle;">🛒</span>
+                        </div>
 
-        <!-- Footer -->
-        <tr>
-            <td class="footer">
-                <div class="footer-logo">CognitoCart</div>
-                <p class="footer-text">You received this email because you have active items saved in your Shopping Cart.</p>
-                <p class="footer-text" style="font-size: 12px; margin-top: 15px;">&copy; 2026 CognitoCart Inc. All rights reserved.</p>
-            </td>
-        </tr>
-    </table>
-</div>
+                        <h1 style="margin:0 0 12px 0;font-size:30px;font-weight:900;color:#ffffff;letter-spacing:-0.8px;line-height:1.2;">
+                            You left something behind,<br/>
+                            <span style="color:#fb923c;" th:text="${name}">Manish</span>.
+                        </h1>
+                        <p style="margin:0;font-size:15px;color:#94a3b8;line-height:1.7;">
+                            Your cart is feeling lonely. Come back and complete your order!
+                        </p>
+                    </td>
+                </tr>
+
+                <!-- ITEM COUNT CHIP -->
+                <tr>
+                    <td style="background:#0d0d1f;padding:0 48px 28px 48px;text-align:center;">
+                        <div style="display:inline-block;background:#1a1a2e;border-radius:50px;padding:12px 28px;border-width:1px;border-style:solid;border-color:#2d2d44;">
+                            <span style="font-size:14px;font-weight:600;color:#94a3b8;">You left </span>
+                            <span style="font-size:18px;font-weight:900;color:#fb923c;" th:text="${itemCount}">3</span>
+                            <span style="font-size:14px;font-weight:600;color:#94a3b8;"> item(s) in your cart</span>
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- FOMO URGENCY CARD -->
+                <tr>
+                    <td style="background:#0d0d1f;padding:0 32px 28px 32px;">
+                        <table width="100%" cellspacing="0" cellpadding="0" border="0"
+                               style="background:linear-gradient(135deg,#1f0a00,#2d1200);border-radius:14px;border-width:1px;border-style:solid;border-color:#7c2d12;">
+                            <tr>
+                                <td style="padding:22px 24px;">
+                                    <p style="margin:0 0 8px 0;font-size:16px;font-weight:800;color:#fed7aa;">
+                                        🔥 &nbsp;High Demand Alert
+                                    </p>
+                                    <p style="margin:0;font-size:13px;color:#fb923c;line-height:1.7;">
+                                        Items in your cart are <strong style="color:#fbbf24;">trending right now</strong> and stock is limited.
+                                        We cannot guarantee availability if you wait too long.
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- WHAT YOU'RE MISSING — 3 reasons to comeback -->
+                <tr>
+                    <td style="background:#0d0d1f;padding:0 32px 28px 32px;">
+                        <table width="100%" cellspacing="0" cellpadding="0" border="0">
+                            <tr>
+                                <td width="30%" valign="top" style="padding:6px;text-align:center;">
+                                    <table width="100%" cellspacing="0" cellpadding="0" border="0"
+                                           style="background:#111827;border-radius:12px;border-width:1px;border-style:solid;border-color:#1e2d40;">
+                                        <tr>
+                                            <td style="padding:18px 12px;text-align:center;">
+                                                <div style="font-size:22px;margin-bottom:8px;">🚀</div>
+                                                <p style="margin:0;font-size:11px;font-weight:700;color:#e2e8f0;line-height:1.4;">Fast Delivery</p>
+                                                <p style="margin:4px 0 0 0;font-size:10px;color:#64748b;">In 2–4 business days</p>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                                <td width="30%" valign="top" style="padding:6px;text-align:center;">
+                                    <table width="100%" cellspacing="0" cellpadding="0" border="0"
+                                           style="background:#111827;border-radius:12px;border-width:1px;border-style:solid;border-color:#1e2d40;">
+                                        <tr>
+                                            <td style="padding:18px 12px;text-align:center;">
+                                                <div style="font-size:22px;margin-bottom:8px;">🔒</div>
+                                                <p style="margin:0;font-size:11px;font-weight:700;color:#e2e8f0;line-height:1.4;">Secure Checkout</p>
+                                                <p style="margin:4px 0 0 0;font-size:10px;color:#64748b;">Razorpay encrypted</p>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                                <td width="30%" valign="top" style="padding:6px;text-align:center;">
+                                    <table width="100%" cellspacing="0" cellpadding="0" border="0"
+                                           style="background:#111827;border-radius:12px;border-width:1px;border-style:solid;border-color:#1e2d40;">
+                                        <tr>
+                                            <td style="padding:18px 12px;text-align:center;">
+                                                <div style="font-size:22px;margin-bottom:8px;">↩️</div>
+                                                <p style="margin:0;font-size:11px;font-weight:700;color:#e2e8f0;line-height:1.4;">Easy Returns</p>
+                                                <p style="margin:4px 0 0 0;font-size:10px;color:#64748b;">Hassle-free policy</p>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- MAIN CTA -->
+                <tr>
+                    <td style="background:#0d0d1f;padding:0 48px 44px 48px;text-align:center;">
+                        <a th:href="${checkoutUrl}" href="https://cognitocart.com/cart" target="_blank"
+                           style="display:inline-block;background:linear-gradient(135deg,#ff6b35,#f7931e);color:#ffffff;font-size:16px;font-weight:800;text-decoration:none;padding:17px 52px;border-radius:50px;letter-spacing:0.5px;">
+                            Complete My Order →
+                        </a>
+                        <p style="margin:18px 0 0 0;font-size:12px;color:#475569;">
+                            Need help? Reply to this email or visit
+                            <a href="https://cognitocart.com/support" style="color:#f97316;text-decoration:none;font-weight:600;">Support</a>
+                        </p>
+                    </td>
+                </tr>
+
+                <!-- FOOTER -->
+                <tr>
+                    <td style="background:#09090f;border-top-width:1px;border-top-style:solid;border-top-color:#1e1e30;padding:24px 48px;text-align:center;">
+                        <p style="margin:0 0 4px 0;font-size:12px;color:#374151;">
+                            You received this because you have items saved in your cart.
+                        </p>
+                        <p style="margin:0;font-size:11px;color:#1f2937;">
+                            &copy; 2026 CognitoCart &nbsp;|&nbsp; Bangalore, India
+                        </p>
+                    </td>
+                </tr>
+
+                <!-- BOTTOM FIRE BAR -->
+                <tr>
+                    <td style="background:linear-gradient(90deg,#ff6b35,#f7931e,#ff6b35);height:4px;font-size:0;line-height:0;">&nbsp;</td>
+                </tr>
+
+            </table>
+        </td>
+    </tr>
+</table>
+
 </body>
 </html>

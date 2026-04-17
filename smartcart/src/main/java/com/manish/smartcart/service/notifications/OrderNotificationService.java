@@ -73,4 +73,29 @@ public class OrderNotificationService {
             log.warn("Failed to send invoice email for Order #{}: {}", order.getOrderId(), e.getMessage());
         }
     }
+
+    /**
+     * Sends "Your order has arrived!" email when carrier marks package as DELIVERED.
+
+     * CONCEPT — Why separate from sendStatusUpdateEmail()?
+     * Delivery is the most important moment in the customer journey.
+     * We use a dedicated template builder call that adds showReviewCta=true,
+     * which renders the "⭐ Rate Your Purchase" button in the email.
+     * This drives review submissions — critical for seller credibility.
+
+     * @Async — runs on background thread, does not delay the carrier webhook response.
+     */
+
+    public void sendDeliveryConfirmationEmail(OrderResponse orderResponse) {
+        try {
+            String body = emailTemplateBuilder.buildDeliveryConfirmationEmail(orderResponse);
+            String subject = "🎉 Delivered! Order #" + orderResponse.getOrderId()
+                    + " has arrived — how was it?";
+            emailService.sendMail(orderResponse.getEmail(), subject, body, "CognitoCart");
+            log.info("Delivery confirmation email sent for Order #{}", orderResponse.getOrderId());
+        } catch (Exception e) {
+            log.warn("Failed to send delivery confirmation email for Order #{}: {}",
+                    orderResponse.getOrderId(), e.getMessage());
+        }
+    }
 }
