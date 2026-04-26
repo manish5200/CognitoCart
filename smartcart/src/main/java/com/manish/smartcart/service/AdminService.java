@@ -2,6 +2,8 @@ package com.manish.smartcart.service;
 
 import com.manish.smartcart.dto.admin.*;
 import com.manish.smartcart.enums.OrderStatus;
+import com.manish.smartcart.exception.BusinessLogicException;
+import com.manish.smartcart.exception.ResourceNotFoundException;
 import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.model.product.Product;
 import com.manish.smartcart.repository.OrderRepository;
@@ -10,9 +12,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -32,6 +36,7 @@ public class AdminService {
     private final ProductRepository productRepository;
     private final OrderRepository orderRepository;
 
+    @Transactional(readOnly = true)
     public DashboardResponse getAdminStats(int stockThreshold,int pageNumber,int pageSize) {
         // 1. Calculate Metrics
         BigDecimal revenue = orderRepository.calculateRevenue();// Using your JPQL query
@@ -84,29 +89,27 @@ public class AdminService {
     // Play with the order
     public Order changeTheStatusOfOrders(StatusChangeRequest statusChangeRequest) {
         Order order = orderRepository.findById(statusChangeRequest.getOrderId())
-                .orElseThrow(() -> new RuntimeException("Order not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Order not found with ID: " + statusChangeRequest.getOrderId()));
 
         // GUARD: Reject any modification attempt on terminal-state orders.
         // This prevents accidental data corruption from admin panel mistakes.
 
-        if(IMMUTABLE_STATES.contains(order.getOrderStatus())) {
-            throw new RuntimeException(
+        if (IMMUTABLE_STATES.contains(order.getOrderStatus())) {
+            throw new BusinessLogicException(                                 // ✅ HTTP 400
                     "Order #" + order.getId() + " is in a terminal state ("
                             + order.getOrderStatus() + ") and cannot be modified.");
         }
 
         try {
-            // Convert String to Enum safely
             OrderStatus newStatus = OrderStatus.valueOf(
                     statusChangeRequest.getOrderStatus().toUpperCase());
-
             order.setOrderStatus(newStatus);
         } catch (IllegalArgumentException e) {
-            throw new RuntimeException(
-                    "Invalid Order Status provided: "
-                            + statusChangeRequest.getOrderStatus());
+            throw new BusinessLogicException(                                 // ✅ HTTP 400
+                    "Invalid order status: '" + statusChangeRequest.getOrderStatus()
+                            + "'. Valid values: " + Arrays.toString(OrderStatus.values()));
         }
         return orderRepository.save(order);
     }
-
 }
