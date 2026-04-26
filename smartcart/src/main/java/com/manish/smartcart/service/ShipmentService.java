@@ -6,6 +6,7 @@ import com.manish.smartcart.dto.order.ShipmentTrackingDTO;
 import com.manish.smartcart.dto.webhook.LogisticsWebhookRequest;
 import com.manish.smartcart.enums.OrderStatus;
 import com.manish.smartcart.enums.ShipmentStatus;
+import com.manish.smartcart.exception.BusinessLogicException;
 import com.manish.smartcart.exception.ResourceNotFoundException;
 import com.manish.smartcart.mapper.OrderMapper;
 import com.manish.smartcart.model.order.Order;
@@ -45,20 +46,23 @@ public class ShipmentService {
     public OrderResponse attachShipmentAndShip(Long orderId, ShipmentRequest request) {
         // 1. Fetch the order — throw a clear error if it doesn't exist
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(()->new RuntimeException("Order not found with ID: " + orderId));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Order not found with ID: " + orderId));                    // ✅ 404
 
         // 2. Guard: only CONFIRMED or PACKED orders can be shipped.
         //    Prevents double-shipping or shipping an unpaid order.
-        if(order.getOrderStatus() != OrderStatus.CONFIRMED
-                && order.getOrderStatus() != OrderStatus.PACKED){
-            throw new RuntimeException(
-                    "Order #" + orderId + " cannot be shipped. Current status: " + order.getOrderStatus()
-                            + ". Order must be CONFIRMED or PACKED first.");
+        if (order.getOrderStatus() != OrderStatus.CONFIRMED
+                && order.getOrderStatus() != OrderStatus.PACKED) {
+            throw new BusinessLogicException(                                       // ✅ 400
+                    "Order #" + orderId + " cannot be shipped. Current status: "
+                            + order.getOrderStatus() + ". Must be CONFIRMED or PACKED.");
         }
 
         // 3. Guard: prevent duplicate shipment creation for the same order
-        if(shipmentRepository.findByOrder_Id(orderId).isPresent()){
-            throw new RuntimeException("A shipment already exists for Order #" + orderId);
+        if (shipmentRepository.findByOrder_Id(orderId).isPresent()) {
+            throw new BusinessLogicException(                                       // ✅ 400
+                    "A shipment already exists for Order #" + orderId
+                            + ". Cannot create duplicate shipment.");
         }
 
         // 4. Build and save the Shipment entity
