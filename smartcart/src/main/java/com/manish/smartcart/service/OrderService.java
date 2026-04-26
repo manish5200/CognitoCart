@@ -23,7 +23,7 @@ import com.manish.smartcart.exception.InsufficientStockException;
 import com.manish.smartcart.exception.ResourceNotFoundException;
 import com.manish.smartcart.service.notifications.OrderNotificationService;
 import io.micrometer.core.instrument.MeterRegistry;
-import org.springframework.transaction.annotation.Transactional;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -214,7 +214,6 @@ public class OrderService {
     }
 
     // Order History feature.
-    @Transactional(readOnly = true)
     public Page<OrderResponse> getOrderHistoryForUser(Long userId, Pageable pageable) {
 
         // Step 1: Get paginated order IDs from the database (no join, perfect pagination)
@@ -248,19 +247,17 @@ public class OrderService {
     public OrderResponse cancelOrder(Long userId, Long orderId) {
         // 1. Find the order and verify ownership
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + orderId));
+                .orElseThrow(() -> new RuntimeException("Cannot find order with orderId: " + orderId));
 
         // It does not make sense but still but if by chance, lets B get oderId of A
         // So to prevent B from cancelling A's order
-        // OWNERSHIP CHECK — HTTP 403 is semantically correct (you exist, but this isn't yours)
         if (!order.getUser().getId().equals(userId)) {
-            throw new BusinessLogicException("Access Denied: You do not own this order.");
+            throw new RuntimeException("Access Denied: You do not own this order.");
         }
 
-        // 2. TERMINAL STATE GUARD: DELIVERED orders cannot be cancelled — business rule
+        // 2. Security Check: DELIVERED orders cannot be canceled
         if (order.getOrderStatus() == OrderStatus.DELIVERED) {
-            throw new BusinessLogicException(
-                    "Order #" + orderId + " cannot be cancelled. Current status: " + order.getOrderStatus());
+            throw new RuntimeException("Order cannot be cancelled❌❌. Current status: " + order.getOrderStatus());
         }
         // 3. Inventory Restoration: Return stock to Product table - every product
         // RESTORE STOCK: Loop through items and update products
@@ -290,9 +287,9 @@ public class OrderService {
                 orderNotificationService.sendRefundEmail(orderResponse, refundId);
 
             } catch (Exception e) {
-                // Refund failure must propagate as a BusinessLogicException (HTTP 400)
-                // so the client knows it was a business-level failure, not a system crash.
-                throw new BusinessLogicException("Refund initiation failed: " + e.getMessage());
+                // If refund fails, we probably shouldn't cancel the order yet,
+                // or we need manual admin intervention. For now, throw the error.
+                throw new RuntimeException("Cannot cancel order: " + e.getMessage());
             }
         }
         // 5. Update Status

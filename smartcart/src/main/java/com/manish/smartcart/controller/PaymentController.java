@@ -5,7 +5,6 @@ import com.manish.smartcart.dto.event.OrderPaidEvent;
 import com.manish.smartcart.dto.order.PaymentVerificationRequest;
 import com.manish.smartcart.enums.OrderStatus;
 import com.manish.smartcart.enums.PaymentStatus;
-import com.manish.smartcart.exception.ResourceNotFoundException;
 import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.repository.OrderRepository;
 import com.manish.smartcart.service.PaymentService;
@@ -68,8 +67,8 @@ public class PaymentController {
         // 2. Find the local order with items eagerly fetched (prevents
         // LazyInitializationException)
         Order order = orderRepository.findByRazorpayOrderIdWithItems(request.getRazorpayOrderId())
-                .orElseThrow(() -> new ResourceNotFoundException(      // ✅ HTTP 404
-                        "Order not found for Razorpay ID: " + request.getRazorpayOrderId()));
+                .orElseThrow(() -> new RuntimeException(
+                        "Order not found across this Razorpay ID: " + request.getRazorpayOrderId()));
 
         // 3. Prevent duplicate processing
         if (order.getOrderStatus() == OrderStatus.PAID) {
