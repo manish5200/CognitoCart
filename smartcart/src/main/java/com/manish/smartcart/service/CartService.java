@@ -1,7 +1,6 @@
 package com.manish.smartcart.service;
 
 import com.manish.smartcart.dto.order.PromotionResult;
-import com.manish.smartcart.enums.DiscountType;
 import com.manish.smartcart.model.cart.Cart;
 import com.manish.smartcart.model.cart.CartItem;
 import com.manish.smartcart.model.product.Product;
@@ -77,6 +76,7 @@ public class CartService {
     }
 
     // Helper method to create a cart
+    @Transactional
     private Cart creatNewCart(Long userId) {
         Users user = usersRepository.getReferenceById(userId);
         Cart cart = new Cart();
@@ -86,7 +86,7 @@ public class CartService {
         return cartRepository.save(cart);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public Cart getCartForUser(Long userId) {
         return cartRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
@@ -134,6 +134,7 @@ public class CartService {
      * THE MATH ENGINE: This runs every time an item is added, removed, or a coupon is applied.
      * It recalculates the 5-step algebraic pipeline securely and logs its decisions using SLF4J.
      */
+    @Transactional
     private void updateCartTotal(Cart cart) {
 
         log.debug("Initiating Cart Math Engine for User ID: {}", cart.getUser().getId());

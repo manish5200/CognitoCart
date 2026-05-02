@@ -6,10 +6,13 @@ import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.model.product.Product;
 import com.manish.smartcart.repository.OrderRepository;
 import com.manish.smartcart.repository.ProductRepository;
+import com.manish.smartcart.exception.BusinessLogicException;
+import com.manish.smartcart.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -32,6 +35,7 @@ public class AdminService {
     private final ProductRepository productRepository;
     private final OrderRepository orderRepository;
 
+    @Transactional(readOnly = true)
     public DashboardResponse getAdminStats(int stockThreshold,int pageNumber,int pageSize) {
         // 1. Calculate Metrics
         BigDecimal revenue = orderRepository.calculateRevenue();// Using your JPQL query
@@ -82,15 +86,17 @@ public class AdminService {
 
 
     // Play with the order
+    @Transactional
     public Order changeTheStatusOfOrders(StatusChangeRequest statusChangeRequest) {
         Order order = orderRepository.findById(statusChangeRequest.getOrderId())
-                .orElseThrow(() -> new RuntimeException("Order not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Order not found with ID: " + statusChangeRequest.getOrderId()));
 
         // GUARD: Reject any modification attempt on terminal-state orders.
         // This prevents accidental data corruption from admin panel mistakes.
 
         if(IMMUTABLE_STATES.contains(order.getOrderStatus())) {
-            throw new RuntimeException(
+            throw new BusinessLogicException(
                     "Order #" + order.getId() + " is in a terminal state ("
                             + order.getOrderStatus() + ") and cannot be modified.");
         }
@@ -102,9 +108,9 @@ public class AdminService {
 
             order.setOrderStatus(newStatus);
         } catch (IllegalArgumentException e) {
-            throw new RuntimeException(
-                    "Invalid Order Status provided: "
-                            + statusChangeRequest.getOrderStatus());
+            throw new BusinessLogicException(
+                    "Invalid order status: '" + statusChangeRequest.getOrderStatus()
+                    + "'. Valid values: " + java.util.Arrays.toString(OrderStatus.values()));
         }
         return orderRepository.save(order);
     }

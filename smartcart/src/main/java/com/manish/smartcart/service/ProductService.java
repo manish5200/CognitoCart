@@ -10,7 +10,8 @@ import com.manish.smartcart.repository.CategoryRepository;
 import com.manish.smartcart.repository.ProductRepository;
 import com.manish.smartcart.repository.specifications.ProductSpecifications;
 import com.manish.smartcart.util.VectorAttributeConverter;
-import jakarta.transaction.Transactional;
+import com.manish.smartcart.exception.BusinessLogicException;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.AllArgsConstructor;
 import com.manish.smartcart.exception.ResourceNotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -132,11 +133,11 @@ public class ProductService {
     })
     public void toggleAvailability(Long productId, Long currentSellerId, boolean isAdmin) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found with ID " + productId));
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID: " + productId));
 
         // Security Check: Unauthorized if not Admin and not the Owner
         if (!isAdmin && !product.getSellerId().equals(currentSellerId)) {
-            throw new RuntimeException("Access Denied: You do not have permission to modify this product.");
+            throw new BusinessLogicException("Access Denied: You do not have permission to modify this product.");
         }
         product.setIsAvailable(!product.getIsAvailable());
         productRepository.save(product);
@@ -151,14 +152,14 @@ public class ProductService {
     @Transactional
     public Product updateStock(Long productId, Integer quantityChange, Long currentSellerId, boolean isAdmin) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found with ID " + productId));
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID: " + productId));
 
         if (!isAdmin && !product.getSellerId().equals(currentSellerId)) {
-            throw new RuntimeException("Access Denied: Inventory updates restricted to owners.");
+            throw new BusinessLogicException("Access Denied: Inventory updates restricted to product owner.");
         }
         int newQuantity = product.getStockQuantity() + quantityChange;
         if (newQuantity < 0) {
-            throw new RuntimeException("Action denied: Not enough stock available.");
+            throw new BusinessLogicException("Insufficient stock: cannot reduce below zero.");
         }
         product.setStockQuantity(newQuantity);
         return productRepository.save(product);
@@ -169,7 +170,7 @@ public class ProductService {
      * Phase 1: Simple retrieval methods. We will add Pagination & Filtering later.
      */
 
-    @Transactional
+    @Transactional(readOnly = true)
     // Removed @Cacheable for paginated dynamic fetching
     public Page<ProductResponse> getAllProducts(Pageable pageable) {
         return productRepository.findAll(pageable)
@@ -180,7 +181,7 @@ public class ProductService {
      * ACTIVITY: Discovery (Fetch by Category)
      * Returns DTOs (not raw entities) so Redis can serialize them safely.
      */
-    @Transactional
+    @Transactional(readOnly = true)
     // Removed @Cacheable for paginated dynamic fetching
     public Page<ProductResponse> getProductsByCategoryIds(List<Long> categoryId, Pageable pageable) {
         return productRepository.findByCategoryIdIn(categoryId, pageable)
@@ -192,11 +193,11 @@ public class ProductService {
      * Returns DTO so Redis can safely serialize/deserialize without Hibernate
      * session.
      */
-    @Transactional
+    @Transactional(readOnly = true)
     @Cacheable(value = "product-slug", key = "#p0")
     public ProductResponse getProductBySlug(String slug) {
         Product product = productRepository.findBySlug(slug)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found for slug: " + slug));
         return productMapper.toProductResponse(product);
     }
 
@@ -213,16 +214,17 @@ public class ProductService {
     public void deleteProduct(Long id, Long authenticatedUserId, boolean isAdmin) {
         // Combined exists and find into one call for efficiency
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Cannot delete. Product ID " + id + " does not exist."));
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID: " + id));
 
         if (!isAdmin && !product.getSellerId().equals(authenticatedUserId)) {
-            throw new RuntimeException("Access Denied: Only owners or admins can delete products.");
+            throw new BusinessLogicException("Access Denied: Only owners or admins can delete products.");
         }
         productRepository.deleteById(id);
     }
 
     // Filter the product using specification
 
+    @Transactional(readOnly = true)
     public Page<ProductResponse> getFilteredProduct(ProductSearchDTO searchDTO, Pageable pageable) {
 
         // 1. Initialize an empty Specification (the "base" query)
@@ -232,7 +234,7 @@ public class ProductService {
         if (searchDTO.getCategory() != null && !searchDTO.getCategory().isEmpty()) {
             // 1. Find the parent category by name (as sent in search)
             Category parentCategory = categoryRepository.findByNameIgnoreCase(searchDTO.getCategory())
-                    .orElseThrow(() -> new RuntimeException("Category not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + searchDTO.getCategory()));
             // 2. Use your CategoryService to get the whole tree of IDs
             List<Long> categoryIds = categoryService.getAllChildCategoryIds(parentCategory.getId());
             // 3. Filter products that belong to ANY of these IDs
