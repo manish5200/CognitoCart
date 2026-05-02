@@ -6,7 +6,9 @@ import com.manish.smartcart.model.user.Address;
 import com.manish.smartcart.model.user.Users;
 import com.manish.smartcart.repository.AddressRepository;
 import com.manish.smartcart.repository.UsersRepository;
-import jakarta.transaction.Transactional;
+import com.manish.smartcart.exception.BusinessLogicException;
+import com.manish.smartcart.exception.ResourceNotFoundException;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -24,7 +26,7 @@ public class AddressService {
     @Transactional
     public AddressResponse addAddress(Long userId, AddressRequest request) {
         Users user = usersRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 
         // Map DTO to Entity
         Address address = Address.builder()
@@ -50,6 +52,7 @@ public class AddressService {
     }
 
     // ─── READ ───────────────────────────────────────────────────────────────
+    @Transactional(readOnly = true)
     public List<AddressResponse>getUserAddresses(Long userId) {
         // Fetch all addresses for this user, map them to DTOs
         List<Address>addresses = addressRepository.findByUserId(userId);
@@ -63,11 +66,11 @@ public class AddressService {
     @Transactional
     public AddressResponse updateAddress(Long userId, Long addressId, AddressRequest request) {
          Address address = addressRepository.findById(addressId)
-                 .orElseThrow(() -> new RuntimeException("Address not found"));
+                 .orElseThrow(() -> new ResourceNotFoundException("Address not found with ID: " + addressId));
 
         // Security check: Never let User A edit User B's address!
         if(!address.getUser().getId().equals(userId)) {
-            throw new RuntimeException("Unauthorized to modify this address");
+            throw new BusinessLogicException("Access Denied: You do not own this address.");
         }
         // Update fields
         address.setFullName(request.getFullName());
@@ -93,10 +96,10 @@ public class AddressService {
     @Transactional
     public void deleteAddress(Long userId, Long addressId) {
         Address address = addressRepository.findById(addressId)
-                .orElseThrow(() -> new RuntimeException("Address not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Address not found with ID: " + addressId));
 
         if(!address.getUser().getId().equals(userId)) {
-            throw new RuntimeException("Unauthorized to delete this address");
+            throw new BusinessLogicException("Access Denied: You do not own this address.");
         }
         // What if they delete their primary address?
         if (address.getIsDefault()) {
@@ -112,11 +115,11 @@ public class AddressService {
     @Transactional
     public void setAsDefault(Long userId, Long addressId) {
         Address targetAddress = addressRepository.findById(addressId)
-                .orElseThrow(() -> new RuntimeException("Address not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Address not found with ID: " + addressId));
 
         // Security check: ensure address belongs to the user
         if (!targetAddress.getUser().getId().equals(userId)) {
-            throw new RuntimeException("Unauthorized address access");
+            throw new BusinessLogicException("Access Denied: You do not own this address.");
         }
 
         handleDefaultToggle(userId); // Unset the previous default

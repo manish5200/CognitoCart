@@ -188,6 +188,7 @@ public class ReviewService {
      * Use case: handling reported abusive, spam, or fake reviews.
      * The product's average is still corrected to maintain data integrity.
      */
+    @Transactional
     public void adminDeleteReview(Long reviewId){
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new ResourceNotFoundException("Review not found with ID: " + reviewId));
