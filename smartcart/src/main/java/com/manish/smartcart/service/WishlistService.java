@@ -8,7 +8,8 @@ import com.manish.smartcart.model.cart.Cart;
 import com.manish.smartcart.model.product.Product;
 import com.manish.smartcart.model.user.Wishlist;
 import com.manish.smartcart.repository.*;
-import jakarta.transaction.Transactional;
+import com.manish.smartcart.exception.ResourceNotFoundException;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -31,7 +32,7 @@ public class WishlistService {
 
         // 1. Actually verify the product exists first
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product with ID " + productId + " not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID: " + productId));
 
         Optional<Wishlist> existing = wishlistRepository.findByUserIdAndProductId(userId, productId);
         if(existing.isPresent()) {
@@ -47,6 +48,7 @@ public class WishlistService {
     }
 
 
+    @Transactional(readOnly = true)
     public List<ProductResponse>getWishlistForUser(Long userId) {
         List<Wishlist> wishlists = wishlistRepository.findByUserId(userId);
         return wishlists.stream()
@@ -60,7 +62,7 @@ public class WishlistService {
     public CartResponse wishlistToCart(Long userId, Long productId, Integer quantity) {
         // 1. Verify item exists in Wishlist
        Wishlist existedProductInWishlist = wishlistRepository.findByUserIdAndProductId(userId, productId)
-               .orElseThrow(() -> new RuntimeException("Item not found in your wishlist"));
+               .orElseThrow(() -> new ResourceNotFoundException("Item not found in your wishlist"));
 
         // 2. Use existing CartService to add to cart
         // This ensures cart totals and stock checks are handled correctly
@@ -73,6 +75,7 @@ public class WishlistService {
 
     }
 
+    @Transactional(readOnly = true)
     public WishlistSummaryDTO getWishlistSummary(Long userId) {
         List<Wishlist>wishlistItems = wishlistRepository.findByUserId(userId);
         // 1. Convert to ProductResponse

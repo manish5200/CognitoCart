@@ -2,7 +2,8 @@ package com.manish.smartcart.service;
 
 import com.manish.smartcart.model.product.Category;
 import com.manish.smartcart.repository.CategoryRepository;
-import jakarta.transaction.Transactional;
+import com.manish.smartcart.exception.ResourceNotFoundException;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -29,7 +30,7 @@ public class CategoryService {
 
         if (category.getParentCategory() != null && category.getParentCategory().getId() != null) {
             Category parent = categoryRepository.findById(category.getParentCategory().getId())
-                    .orElseThrow(() -> new RuntimeException("Parent Category Not Found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Parent Category not found with ID: " + category.getParentCategory().getId()));
             category.setParentCategory(parent);
         }
         return categoryRepository.save(category);
@@ -46,8 +47,8 @@ public class CategoryService {
             // Resolve parent if provided
             if (category.getParentCategory() != null && category.getParentCategory().getId() != null) {
                 Category parent = categoryRepository.findById(category.getParentCategory().getId())
-                        .orElseThrow(() -> new RuntimeException(
-                                "Parent ID " + category.getParentCategory().getId() + " not found"));
+                        .orElseThrow(() -> new ResourceNotFoundException(
+                                "Parent Category not found with ID: " + category.getParentCategory().getId()));
                 category.setParentCategory(parent);
             }
             savedCategories.add(categoryRepository.save(category));
@@ -76,11 +77,13 @@ public class CategoryService {
         return slug;
     }
 
+    @Transactional(readOnly = true)
     @Cacheable(value = "categories", key = "'all'")
     public List<Category> getAllCategories() {
         return categoryRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public List<Long> getAllChildCategoryIds(Long parentId) {
         return getAllChildCategoryIdsRecursive(parentId, new HashSet<>());
     }
