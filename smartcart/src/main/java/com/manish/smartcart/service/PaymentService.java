@@ -1,5 +1,6 @@
 package com.manish.smartcart.service;
 
+import com.manish.smartcart.exception.BusinessLogicException;
 import com.manish.smartcart.model.order.Order;
 import com.razorpay.RazorpayClient;
 import com.razorpay.RazorpayException;
@@ -45,7 +46,9 @@ public class PaymentService {
 
         } catch (RazorpayException e) {
             log.error("Failed to create Razorpay Order for Local Order ID {}", order.getId(), e);
-            throw new RuntimeException("Payment Gateway Error: Unable to initiate payment.");
+            throw new BusinessLogicException(
+                    "Payment Gateway Error: Unable to initiate payment. Please try again.");
+
         }
     }
 
