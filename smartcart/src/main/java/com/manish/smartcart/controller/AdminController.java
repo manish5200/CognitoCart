@@ -1,10 +1,13 @@
 package com.manish.smartcart.controller;
 
 import com.manish.smartcart.dto.admin.DashboardResponse;
+import com.manish.smartcart.dto.admin.KycUpdateRequest;
+import com.manish.smartcart.dto.seller.SellerSummaryResponse;
 import com.manish.smartcart.dto.admin.StatusChangeRequest;
 import com.manish.smartcart.dto.order.ShipmentRequest;
 import com.manish.smartcart.mapper.OrderMapper;
 import com.manish.smartcart.model.order.Order;
+import com.manish.smartcart.model.user.SellerProfile;
 import com.manish.smartcart.service.AdminService;
 import com.manish.smartcart.service.ShipmentService;
 import com.manish.smartcart.service.WebhookDlqService;
@@ -141,5 +144,38 @@ public class AdminController {
     public ResponseEntity<String> replayFailedWebhook(@PathVariable Long eventId) {
         String result = webhookDlqService.replayFailedWebhook(eventId);
         return ResponseEntity.ok(result);
+    }
+
+    // --- KYC MANAGEMENT ---
+    @GetMapping("/sellers")
+    @Operation(summary = "List all sellers", description = "Returns all registered sellers with KYC status.")
+    @ApiResponse(responseCode = "200", description = "Sellers retrieved")
+    public ResponseEntity<List<SellerSummaryResponse>> getAllSellers() {
+        return ResponseEntity.ok(adminService.getAllSellers());
+    }
+
+    @GetMapping("/sellers/kyc/pending")
+    @Operation(summary = "KYC review queue", description = "Returns sellers in PENDING or IN_REVIEW state.")
+    @ApiResponse(responseCode = "200", description = "Pending KYC sellers retrieved")
+    public ResponseEntity<List<SellerSummaryResponse>> getPendingKycSellers() {
+        return ResponseEntity.ok(adminService.getPendingKycSellers());
+    }
+
+    @PatchMapping("/sellers/{sellerId}/kyc")
+    @Operation(summary = "Update seller KYC status")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "KYC updated, email sent"),
+            @ApiResponse(responseCode = "400", description = "Invalid transition or missing comment"),
+            @ApiResponse(responseCode = "404", description = "Seller not found")
+    })
+    public ResponseEntity<Map<String,String>> updateSellerKyc(
+            @PathVariable Long sellerId,
+            @Valid @RequestBody KycUpdateRequest request){
+        SellerProfile updated = adminService.updateSellerKyc(sellerId, request);
+
+        return ResponseEntity.ok(Map.of(
+                "message",   "KYC status updated to " + updated.getKycStatus(),
+                "sellerId",  String.valueOf(sellerId),
+                "newStatus", updated.getKycStatus().name()));
     }
 }
