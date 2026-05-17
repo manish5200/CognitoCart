@@ -7,11 +7,14 @@
 </head>
 <!--
   seller-kyc.html — CognitoCart Premium Seller KYC Decision Email
-  Variables:
-    • sellerName  (String)   — seller's full name
-    • isApproved  (Boolean)  — true = VERIFIED, false = REJECTED
-    • statusWord  (String)   — "Approved" or "Rejected"
-    • comments    (String)   — admin's note
+  Thymeleaf Variables:
+    • sellerName   (String)  — seller's full name
+    • kycStatus    (String)  — "VERIFIED" | "REJECTED" | "SUSPENDED"
+    • adminComment (String)  — admin's note (required for REJECTED / SUSPENDED)
+  Derived locally via th:with:
+    • isVerified   = kycStatus == 'VERIFIED'
+    • isRejected   = kycStatus == 'REJECTED'
+    • isSuspended  = kycStatus == 'SUSPENDED'
   Email rules: all CSS inline, no <style> block, table layout only.
   th:style REPLACES style attr entirely — never use both on same element.
 -->
@@ -21,46 +24,60 @@
     <tr>
         <td align="center">
             <table width="600" cellspacing="0" cellpadding="0" border="0"
+                   th:with="
+                     isVerified=${kycStatus == 'VERIFIED'},
+                     isRejected=${kycStatus == 'REJECTED'},
+                     isSuspended=${kycStatus == 'SUSPENDED'}
+                   "
                    style="border-radius:20px;overflow:hidden;border-width:1px;border-style:solid;border-color:#1e1e30;">
 
-                <!-- TOP DYNAMIC BAR — green for approved, red for rejected -->
+                <!-- TOP DYNAMIC BAR -->
                 <tr>
-                    <td th:style="${isApproved}
+                    <td th:style="${kycStatus == 'VERIFIED'}
                             ? 'background:linear-gradient(90deg,#10b981,#34d399,#10b981);height:4px;font-size:0;line-height:0;'
-                            : 'background:linear-gradient(90deg,#ef4444,#f87171,#ef4444);height:4px;font-size:0;line-height:0;'"
+                            : (${kycStatus == 'SUSPENDED'}
+                                ? 'background:linear-gradient(90deg,#f97316,#fb923c,#f97316);height:4px;font-size:0;line-height:0;'
+                                : 'background:linear-gradient(90deg,#ef4444,#f87171,#ef4444);height:4px;font-size:0;line-height:0;')"
                         style="background:linear-gradient(90deg,#10b981,#34d399,#10b981);height:4px;font-size:0;line-height:0;">&nbsp;</td>
                 </tr>
 
-                <!-- HERO HEADER — dynamic gradient per decision -->
+                <!-- HERO HEADER -->
                 <tr>
-                    <td th:style="${isApproved}
+                    <td th:style="${kycStatus == 'VERIFIED'}
                             ? 'background:linear-gradient(160deg,#00150d 0%,#003d23 60%,#00150d 100%);padding:52px 48px 44px 48px;text-align:center;'
-                            : 'background:linear-gradient(160deg,#150000 0%,#3d0000 60%,#150000 100%);padding:52px 48px 44px 48px;text-align:center;'"
-                        style="background:linear-gradient(160deg,#00150d 0%,#003d23 60%,#00150d 100%);padding:52px 48px 44px 48px;text-align:center;">
+                            : (${kycStatus == 'SUSPENDED'}
+                                ? 'background:linear-gradient(160deg,#150800 0%,#3d1500 60%,#150800 100%);padding:52px 48px 44px 48px;text-align:center;'
+                                : 'background:linear-gradient(160deg,#150000 0%,#3d0000 60%,#150000 100%);padding:52px 48px 44px 48px;text-align:center;')"
+                       style="background:linear-gradient(160deg,#00150d 0%,#003d23 60%,#00150d 100%);padding:52px 48px 44px 48px;text-align:center;">
 
-                        <p style="margin:0 0 28px 0;font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;"
-                           th:style="${isApproved} ? 'color:#34d399;margin:0 0 28px 0;font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;'
-                                                   : 'color:#f87171;margin:0 0 28px 0;font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;'">
+                        <p th:style="${kycStatus == 'VERIFIED'} ? 'color:#34d399;margin:0 0 28px 0;font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;'
+                                     : (${kycStatus == 'SUSPENDED'} ? 'color:#fb923c;margin:0 0 28px 0;font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;'
+                                                                     : 'color:#f87171;margin:0 0 28px 0;font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;')"
+                           style="margin:0 0 28px 0;font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#34d399;">
                             ⚡ COGNITOCART MERCHANT
                         </p>
 
-                        <!-- Decision icon with colored glow ring -->
-                        <div th:style="${isApproved}
+                        <!-- Decision icon -->
+                        <div th:style="${kycStatus == 'VERIFIED'}
                                 ? 'display:inline-block;width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);text-align:center;line-height:88px;margin-bottom:28px;border-width:3px;border-style:solid;border-color:rgba(16,185,129,0.4);'
-                                : 'display:inline-block;width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,#ef4444,#b91c1c);text-align:center;line-height:88px;margin-bottom:28px;border-width:3px;border-style:solid;border-color:rgba(239,68,68,0.4);'"
+                                : (${kycStatus == 'SUSPENDED'}
+                                    ? 'display:inline-block;width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,#f97316,#c2410c);text-align:center;line-height:88px;margin-bottom:28px;border-width:3px;border-style:solid;border-color:rgba(249,115,22,0.4);'
+                                    : 'display:inline-block;width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,#ef4444,#b91c1c);text-align:center;line-height:88px;margin-bottom:28px;border-width:3px;border-style:solid;border-color:rgba(239,68,68,0.4);')"
                              style="display:inline-block;width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);text-align:center;line-height:88px;margin-bottom:28px;border-width:3px;border-style:solid;border-color:rgba(16,185,129,0.4);">
                             <span style="font-size:40px;line-height:88px;display:inline-block;vertical-align:middle;"
-                                  th:text="${isApproved} ? '🎉' : '📋'">🎉</span>
+                                  th:text="${kycStatus == 'VERIFIED'} ? '🎉' : (${kycStatus == 'SUSPENDED'} ? '⚠️' : '📋')">🎉</span>
                         </div>
 
                         <h1 style="margin:0 0 12px 0;font-size:30px;font-weight:900;color:#ffffff;letter-spacing:-0.8px;line-height:1.2;"
-                            th:text="${isApproved} ? 'Congratulations! You\'re Verified!' : 'Application Under Review'">
+                            th:text="${kycStatus == 'VERIFIED'} ? 'Congratulations! You\'re Verified!'
+                                     : (${kycStatus == 'SUSPENDED'} ? 'Account Temporarily Suspended'
+                                                                     : 'Application Needs Attention')">
                             Congratulations! You're Verified!
                         </h1>
                         <p style="margin:0;font-size:15px;color:#94a3b8;line-height:1.7;"
-                           th:text="${isApproved}
-                               ? 'Your KYC is approved. Start selling to thousands of customers today.'
-                               : 'We\'ve reviewed your KYC application. Please see the details below.'">
+                           th:text="${kycStatus == 'VERIFIED'} ? 'Your KYC is approved. Start selling to thousands of customers today.'
+                                    : (${kycStatus == 'SUSPENDED'} ? 'Your seller account has been temporarily suspended. Please review the details below.'
+                                                                    : 'We\'ve reviewed your KYC application. Please see the details below.')">
                             Your KYC is approved. Start selling today.
                         </p>
                     </td>
@@ -75,9 +92,11 @@
                         <p style="margin:0;font-size:14px;color:#94a3b8;line-height:1.8;">
                             The CognitoCart Merchant team has reviewed your KYC application.
                             Your application has been
-                            <strong th:style="${isApproved} ? 'color:#34d399;' : 'color:#f87171;'"
-                                    th:text="${statusWord}"
-                                    style="color:#34d399;">Approved</strong>.
+                            <strong th:style="${kycStatus == 'VERIFIED'} ? 'color:#34d399;'
+                                             : (${kycStatus == 'SUSPENDED'} ? 'color:#fb923c;' : 'color:#f87171;')"
+                                    th:text="${kycStatus == 'VERIFIED'} ? 'Approved ✓'
+                                             : (${kycStatus == 'SUSPENDED'} ? 'Suspended ⚠️' : 'Rejected ✗')"
+                                    style="color:#34d399;">Approved ✓</strong>.
                         </p>
                     </td>
                 </tr>
@@ -85,12 +104,17 @@
                 <!-- DECISION BADGE -->
                 <tr>
                     <td style="background:#0d0d1f;padding:0 48px 24px 48px;text-align:center;">
-                        <div th:style="${isApproved}
+                        <div th:style="${kycStatus == 'VERIFIED'}
                                 ? 'display:inline-block;background:rgba(16,185,129,0.1);border-radius:50px;padding:12px 32px;border-width:1px;border-style:solid;border-color:#10b981;'
-                                : 'display:inline-block;background:rgba(239,68,68,0.1);border-radius:50px;padding:12px 32px;border-width:1px;border-style:solid;border-color:#ef4444;'"
+                                : (${kycStatus == 'SUSPENDED'}
+                                    ? 'display:inline-block;background:rgba(249,115,22,0.1);border-radius:50px;padding:12px 32px;border-width:1px;border-style:solid;border-color:#f97316;'
+                                    : 'display:inline-block;background:rgba(239,68,68,0.1);border-radius:50px;padding:12px 32px;border-width:1px;border-style:solid;border-color:#ef4444;')"
                              style="display:inline-block;background:rgba(16,185,129,0.1);border-radius:50px;padding:12px 32px;border-width:1px;border-style:solid;border-color:#10b981;">
-                            <p th:style="${isApproved} ? 'margin:0;font-size:16px;font-weight:800;color:#34d399;' : 'margin:0;font-size:16px;font-weight:800;color:#f87171;'"
-                               th:text="${isApproved} ? 'VERIFIED ✓' : 'REJECTED ✗'"
+                            <p th:style="${kycStatus == 'VERIFIED'} ? 'margin:0;font-size:16px;font-weight:800;color:#34d399;'
+                                         : (${kycStatus == 'SUSPENDED'} ? 'margin:0;font-size:16px;font-weight:800;color:#fb923c;'
+                                                                         : 'margin:0;font-size:16px;font-weight:800;color:#f87171;')"
+                               th:text="${kycStatus == 'VERIFIED'} ? 'VERIFIED ✓'
+                                        : (${kycStatus == 'SUSPENDED'} ? 'SUSPENDED ⚠️' : 'REJECTED ✗')"
                                style="margin:0;font-size:16px;font-weight:800;color:#34d399;">VERIFIED ✓</p>
                         </div>
                     </td>
@@ -107,7 +131,7 @@
                                         Admin Comments
                                     </p>
                                     <p style="margin:0;font-size:14px;color:#cbd5e1;font-style:italic;line-height:1.8;"
-                                       th:text="${comments}">
+                                       th:text="${adminComment != null and !#strings.isEmpty(adminComment)} ? ${adminComment} : 'No additional comments provided.'">
                                         "Everything looks perfect! Welcome aboard."
                                     </p>
                                 </td>
@@ -116,8 +140,8 @@
                     </td>
                 </tr>
 
-                <!-- APPROVED: NEXT STEPS -->
-                <tr th:if="${isApproved}">
+                <!-- VERIFIED: NEXT STEPS -->
+                <tr th:if="${kycStatus == 'VERIFIED'}">
                     <td style="background:#0d0d1f;padding:0 32px 24px 32px;">
                         <table width="100%" cellspacing="0" cellpadding="0" border="0"
                                style="background:linear-gradient(135deg,#00150d,#003d23);border-radius:14px;border-width:1px;border-style:solid;border-color:#065f46;">
@@ -155,7 +179,7 @@
                 </tr>
 
                 <!-- REJECTED: WHAT TO DO NEXT -->
-                <tr th:unless="${isApproved}">
+                <tr th:if="${kycStatus == 'REJECTED'}">
                     <td style="background:#0d0d1f;padding:0 32px 24px 32px;">
                         <table width="100%" cellspacing="0" cellpadding="0" border="0"
                                style="background:rgba(239,68,68,0.06);border-radius:14px;border-width:1px;border-style:solid;border-color:#7f1d1d;">
@@ -175,16 +199,49 @@
                     </td>
                 </tr>
 
+                <!-- SUSPENDED: WHAT TO DO NEXT -->
+                <tr th:if="${kycStatus == 'SUSPENDED'}">
+                    <td style="background:#0d0d1f;padding:0 32px 24px 32px;">
+                        <table width="100%" cellspacing="0" cellpadding="0" border="0"
+                               style="background:rgba(249,115,22,0.06);border-radius:14px;border-width:1px;border-style:solid;border-color:#7c2d12;">
+                            <tr>
+                                <td style="padding:24px;">
+                                    <p style="margin:0 0 12px 0;font-size:14px;font-weight:800;color:#fdba74;">
+                                        ⚠️ &nbsp;Account Suspended — What this means:
+                                    </p>
+                                    <p style="margin:0 0 12px 0;font-size:13px;color:#fb923c;line-height:1.8;">
+                                        Your seller account has been temporarily suspended. During this period,
+                                        your product listings are <strong style="color:#fdba74;">hidden from buyers</strong>
+                                        and you cannot accept new orders.
+                                    </p>
+                                    <p style="margin:0;font-size:13px;color:#fb923c;line-height:1.8;">
+                                        Please review the admin comments and contact our merchant support team at
+                                        <a href="mailto:merchants@cognitocart.com"
+                                           style="color:#fdba74;font-weight:700;text-decoration:none;">merchants@cognitocart.com</a>
+                                        to resolve this.
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
                 <!-- CTA BUTTON -->
                 <tr>
                     <td style="background:#0d0d1f;padding:0 48px 44px 48px;text-align:center;">
-                        <a th:href="${isApproved} ? 'https://cognitocart.com/seller/dashboard' : 'https://cognitocart.com/seller/kyc'"
-                           th:style="${isApproved}
+                        <a th:href="${kycStatus == 'VERIFIED'} ? 'https://cognitocart.com/seller/dashboard'
+                                    : (${kycStatus == 'SUSPENDED'} ? 'mailto:merchants@cognitocart.com'
+                                                                    : 'https://cognitocart.com/seller/kyc')"
+                           th:style="${kycStatus == 'VERIFIED'}
                                ? 'display:inline-block;background:linear-gradient(135deg,#10b981,#059669);color:#ffffff;font-size:15px;font-weight:800;text-decoration:none;padding:16px 48px;border-radius:50px;letter-spacing:0.5px;'
-                               : 'display:inline-block;background:linear-gradient(135deg,#ef4444,#b91c1c);color:#ffffff;font-size:15px;font-weight:800;text-decoration:none;padding:16px 48px;border-radius:50px;letter-spacing:0.5px;'"
+                               : (${kycStatus == 'SUSPENDED'}
+                                   ? 'display:inline-block;background:linear-gradient(135deg,#f97316,#c2410c);color:#ffffff;font-size:15px;font-weight:800;text-decoration:none;padding:16px 48px;border-radius:50px;letter-spacing:0.5px;'
+                                   : 'display:inline-block;background:linear-gradient(135deg,#ef4444,#b91c1c);color:#ffffff;font-size:15px;font-weight:800;text-decoration:none;padding:16px 48px;border-radius:50px;letter-spacing:0.5px;')"
                            href="https://cognitocart.com/seller/dashboard"
                            style="display:inline-block;background:linear-gradient(135deg,#10b981,#059669);color:#ffffff;font-size:15px;font-weight:800;text-decoration:none;padding:16px 48px;border-radius:50px;letter-spacing:0.5px;"
-                           th:text="${isApproved} ? 'Go to Seller Dashboard →' : 'Update KYC &amp; Resubmit →'">
+                           th:text="${kycStatus == 'VERIFIED'} ? 'Go to Seller Dashboard →'
+                                    : (${kycStatus == 'SUSPENDED'} ? 'Contact Merchant Support →'
+                                                                    : 'Update KYC &amp; Resubmit →')">
                             Go to Seller Dashboard →
                         </a>
                     </td>
@@ -193,12 +250,12 @@
                 <!-- FOOTER -->
                 <tr>
                     <td style="background:#09090f;border-top-width:1px;border-top-style:solid;border-top-color:#1e1e30;padding:24px 48px;text-align:center;">
-                        <p style="margin:0 0 4px 0;font-size:12px;color:#374151;">
+                        <p style="margin:0 0 4px 0;font-size:12px;color:#64748b;">
                             Questions? Contact
                             <a href="mailto:merchants@cognitocart.com"
                                style="color:#818cf8;text-decoration:none;font-weight:600;">merchants@cognitocart.com</a>
                         </p>
-                        <p style="margin:0;font-size:11px;color:#1f2937;">
+                        <p style="margin:0;font-size:11px;color:#475569;">
                             &copy; 2026 CognitoCart Merchant Services &nbsp;|&nbsp; Bangalore, India
                         </p>
                     </td>
@@ -206,9 +263,11 @@
 
                 <!-- BOTTOM DYNAMIC BAR -->
                 <tr>
-                    <td th:style="${isApproved}
+                    <td th:style="${kycStatus == 'VERIFIED'}
                             ? 'background:linear-gradient(90deg,#10b981,#34d399,#10b981);height:4px;font-size:0;line-height:0;'
-                            : 'background:linear-gradient(90deg,#ef4444,#f87171,#ef4444);height:4px;font-size:0;line-height:0;'"
+                            : (${kycStatus == 'SUSPENDED'}
+                                ? 'background:linear-gradient(90deg,#f97316,#fb923c,#f97316);height:4px;font-size:0;line-height:0;'
+                                : 'background:linear-gradient(90deg,#ef4444,#f87171,#ef4444);height:4px;font-size:0;line-height:0;')"
                         style="background:linear-gradient(90deg,#10b981,#34d399,#10b981);height:4px;font-size:0;line-height:0;">&nbsp;</td>
                 </tr>
 

@@ -74,13 +74,21 @@ public class EmailTemplateBuilder {
         return templateEngine.process("emails/order-status", context);
     }
 
-    /** Builds the Seller KYC Status HTML (approved / rejected). */
-    public String buildSellerKycStatus(String sellerName, boolean isApproved, String comments) {
+    /**
+     * Builds the Seller KYC Decision Email — supports all 3 terminal states:
+     *   VERIFIED  → green theme,  "Go to Seller Dashboard" CTA
+     *   REJECTED  → red theme,    "Update KYC & Resubmit" CTA
+     *   SUSPENDED → orange theme, "Contact Merchant Support" CTA
+     *
+     * @param sellerName   seller's full name
+     * @param kycStatus    "VERIFIED" | "REJECTED" | "SUSPENDED"
+     * @param adminComment admin's reason (required for REJECTED/SUSPENDED)
+     */
+    public String buildSellerKycDecisionEmail(String sellerName, String kycStatus, String adminComment) {
         Context context = new Context();
         context.setVariable("sellerName", sellerName);
-        context.setVariable("isApproved", isApproved);
-        context.setVariable("statusWord", isApproved ? "Approved" : "Rejected");
-        context.setVariable("comments", comments != null ? comments : "No additional comments provided.");
+        context.setVariable("kycStatus", kycStatus);   // drives ALL th:if / th:style in template
+        context.setVariable("adminComment", adminComment);
         return templateEngine.process("emails/seller-kyc", context);
     }
 
