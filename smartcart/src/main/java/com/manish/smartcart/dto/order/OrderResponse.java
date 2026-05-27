@@ -2,6 +2,7 @@ package com.manish.smartcart.dto.order;
 
 import com.manish.smartcart.enums.OrderStatus;
 import com.manish.smartcart.enums.PaymentStatus;
+import com.manish.smartcart.enums.ReturnType;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -32,6 +33,10 @@ public class OrderResponse {
     private String razorpayOrderId;
     // List of the items we ordered
     private List<OrderItemDTO> items;
+
+    private ReturnType returnRequestType;    // RETURN / REPLACEMENT / EXCHANGE
+    private String returnReason;             // "DEFECTIVE", "WRONG_ITEM", etc.
+    private LocalDateTime returnRequestedAt; // When request was submitted
 
     @Setter
     @Getter

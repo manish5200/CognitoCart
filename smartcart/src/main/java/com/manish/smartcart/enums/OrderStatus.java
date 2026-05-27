@@ -1,16 +1,23 @@
 package com.manish.smartcart.enums;
 
 public enum OrderStatus {
-    CREATED, // Order placed
-    PAYMENT_PENDING, // Waiting for payment
-    PAID, // Payment success event received
-    CONFIRMED, // Seller/system confirmed
-    PACKED, // Warehouse processing
-    SHIPPED, // Handed to courier
-    DELIVERED, // Completed
-    CANCELLED, // Cancelled before shipping
-    RETURN_REQUESTED, // Customer requested return
-    RETURNED, // Item received back
-    REFUNDED, // Refund completed
-    OUT_FOR_DELIVERY
+    CREATED,
+    PAYMENT_PENDING,
+    PAID,
+    CONFIRMED,
+    PACKED,
+    SHIPPED,
+    OUT_FOR_DELIVERY,
+    DELIVERED,
+    CANCELLED,
+
+    // ── Post-delivery customer requests ──────────────────────────────────
+    RETURN_REQUESTED,       // Customer wants refund — awaiting admin approval
+    REPLACEMENT_REQUESTED,  // Customer wants same item re-sent — awaiting admin check
+    EXCHANGE_REQUESTED,     // Customer wants different variant — awaiting admin handling
+
+    // ── Resolution states ─────────────────────────────────────────────────
+    RETURNED,               // Item physically received back at warehouse
+    REFUNDED,               // Money returned to customer via Razorpay
+    REPLACEMENT_SHIPPED     // Replacement unit dispatched to customer
 }

@@ -2,15 +2,14 @@ package com.manish.smartcart.controller;
 
 import com.manish.smartcart.dto.admin.DashboardResponse;
 import com.manish.smartcart.dto.admin.KycUpdateRequest;
+import com.manish.smartcart.dto.order.OrderResponse;
 import com.manish.smartcart.dto.seller.SellerSummaryResponse;
 import com.manish.smartcart.dto.admin.StatusChangeRequest;
 import com.manish.smartcart.dto.order.ShipmentRequest;
 import com.manish.smartcart.mapper.OrderMapper;
 import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.model.user.SellerProfile;
-import com.manish.smartcart.service.AdminService;
-import com.manish.smartcart.service.ShipmentService;
-import com.manish.smartcart.service.WebhookDlqService;
+import com.manish.smartcart.service.*;
 import com.manish.smartcart.util.AppConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -29,7 +28,6 @@ import java.util.Map;
 
 import com.manish.smartcart.dto.coupon.CouponRequest;
 import com.manish.smartcart.dto.coupon.CouponResponse;
-import com.manish.smartcart.service.CouponService;
 import com.manish.smartcart.service.notifications.OrderNotificationService;
 import jakarta.validation.Valid;
 
@@ -47,6 +45,7 @@ public class AdminController {
     private final OrderNotificationService orderNotificationService;
     private final ShipmentService shipmentService;
     private final WebhookDlqService webhookDlqService;
+    private final OrderService orderService;
 
     @Operation(summary = "Get Dashboard Stats", description = "Retrieves top-selling products and low-stock alerts. Access restricted to users with ROLE_ADMIN.")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved statistics")
@@ -178,4 +177,41 @@ public class AdminController {
                 "sellerId",  String.valueOf(sellerId),
                 "newStatus", updated.getKycStatus().name()));
     }
+
+
+    @Operation(
+            summary = "Approve return request → triggers Razorpay refund",
+            description = "Admin approves a RETURN_REQUESTED order. " +
+                    "Restores stock, issues Razorpay refund, updates status to REFUNDED, sends refund email."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Return approved — refund issued"),
+            @ApiResponse(responseCode = "400", description = "Order is not in RETURN_REQUESTED state"),
+            @ApiResponse(responseCode = "404", description = "Order not found")
+    })
+    @PutMapping("/{orderId}/approve-return")
+    public ResponseEntity<OrderResponse>approveReturn(@PathVariable Long orderId){
+        OrderResponse orderResponse = orderService.approveReturn(orderId);
+        return ResponseEntity.ok(orderResponse);
+    }
+
+
+    @Operation(
+            summary = "Approve replacement / exchange → re-checks stock → marks REPLACEMENT_SHIPPED",
+            description = "Admin approves a REPLACEMENT_REQUESTED or EXCHANGE_REQUESTED order. " +
+                    "Re-checks live stock at approval time. Deducts stock. " +
+                    "Admin then attaches new tracking via POST /admin/{orderId}/shipment."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Replacement approved — REPLACEMENT_SHIPPED"),
+            @ApiResponse(responseCode = "400", description = "Order not in correct state or insufficient stock"),
+            @ApiResponse(responseCode = "404", description = "Order not found")
+    })
+    @PutMapping("/{orderId}/approve-replacement")
+    public ResponseEntity<?> approveReplacement(@PathVariable Long orderId) {
+        OrderResponse response = orderService.approveReplacement(orderId);
+        return ResponseEntity.ok(response);
+    }
+
+
 }
