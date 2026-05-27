@@ -3,6 +3,7 @@ package com.manish.smartcart.controller;
 import com.manish.smartcart.config.CustomUserDetails;
 import com.manish.smartcart.dto.order.OrderRequest;
 import com.manish.smartcart.dto.order.OrderResponse;
+import com.manish.smartcart.dto.order.ReturnRequestDTO;
 import com.manish.smartcart.exception.BusinessLogicException;
 import com.manish.smartcart.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -78,6 +79,36 @@ public class OrderController {
                 OrderResponse orderResponse = orderService.cancelOrder(userId, orderId);
                 return ResponseEntity.ok(orderResponse);
         }
+
+        @Operation(
+                summary = "Request return / replacement / exchange",
+                description = "Submit a post-delivery request. Validates ownership, order status, " +
+                        "return window (deliveredAt + returnWindowDays), and policy snapshot. " +
+                        "Use returnType: RETURN (refund), REPLACEMENT (same item re-sent), EXCHANGE (swap variant)."
+        )
+        @ApiResponses(value = {
+                @ApiResponse(responseCode = "200", description = "Request submitted — order status updated"),
+                @ApiResponse(responseCode = "400", description = "Window expired / type not allowed by policy / duplicate request"),
+                @ApiResponse(responseCode = "403", description = "Order does not belong to you"),
+                @ApiResponse(responseCode = "404", description = "Order not found")
+        })
+        @PostMapping("/{orderId}/request-return")
+        public ResponseEntity<OrderResponse>requestReturn(
+                @PathVariable Long orderId,
+                @RequestBody @Valid ReturnRequestDTO request,
+                Authentication authentication) {
+                Long userId = extractUserId(authentication);
+                OrderResponse orderResponse = orderService.requestReturn(
+                        userId, orderId,
+                        request.getReturnType(),
+                        request.getReturnReason(),
+                        request.getReturnDescription()
+                );
+
+                return ResponseEntity.ok(orderResponse);
+        }
+
+
 
         //HELPER FUNCTION TO EXTRACT UserId
         private long extractUserId(Authentication authentication) {

@@ -24,7 +24,9 @@ public class OrderMapper {
         orderResponse.setStatus(order.getOrderStatus());
         orderResponse.setPaymentStatus(order.getPaymentStatus());
         orderResponse.setDeliveryFee(order.getDeliveryFee()); // ← was missing — fixes "null" in PDF invoice
-
+        orderResponse.setReturnRequestType(order.getReturnRequestType());
+        orderResponse.setReturnReason(order.getReturnReason());
+        orderResponse.setReturnRequestedAt(order.getReturnRequestedAt());
 
         // --- FIXED: Mapping the Snapshot Address ---
         // We build a readable address string from the individual snapshot columns

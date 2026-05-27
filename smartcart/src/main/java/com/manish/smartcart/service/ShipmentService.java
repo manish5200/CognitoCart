@@ -19,6 +19,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -161,6 +163,10 @@ public class ShipmentService {
         // 5. Commit the status transition
         OrderStatus previousStatus = order.getOrderStatus();
         order.setOrderStatus(newOrderStatus);
+        // Stamp delivery time — this is when the return window clock starts
+        if (newOrderStatus == OrderStatus.DELIVERED) {
+            order.setDeliveredAt(LocalDateTime.now());
+        }
         orderRepository.save(order);
 
         log.info("Order #{} updated: {} → {} | Carrier: {} | AWB: {} | Remarks: {}",

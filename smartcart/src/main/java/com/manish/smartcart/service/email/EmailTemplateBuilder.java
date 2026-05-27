@@ -66,6 +66,12 @@ public class EmailTemplateBuilder {
             case DELIVERED         -> "Your order has been delivered. We hope you love your purchase! 🎉";
             case CANCELLED         -> "Your order has been cancelled. If you have questions, please contact support.";
             case RETURN_REQUESTED  -> "We have received your return request and are processing it.";
+            case REPLACEMENT_REQUESTED -> "We have received your replacement request and are reviewing it. " +
+                    "We'll notify you once it's approved and a new unit is dispatched.";
+            case EXCHANGE_REQUESTED -> "We have received your exchange request and are reviewing it. " +
+                            "Our team will reach out shortly to arrange the variant swap.";
+            case REPLACEMENT_SHIPPED -> "Great news! Your replacement item has been dispatched and is on its way. " +
+                            "You will receive a new tracking number shortly.";
             case RETURNED          -> "Your returned item has been received at our warehouse.";
             case REFUNDED          -> "Your refund has been issued successfully. It will reflect in 5-7 business days.";
             default                -> "The status of your order has been updated. Visit the app for details.";

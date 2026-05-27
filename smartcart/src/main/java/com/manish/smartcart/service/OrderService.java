@@ -1,9 +1,14 @@
 package com.manish.smartcart.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.manish.smartcart.dto.order.OrderRequest;
 import com.manish.smartcart.dto.order.OrderResponse;
+import com.manish.smartcart.dto.order.PolicySnapshot;
 import com.manish.smartcart.enums.OrderStatus;
 import com.manish.smartcart.enums.PaymentStatus;
+import com.manish.smartcart.enums.PolicyType;
+import com.manish.smartcart.enums.ReturnType;
 import com.manish.smartcart.mapper.OrderMapper;
 import com.manish.smartcart.model.cart.Cart;
 import com.manish.smartcart.model.cart.CartItem;
@@ -23,13 +28,14 @@ import com.manish.smartcart.exception.InsufficientStockException;
 import com.manish.smartcart.exception.ResourceNotFoundException;
 import com.manish.smartcart.service.notifications.OrderNotificationService;
 import io.micrometer.core.instrument.MeterRegistry;
-import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -52,6 +58,9 @@ public class OrderService {
     private final RazorpayRefundService razorpayRefundService;
     private final ShipmentRepository shipmentRepository;
     private final MeterRegistry meterRegistry;
+    private final ReturnPolicyService returnPolicyService;
+    private final ObjectMapper objectMapper;
+
 
     @Transactional
     public OrderResponse placeOrder(Long userId, OrderRequest orderRequest) {
@@ -151,6 +160,21 @@ public class OrderService {
         }
         order.setOrderItems(orderItems);
 
+        // ─── SNAPSHOT THE RETURN POLICY AT CHECKOUT TIME ─────────────────────
+        // This freezes the return policy at the moment the customer pays.
+        //Even if the seller updates their policy tomorrow, this order is protected.
+        // Same principle as priceAtPurchase — immutable audit trail.
+        if(!orderItems.isEmpty()){
+            Product firstProduct = orderItems.get(0).getProduct();
+            try{
+                PolicySnapshot snapshot = returnPolicyService.getPolicySnapshotForCheckout(firstProduct);
+                order.setReturnPolicySnapshot(objectMapper.writeValueAsString(snapshot));
+            } catch (JsonProcessingException e) {
+                // Non-fatal: order still proceeds. Return eligibility falls back to live policy.
+                log.warn("Could not serialize return policy snapshot: {}", e.getMessage());
+            }
+        }
+
         // 4. Handle Coupons and their Usage Limits
         if (cart.getCouponCode() != null) {
             order.setCouponCode(cart.getCouponCode());
@@ -197,7 +221,7 @@ public class OrderService {
         //Prometheus
         meterRegistry.counter("cognitocart.orders.placed").increment();
         // ↑ Every time an order is placed, this counter ticks up by 1.
-        // In Grafana you can graph: "How many orders per hour?"
+        // In Grafana, you can graph: "How many orders per hour?"
 
         cartService.clearTheCart(userId);
 
@@ -316,4 +340,238 @@ public class OrderService {
         order.setOrderStatus(OrderStatus.CANCELLED);
         orderRepository.save(order);// Or OrderStatus.EXPIRED
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+// CUSTOMER: Request return / replacement / exchange
+// ─────────────────────────────────────────────────────────────────────────
+    /**
+     * Full policy matrix:
+
+     *  PolicyType           | RETURN req | REPLACEMENT req | EXCHANGE req
+     *  ---------------------|------------|-----------------|-------------
+     *  NON_RETURNABLE       | ❌         | ❌              | ❌
+     *  RETURN_ONLY          | ✅         | ❌              | ❌
+     *  EXCHANGE_ONLY        | ❌         | ❌              | ✅
+     *  REPLACEMENT_ONLY     | ❌         | ✅ (if in stock)| ❌
+     *  RETURN_AND_EXCHANGE  | ✅         | ❌              | ✅
+
+     * Extra rule for REPLACEMENT:
+     *   Even if policy allows it, we check LIVE stock.
+     *   If out of stock → reject with clear message (do NOT auto-fallback to RETURN).
+     */
+    @Transactional
+    public OrderResponse requestReturn(Long userId, Long orderId,
+                                       ReturnType requestType,
+                                       String returnReason,
+                                       String returnDescription) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Cannot find order with orderId: " + orderId));
+
+        // Guard 1: Ownership check
+        if(!order.getUser().getId().equals(userId)) {
+            throw new BusinessLogicException("Access Denied: This order does not belong to you.");
+        }
+
+        // Guard 2: Status check — only DELIVERED orders can be returned
+        if(order.getOrderStatus() != OrderStatus.DELIVERED) {
+            throw new BusinessLogicException(
+                    "Post-purchase request not allowed. Order must be DELIVERED. " +
+                            "Current status: " + order.getOrderStatus());
+        }
+
+        // Guard 3: Duplicate return check
+        if(order.getReturnRequestedAt() != null){
+            throw new BusinessLogicException(
+                    "A " + order.getReturnRequestType() + " request is already submitted for this order.");
+        }
+
+        // Guard 4: Validate against the frozen policy snapshot
+        PolicySnapshot policySnapshot = null;
+        if(order.getReturnPolicySnapshot() != null){
+            try{
+                 policySnapshot = objectMapper.readValue(order.getReturnPolicySnapshot(), PolicySnapshot.class);
+            }catch (Exception e){
+                log.warn("Could not parse return policy snapshot for order {}. Proceeding.", orderId, e);
+            }
+        }
+        // Guard 5: Return window deadline
+        if(policySnapshot != null && order.getDeliveredAt() != null &&  policySnapshot.getReturnWindowDays() > 0){
+            LocalDateTime deadline = order.getDeliveredAt().plusDays(policySnapshot.getReturnWindowDays());
+            if(LocalDateTime.now().isAfter(deadline)){
+                throw new BusinessLogicException(
+                        "Return window expired. You had " + policySnapshot.getReturnWindowDays()
+                                + " days from delivery. Deadline was: " + deadline);
+            }
+
+        }
+        // Guard 6: Policy matrix — the CORE validation
+        OrderStatus newStatus;
+
+        if(policySnapshot != null){
+
+            // Hard stop: NON_RETURNABLE means absolutely nothing is allowed
+            if(policySnapshot.getPolicyType() == PolicyType.NON_RETURNABLE){
+                throw new BusinessLogicException(
+                        "This item is not eligible for any post-purchase action " +
+                                "(non-returnable as per seller's policy at time of purchase).");
+            }
+
+            newStatus = switch (requestType){
+                case RETURN -> {
+                    if(!policySnapshot.isReturnAllowed()){
+                        throw new BusinessLogicException(
+                                "Return (refund) is not available for this product." +
+                                        buildAvailableOptionsHint(policySnapshot));
+                    }
+                    yield OrderStatus.RETURN_REQUESTED;
+                }
+
+                case REPLACEMENT -> {
+                    if (!policySnapshot.isReplacementAllowed()) {
+                        throw new BusinessLogicException(
+                                "Replacement is not available for this product." +
+                                        buildAvailableOptionsHint(policySnapshot));
+                    }
+                    // Live stock check — replacement needs available inventory
+                    Long productId = order.getOrderItems().get(0).getProduct().getId();
+                    Product freshProduct = productRepository.findById(productId)
+                            .orElseThrow(() -> new ResourceNotFoundException("Product no longer exists."));
+
+                    if (freshProduct.getStockQuantity() <= 0) {
+                        String returnHint = policySnapshot.isReturnAllowed()
+                                ? " You may request a RETURN (refund) instead."
+                                : "";
+                        throw new BusinessLogicException(
+                                "Replacement temporarily unavailable — product is out of stock." + returnHint);
+                    }
+                    yield OrderStatus.REPLACEMENT_REQUESTED;
+                }
+
+                case EXCHANGE -> {
+                    if (!policySnapshot.isExchangeAllowed()) {
+                        throw new BusinessLogicException(
+                                "Exchange is not available for this product." +
+                                        buildAvailableOptionsHint(policySnapshot));
+                    }
+                    yield OrderStatus.EXCHANGE_REQUESTED;
+                }
+            };
+
+        }else {
+            // No policy snapshot — conservative default: only RETURN allowed
+            if (requestType != ReturnType.RETURN) {
+                throw new BusinessLogicException(
+                        "No return policy found for this order. Only RETURN (refund) is permitted by default.");
+            }
+            newStatus = OrderStatus.RETURN_REQUESTED;
+        }
+
+
+        // Commit the request
+        order.setOrderStatus(newStatus);
+        order.setReturnRequestType(requestType);
+        order.setReturnReason(returnReason);
+        order.setReturnDescription(returnDescription);
+        order.setReturnRequestedAt(LocalDateTime.now());
+        Order saved = orderRepository.save(order);
+        orderNotificationService.sendStatusUpdateEmail(orderMapper.toOrderResponse(saved));
+        log.info("Post-purchase [{}] request for Order ID: {} by User ID: {}", requestType, orderId, userId);
+        return orderMapper.toOrderResponse(saved);
+
+    }
+
+    private String buildAvailableOptionsHint(PolicySnapshot policy) {
+        List<String> options = new ArrayList<>();
+        if (policy.isReturnAllowed())      options.add("RETURN (refund)");
+        if (policy.isReplacementAllowed()) options.add("REPLACEMENT");
+        if (policy.isExchangeAllowed())    options.add("EXCHANGE");
+        return options.isEmpty()
+                ? " No post-purchase options available for this item."
+                : " Available option(s): " + String.join(", ", options) + ".";
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // ADMIN: Approve RETURN → refund money
+    // ─────────────────────────────────────────────────────────────────────────
+    public OrderResponse approveReturn(Long orderId){
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
+
+        if (order.getOrderStatus() != OrderStatus.RETURN_REQUESTED) {
+            throw new BusinessLogicException(
+                    "Order is not in RETURN_REQUESTED state. Current: " + order.getOrderStatus());
+        }
+
+        // Restore stock
+        for (OrderItem item : order.getOrderItems()) {
+            Product p = item.getProduct();
+            p.setStockQuantity(p.getStockQuantity() + item.getQuantity());
+            productRepository.save(p);
+        }
+
+        order.setOrderStatus(OrderStatus.RETURNED);
+
+        // Refund if paid
+        if(order.getPaymentStatus() == PaymentStatus.PAID && order.getRazorpayPaymentId() != null){
+            try{
+                String refundId = razorpayRefundService.initiateFullRefund(
+                        order.getRazorpayPaymentId(), order.getTotalAmount());
+                order.setPaymentStatus(PaymentStatus.REFUNDED);
+                order.setOrderStatus(OrderStatus.REFUNDED);
+                Order saved = orderRepository.save(order);
+                orderNotificationService.sendRefundEmail(orderMapper.toOrderResponse(saved), refundId);
+                return orderMapper.toOrderResponse(saved);
+
+            }catch (Exception e){
+                orderRepository.save(order); // Save RETURNED even if refund API fails
+                throw new BusinessLogicException(
+                        "Stock restored, marked RETURNED. Razorpay refund failed: " + e.getMessage() +
+                                " — process manually via Razorpay dashboard.");
+            }
+        }
+        return orderMapper.toOrderResponse(orderRepository.save(order));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // ADMIN: Approve REPLACEMENT or EXCHANGE → re-check stock → re-ship
+    // ─────────────────────────────────────────────────────────────────────────
+    @Transactional
+    public OrderResponse approveReplacement(Long orderId){
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
+
+        if(order.getOrderStatus() != OrderStatus.REPLACEMENT_REQUESTED &&
+        order.getOrderStatus() != OrderStatus.EXCHANGE_REQUESTED) {
+            throw new BusinessLogicException(
+                    "Order must be in REPLACEMENT_REQUESTED or EXCHANGE_REQUESTED state. " +
+                            "Current: " + order.getOrderStatus());
+        }
+
+        // Re-check stock at approval time (may have dropped since request)
+        for(OrderItem item : order.getOrderItems()) {
+
+            Product freshProduct = productRepository.findById(item.getProduct().getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Product no longer exists."));
+
+            if(freshProduct.getStockQuantity() < item.getQuantity()) {
+                throw new BusinessLogicException(
+                        "Cannot approve replacement — insufficient stock for: " +
+                                freshProduct.getProductName() + ". Available: " + freshProduct.getStockQuantity() +
+                                ". Consider approving a RETURN (refund) instead.");
+            }
+
+            freshProduct.setStockQuantity(freshProduct.getStockQuantity() - item.getQuantity());
+            productRepository.save(freshProduct);
+        }
+        order.setOrderStatus(OrderStatus.REPLACEMENT_SHIPPED);
+        Order saved = orderRepository.save(order);
+
+        // Admin then attaches the new shipment tracking via
+        // existing POST /api/v1/admin/{orderId}/shipment endpoint
+        orderNotificationService.sendStatusUpdateEmail(orderMapper.toOrderResponse(saved));
+        log.info("Replacement approved and stock decremented for Order ID: {}", orderId);
+        return orderMapper.toOrderResponse(saved);
+    }
+
 }

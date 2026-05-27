@@ -2,6 +2,7 @@ package com.manish.smartcart.model.order;
 
 import com.manish.smartcart.enums.OrderStatus;
 import com.manish.smartcart.enums.PaymentStatus;
+import com.manish.smartcart.enums.ReturnType;
 import com.manish.smartcart.model.base.BaseEntity;
 import com.manish.smartcart.model.user.Users;
 import jakarta.persistence.*;
@@ -72,4 +73,40 @@ public class Order extends BaseEntity {
     private String shippingState;
     private String shippingZipCode;
     private String shippingCountry;
+
+    // ─── POST-DELIVERY / RETURN FIELDS (V25 Migrations) ───────────────
+
+    /** WHY customer is requesting action: "DEFECTIVE", "WRONG_ITEM", "CHANGED_MIND" */
+    private String returnReason;
+
+    /** Customer's optional explanation in their own words */
+    private String returnDescription;
+
+    /** When the customer submitted the request — used for audit trail */
+    private LocalDateTime returnRequestedAt;
+
+    /**
+     * When the carrier marked this order as DELIVERED.
+     * Set by ShipmentService.processLogisticsUpdate() when status = DELIVERED.
+     * CRITICAL: return window deadline = deliveredAt + policy.returnWindowDays
+     */
+    private LocalDateTime deliveredAt;
+
+    /**
+     * Frozen JSON snapshot of ProductReturnPolicy at checkout time.
+     * WHY: If seller changes/deletes policy tomorrow, this order still
+     * honors the policy the customer saw when they paid.
+     * Same concept as priceAtPurchase in OrderItem.
+     */
+    @Column(columnDefinition = "jsonb")
+    private String returnPolicySnapshot;
+
+    /**
+     * What the customer REQUESTED: RETURN, REPLACEMENT, or EXCHANGE.
+     * Distinct from PolicyType (seller's rule) — this is customer's intent.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "return_request_type")
+    private ReturnType returnRequestType;
+
 }
