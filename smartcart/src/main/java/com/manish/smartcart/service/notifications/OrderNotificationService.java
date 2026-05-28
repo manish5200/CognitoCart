@@ -75,7 +75,7 @@ public class OrderNotificationService {
     }
 
     /**
-     * Sends "Your order has arrived!" email when carrier marks package as DELIVERED.
+     * // 5️⃣ Sends "Your order has arrived!" email when carrier marks package as DELIVERED.
 
      * CONCEPT — Why separate from sendStatusUpdateEmail()?
      * Delivery is the most important moment in the customer journey.
@@ -95,6 +95,19 @@ public class OrderNotificationService {
             log.info("Delivery confirmation email sent for Order #{}", orderResponse.getOrderId());
         } catch (Exception e) {
             log.warn("Failed to send delivery confirmation email for Order #{}: {}",
+                    orderResponse.getOrderId(), e.getMessage());
+        }
+    }
+
+    // 6️⃣ Send Return Rejection Email
+    public void sendReturnRejectedEmail(OrderResponse orderResponse, String adminComment){
+        try{
+            String body = emailTemplateBuilder.buildReturnRejectedEmail(orderResponse, adminComment);
+            String subject = "❌ Return Request Declined: Order #" + orderResponse.getOrderId();
+            emailService.sendMail(orderResponse.getEmail(), subject, body, "CognitoCart");
+            log.info("Return rejection email sent to customer for Order #{}", orderResponse.getOrderId());
+        }catch (Exception e){
+            log.warn("Failed to send return rejection email for Order #{}: {}",
                     orderResponse.getOrderId(), e.getMessage());
         }
     }

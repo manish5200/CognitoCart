@@ -214,4 +214,32 @@ public class AdminController {
     }
 
 
+    @Operation(
+            summary = "Reject return/replacement request",
+            description = "Resets the order status back to DELIVERED, clears active return metadata, and notifies the user."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Return request rejected successfully"),
+            @ApiResponse(responseCode = "400", description = "Order is not in a return-requested state"),
+            @ApiResponse(responseCode = "404", description = "Order not found")
+    })
+    @PutMapping("/{orderId}/reject-return")
+    public ResponseEntity<OrderResponse>rejectReturn(
+            @PathVariable Long orderId,
+            @RequestParam(required = false) String adminComment){
+        OrderResponse response = orderService.rejectReturn(orderId, adminComment);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+            summary = "List all pending return / replacement / exchange requests",
+            description = "Retrieves all orders in RETURN_REQUESTED, REPLACEMENT_REQUESTED, or EXCHANGE_REQUESTED states."
+    )
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved pending return requests")
+    @GetMapping("/orders/pending-returns")
+    public ResponseEntity<List<OrderResponse>> getPendingReturns() {
+        List<OrderResponse> responses = orderService.getPendingReturnRequests();
+        return ResponseEntity.ok(responses);
+    }
+
 }

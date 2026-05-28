@@ -184,5 +184,25 @@ public class EmailTemplateBuilder {
         return templateEngine.process("emails/order-status", context);
     }
 
+    /**
+     * Builds the Return/Replacement Request Rejected HTML email.
+     */
+    public String buildReturnRejectedEmail(OrderResponse order, String adminComment){
+
+        Context context = new Context();
+        context.setVariable("customerName", order.getCustomerName());
+        context.setVariable("orderId", order.getOrderId());
+        context.setVariable("status", "RETURN_REJECTED");
+
+        String rejectionReason = (adminComment != null  && !adminComment.trim().isEmpty())
+                ? adminComment.trim()
+                : "The request does not meet our standard return policy criteria.";
+
+        context.setVariable("statusMessage",
+                "Your post-purchase request for Order #" + order.getOrderId() +
+                        " has been declined.\n\nReason: " + rejectionReason);
+
+        return templateEngine.process("emails/order-status", context);
+    }
 }
 

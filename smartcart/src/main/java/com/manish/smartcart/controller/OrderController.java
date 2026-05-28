@@ -1,5 +1,7 @@
 package com.manish.smartcart.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.manish.smartcart.config.CustomUserDetails;
 import com.manish.smartcart.dto.order.OrderRequest;
 import com.manish.smartcart.dto.order.OrderResponse;
@@ -15,6 +17,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequiredArgsConstructor
@@ -31,6 +35,7 @@ import org.springframework.data.web.PageableDefault;
 public class OrderController {
 
         private final OrderService orderService;
+        private final ObjectMapper objectMapper;
 
         @Operation(summary = "Checkout and place order", description = "Processes the cart and creates a permanent order record. "
                         +
@@ -80,11 +85,10 @@ public class OrderController {
                 return ResponseEntity.ok(orderResponse);
         }
 
+
         @Operation(
                 summary = "Request return / replacement / exchange",
-                description = "Submit a post-delivery request. Validates ownership, order status, " +
-                        "return window (deliveredAt + returnWindowDays), and policy snapshot. " +
-                        "Use returnType: RETURN (refund), REPLACEMENT (same item re-sent), EXCHANGE (swap variant)."
+                description = "Submit a post-delivery request. For DEFECTIVE or WRONG_ITEM, images are mandatory."
         )
         @ApiResponses(value = {
                 @ApiResponse(responseCode = "200", description = "Request submitted — order status updated"),
@@ -92,17 +96,29 @@ public class OrderController {
                 @ApiResponse(responseCode = "403", description = "Order does not belong to you"),
                 @ApiResponse(responseCode = "404", description = "Order not found")
         })
-        @PostMapping("/{orderId}/request-return")
+        @PostMapping(value = "/{orderId}/request-return", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
         public ResponseEntity<OrderResponse>requestReturn(
                 @PathVariable Long orderId,
-                @RequestBody @Valid ReturnRequestDTO request,
-                Authentication authentication) {
+                @RequestPart("request") @Valid String requestJson,
+                @RequestPart(value = "images", required = false) MultipartFile[] images,
+                Authentication authentication) throws Exception {
+
+                ReturnRequestDTO request = objectMapper.readValue(requestJson, ReturnRequestDTO.class);
+
+                if (request.getReturnType() == null) {
+                        throw new BusinessLogicException("returnType is required.");
+                }
+                if (request.getReturnReason() == null || request.getReturnReason().isBlank()) {
+                        throw new BusinessLogicException("returnReason is required.");
+                }
+
                 Long userId = extractUserId(authentication);
                 OrderResponse orderResponse = orderService.requestReturn(
                         userId, orderId,
                         request.getReturnType(),
                         request.getReturnReason(),
-                        request.getReturnDescription()
+                        request.getReturnDescription(),
+                        images
                 );
 
                 return ResponseEntity.ok(orderResponse);

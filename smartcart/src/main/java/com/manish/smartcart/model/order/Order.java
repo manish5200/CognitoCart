@@ -8,6 +8,8 @@ import com.manish.smartcart.model.user.Users;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -108,5 +110,12 @@ public class Order extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "return_request_type")
     private ReturnType returnRequestType;
+
+    /**
+     * Stores CDN URLs for image proof if the item is defective or wrong.
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private List<String> returnProofImages;
 
 }
