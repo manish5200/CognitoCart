@@ -35,10 +35,16 @@ public class AdminService {
     // Just like you cannot un-deliver a package or un-cancel a ticket.
     // We use a Set for O(1) lookup instead of chaining multiple if-else conditions.
     private static final java.util.Set<OrderStatus> IMMUTABLE_STATES = java.util.Set.of(
-            OrderStatus.DELIVERED,       // Job done — cannot go back
-            OrderStatus.CANCELLED,       // Canceled orders stay canceled
-            OrderStatus.RETURNED,        // Item is back at warehouse
-            OrderStatus.REFUNDED         // Money returned — audit trail must not change
+            OrderStatus.DELIVERED,
+            OrderStatus.CANCELLED,
+            OrderStatus.RETURNED,
+            OrderStatus.REFUNDED,
+            // Return lifecycle states — these MUST only be changed via
+            // the dedicated approve/reject endpoints, not the generic PATCH
+            OrderStatus.RETURN_REQUESTED,
+            OrderStatus.REPLACEMENT_REQUESTED,
+            OrderStatus.EXCHANGE_REQUESTED,
+            OrderStatus.REPLACEMENT_SHIPPED
     );
 
     private final ProductRepository productRepository;

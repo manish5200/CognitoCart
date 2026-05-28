@@ -40,10 +40,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -285,17 +282,28 @@ public class OrderService {
     public OrderResponse cancelOrder(Long userId, Long orderId) {
         // 1. Find the order and verify ownership
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Cannot find order with orderId: " + orderId));
+                .orElseThrow(() -> new ResourceNotFoundException("Cannot find order with orderId: " + orderId));
 
         // It does not make sense but still but if by chance, lets B get oderId of A
         // So to prevent B from cancelling A's order
         if (!order.getUser().getId().equals(userId)) {
-            throw new RuntimeException("Access Denied: You do not own this order.");
+            throw new BusinessLogicException("Access Denied: You do not own this order.");
         }
 
+        // Block cancellation for terminal/active fulfillment states
+        Set<OrderStatus> nonCancellableStatuses = Set.of(
+                OrderStatus.DELIVERED,
+                OrderStatus.SHIPPED,
+                OrderStatus.OUT_FOR_DELIVERY,
+                OrderStatus.RETURNED,
+                OrderStatus.REFUNDED,
+                OrderStatus.CANCELLED
+        );
         // 2. Security Check: DELIVERED orders cannot be canceled
-        if (order.getOrderStatus() == OrderStatus.DELIVERED) {
-            throw new RuntimeException("Order cannot be cancelled❌❌. Current status: " + order.getOrderStatus());
+        if (nonCancellableStatuses.contains(order.getOrderStatus())) {
+            throw new BusinessLogicException(
+                    "Order cannot be cancelled. Current status: " + order.getOrderStatus() +
+                            ". Only orders that are CREATED, PAYMENT_PENDING, PAID, CONFIRMED, or PACKED can be cancelled.");
         }
         // 3. Inventory Restoration: Return stock to Product table - every product
         // RESTORE STOCK: Loop through items and update products
@@ -510,7 +518,7 @@ public class OrderService {
                         ||
                 "WRONG_ITEM".equalsIgnoreCase(returnReason));
 
-        boolean hasImages = (images != null || images.length > 0);
+        boolean hasImages = (images != null && images.length > 0);
 
         if(isDefectiveOrWrong && !hasImages){
             throw new BusinessLogicException("Image proof is mandatory for " + returnReason + " return requests.");
