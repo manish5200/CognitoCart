@@ -4,6 +4,7 @@ import com.manish.smartcart.config.CustomUserDetails;
 import com.manish.smartcart.dto.product.ProductRequest;
 import com.manish.smartcart.dto.product.ProductResponse;
 import com.manish.smartcart.dto.product.ProductSearchDTO;
+import com.manish.smartcart.dto.product.ReturnPolicyResponse;
 import com.manish.smartcart.mapper.ProductMapper;
 import com.manish.smartcart.model.product.Product;
 import com.manish.smartcart.repository.ProductRepository;
@@ -47,6 +48,7 @@ public class ProductController {
         private final CloudinaryService cloudinaryService;
         private final EmbeddingService embeddingService;
         private final ProductMapper productMapper;
+        private final ReturnPolicyService returnPolicyService;
 
 
     // Get All products natively paginated
@@ -326,6 +328,17 @@ public class ProductController {
 
                 return ResponseEntity.ok(response);
         }
+
+
+    @Operation(summary = "Get return policy for product",
+            description = "Returns the live applicable return/exchange policy for a product. "
+                    + "Follows the chain: product-level → category-level → NON_RETURNABLE default.")
+    @ApiResponse(responseCode = "200", description = "Policy retrieved")
+    @GetMapping("/{productId}/return-policy")
+    public ResponseEntity<ReturnPolicyResponse> getProductReturnPolicy(@PathVariable Long productId) {
+        return ResponseEntity.ok(returnPolicyService.getLivePolicyResponse(productId));
+    }
+
 
 }
 
