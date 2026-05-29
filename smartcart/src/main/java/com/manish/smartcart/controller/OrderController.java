@@ -1,6 +1,5 @@
 package com.manish.smartcart.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.manish.smartcart.config.CustomUserDetails;
 import com.manish.smartcart.dto.order.OrderRequest;
@@ -108,8 +107,9 @@ public class OrderController {
                 if (request.getReturnType() == null) {
                         throw new BusinessLogicException("returnType is required.");
                 }
-                if (request.getReturnReason() == null || request.getReturnReason().isBlank()) {
-                        throw new BusinessLogicException("returnReason is required.");
+                if (request.getReturnReason() == null) {
+                        throw new BusinessLogicException("returnReason is required. Valid: DEFECTIVE, WRONG_ITEM, "
+                                + "DAMAGED_IN_TRANSIT, CHANGED_MIND, NOT_AS_DESCRIBED, SIZE_MISMATCH");
                 }
 
                 Long userId = extractUserId(authentication);

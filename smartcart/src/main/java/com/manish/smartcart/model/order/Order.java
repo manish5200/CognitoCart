@@ -2,6 +2,7 @@ package com.manish.smartcart.model.order;
 
 import com.manish.smartcart.enums.OrderStatus;
 import com.manish.smartcart.enums.PaymentStatus;
+import com.manish.smartcart.enums.ReturnReason;
 import com.manish.smartcart.enums.ReturnType;
 import com.manish.smartcart.model.base.BaseEntity;
 import com.manish.smartcart.model.user.Users;
@@ -79,7 +80,9 @@ public class Order extends BaseEntity {
     // ─── POST-DELIVERY / RETURN FIELDS (V25 Migrations) ───────────────
 
     /** WHY customer is requesting action: "DEFECTIVE", "WRONG_ITEM", "CHANGED_MIND" */
-    private String returnReason;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "return_reason", length = 30)
+    private ReturnReason returnReason;
 
     /** Customer's optional explanation in their own words */
     private String returnDescription;

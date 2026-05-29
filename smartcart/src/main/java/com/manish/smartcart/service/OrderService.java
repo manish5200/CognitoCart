@@ -6,10 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.manish.smartcart.dto.order.OrderRequest;
 import com.manish.smartcart.dto.order.OrderResponse;
 import com.manish.smartcart.dto.order.PolicySnapshot;
-import com.manish.smartcart.enums.OrderStatus;
-import com.manish.smartcart.enums.PaymentStatus;
-import com.manish.smartcart.enums.PolicyType;
-import com.manish.smartcart.enums.ReturnType;
+import com.manish.smartcart.enums.*;
 import com.manish.smartcart.mapper.OrderMapper;
 import com.manish.smartcart.model.cart.Cart;
 import com.manish.smartcart.model.cart.CartItem;
@@ -383,7 +380,7 @@ public class OrderService {
      */
     @Transactional
     public OrderResponse requestReturn(Long userId, Long orderId,
-                                       ReturnType requestType, String returnReason, String returnDescription,
+                                       ReturnType requestType, ReturnReason returnReason, String returnDescription,
                                        MultipartFile[] images) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cannot find order with orderId: " + orderId));
@@ -513,15 +510,11 @@ public class OrderService {
             case EXCHANGE -> OrderStatus.EXCHANGE_REQUESTED;
         };
         // --- NEW LOGIC: Enforce Media Proof ---
-        boolean isDefectiveOrWrong = (
-                "DEFECTIVE".equalsIgnoreCase(returnReason)
-                        ||
-                "WRONG_ITEM".equalsIgnoreCase(returnReason));
-
         boolean hasImages = (images != null && images.length > 0);
 
-        if(isDefectiveOrWrong && !hasImages){
-            throw new BusinessLogicException("Image proof is mandatory for " + returnReason + " return requests.");
+        if(returnReason.requiresImageProof() && !hasImages){
+            throw new BusinessLogicException(
+                    "Image proof is mandatory for '" + returnReason.name() + "' requests. Attach at least 1 image.");
         }
 
         // Upload to Cloudinary ---
