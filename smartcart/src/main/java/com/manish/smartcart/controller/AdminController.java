@@ -10,6 +10,7 @@ import com.manish.smartcart.mapper.OrderMapper;
 import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.model.user.SellerProfile;
 import com.manish.smartcart.service.*;
+import com.manish.smartcart.service.order.ReturnAdminService;
 import com.manish.smartcart.util.AppConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -45,7 +46,7 @@ public class AdminController {
     private final OrderNotificationService orderNotificationService;
     private final ShipmentService shipmentService;
     private final WebhookDlqService webhookDlqService;
-    private final OrderService orderService;
+    private final ReturnAdminService returnAdminService;
 
     @Operation(summary = "Get Dashboard Stats", description = "Retrieves top-selling products and low-stock alerts. Access restricted to users with ROLE_ADMIN.")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved statistics")
@@ -191,7 +192,7 @@ public class AdminController {
     })
     @PutMapping("/{orderId}/approve-return")
     public ResponseEntity<OrderResponse>approveReturn(@PathVariable Long orderId){
-        OrderResponse orderResponse = orderService.approveReturn(orderId);
+        OrderResponse orderResponse = returnAdminService.approveReturn(orderId);
         return ResponseEntity.ok(orderResponse);
     }
 
@@ -209,7 +210,7 @@ public class AdminController {
     })
     @PutMapping("/{orderId}/approve-replacement")
     public ResponseEntity<?> approveReplacement(@PathVariable Long orderId) {
-        OrderResponse response = orderService.approveReplacement(orderId);
+        OrderResponse response = returnAdminService.approveReplacement(orderId);
         return ResponseEntity.ok(response);
     }
 
@@ -227,7 +228,7 @@ public class AdminController {
     public ResponseEntity<OrderResponse>rejectReturn(
             @PathVariable Long orderId,
             @RequestParam(required = false) String adminComment){
-        OrderResponse response = orderService.rejectReturn(orderId, adminComment);
+        OrderResponse response = returnAdminService.rejectReturn(orderId, adminComment);
         return ResponseEntity.ok(response);
     }
 
@@ -238,7 +239,7 @@ public class AdminController {
     @ApiResponse(responseCode = "200", description = "Successfully retrieved pending return requests")
     @GetMapping("/orders/pending-returns")
     public ResponseEntity<List<OrderResponse>> getPendingReturns() {
-        List<OrderResponse> responses = orderService.getPendingReturnRequests();
+        List<OrderResponse> responses = returnAdminService.getPendingReturnRequests();
         return ResponseEntity.ok(responses);
     }
 
