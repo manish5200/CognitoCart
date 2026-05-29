@@ -3,7 +3,7 @@ package com.manish.smartcart.scheduler;
 import com.manish.smartcart.enums.OrderStatus;
 import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.repository.OrderRepository;
-import com.manish.smartcart.service.OrderService;
+import com.manish.smartcart.service.order.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
