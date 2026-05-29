@@ -2,6 +2,7 @@ package com.manish.smartcart.dto.order;
 
 import com.manish.smartcart.enums.OrderStatus;
 import com.manish.smartcart.enums.PaymentStatus;
+import com.manish.smartcart.enums.ReturnReason;
 import com.manish.smartcart.enums.ReturnType;
 import lombok.*;
 
@@ -35,7 +36,7 @@ public class OrderResponse {
     private List<OrderItemDTO> items;
 
     private ReturnType returnRequestType;    // RETURN / REPLACEMENT / EXCHANGE
-    private String returnReason;             // "DEFECTIVE", "WRONG_ITEM", etc.
+    private ReturnReason returnReason;             // "DEFECTIVE", "WRONG_ITEM", etc.
     private LocalDateTime returnRequestedAt; // When request was submitted
 
     @Setter
