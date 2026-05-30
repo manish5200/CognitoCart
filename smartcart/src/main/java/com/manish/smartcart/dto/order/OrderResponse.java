@@ -18,6 +18,8 @@ public class OrderResponse {
     private Long orderId;
     private String email;
     private String customerName;
+    private Long customerId;
+    private String shippingPhone;
     private LocalDateTime orderDate;
     private BigDecimal totalAmount;
     private String couponCode;

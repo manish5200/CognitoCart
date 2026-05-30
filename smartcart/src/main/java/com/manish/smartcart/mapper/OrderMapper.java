@@ -17,6 +17,8 @@ public class OrderMapper {
         orderResponse.setOrderId(order.getId());
         orderResponse.setEmail(order.getUser().getEmail());
         orderResponse.setCustomerName(order.getUser().getFullName()); // Uses hoisted name
+        orderResponse.setCustomerId(order.getUser().getId());
+        orderResponse.setShippingPhone(order.getShippingPhone());
         orderResponse.setOrderDate(order.getOrderDate());
         orderResponse.setTotalAmount(order.getTotalAmount());
         orderResponse.setCouponCode(order.getCouponCode());

@@ -43,7 +43,7 @@ public class OrderRabbitListener {
             byte[] invoicePdf = invoiceService.generateInvoice(response);
 
             // 4. Dispatch Emails Heavy Task (Very Slow! 2000ms)
-            orderNotificationService.sendEmailNotification(response);
+            orderNotificationService.sendOrderConfirmationEmail(response);
             orderNotificationService.sendInvoiceEmail(response, invoicePdf);
 
             log.info("✅ [RabbitMQ Listener] Emails and PDF sent successfully for Order {}", event.getOrderId());
