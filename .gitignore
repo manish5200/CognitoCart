@@ -1,15 +1,17 @@
 HELP.md
+
+# Maven
 target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-### Logs ###
+# Logs
 *.log
-logs/
-log/
+/logs/
+**/logs/
 
-### STS ###
+# STS
 .apt_generated
 .classpath
 .factorypath
@@ -18,13 +20,13 @@ log/
 .springBeans
 .sts4-cache
 
-### IntelliJ IDEA ###
-.idea
+# IntelliJ
+.idea/
 *.iws
 *.iml
 *.ipr
 
-### NetBeans ###
+# NetBeans
 /nbproject/private/
 /nbbuild/
 /dist/
@@ -34,41 +36,34 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### VS Code ###
+# VS Code
 .vscode/
 
-### OS ###
+# OS
 .DS_Store
 Thumbs.db
 
-### Environment ###
+# Environment
 .env
 
-### Project-specific ###
-# User-uploaded files (generated at runtime)
+# Runtime uploads
 uploads/
 
-### Docker (WIP — excluded until deployment phase) ###
+# Docker (until deployment)
 Dockerfile
 docker-compose.yml
 
-### Secret Configuration Files ###
-# Real config files with DB/JWT/Mail credentials — NEVER commit these.
-# Only application-demo.yml (fake placeholder data) is safe to push.
+# Secret configs
 smartcart/src/main/resources/application.yml
 smartcart/src/main/resources/application-dev.yml
-### Logs ###
-# Ignore all log files anywhere in the project
-*.log
-# Ignore the logs directory at the root
-/logs/
-# Ignore any directory named logs anywhere (nested)
-**/logs/
 
-**/.code-review-graph/
+# Personal notes/docs
+MASTER_REFERENCE.md
 return_feature_map.md
 roadmap_and_refactoring.md
-.code-review-graph
-.idea
-hs_err_pid21244.log
-MASTER_REFERENCE.md
+
+# Crash dumps
+hs_err_pid*.log
+
+# Code review artifacts
+.code-review-graph/
