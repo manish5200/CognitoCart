@@ -66,3 +66,9 @@ smartcart/src/main/resources/application-dev.yml
 **/logs/
 
 **/.code-review-graph/
+return_feature_map.md
+roadmap_and_refactoring.md
+.code-review-graph
+.idea
+hs_err_pid21244.log
+MASTER_REFERENCE.md
