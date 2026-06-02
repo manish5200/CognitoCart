@@ -1,9 +1,11 @@
 package com.manish.smartcart.service;
 
 import com.manish.smartcart.dto.admin.*;
+import com.manish.smartcart.dto.order.OrderResponse;
 import com.manish.smartcart.dto.seller.SellerSummaryResponse;
 import com.manish.smartcart.enums.KycStatus;
 import com.manish.smartcart.enums.OrderStatus;
+import com.manish.smartcart.mapper.OrderMapper;
 import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.model.product.Product;
 import com.manish.smartcart.model.user.SellerProfile;
@@ -52,6 +54,8 @@ public class AdminService {
     private final SellerProfileRepository sellerProfileRepository;
     private final EmailTemplateBuilder emailTemplateBuilder;
     private final EmailService emailService;
+    private final OrderMapper orderMapper;
+
 
     @Transactional(readOnly = true)
     public DashboardResponse getAdminStats(int stockThreshold,int pageNumber,int pageSize) {
@@ -104,7 +108,7 @@ public class AdminService {
 
     // Play with the order
     @Transactional
-    public Order changeTheStatusOfOrders(StatusChangeRequest statusChangeRequest) {
+    public OrderResponse changeTheStatusOfOrders(StatusChangeRequest statusChangeRequest) {
         Order order = orderRepository.findById(statusChangeRequest.getOrderId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Order not found with ID: " + statusChangeRequest.getOrderId()));
@@ -129,7 +133,8 @@ public class AdminService {
                     "Invalid order status: '" + statusChangeRequest.getOrderStatus()
                     + "'. Valid values: " + java.util.Arrays.toString(OrderStatus.values()));
         }
-        return orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
+        return orderMapper.toOrderResponse(savedOrder);
     }
 
     private static final Map<KycStatus, Set<KycStatus>> ALLOWED_KYC_TRANSITIONS = Map.of(
