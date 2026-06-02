@@ -1,13 +1,8 @@
 package com.manish.smartcart.controller;
 
-import com.manish.smartcart.dto.admin.DashboardResponse;
-import com.manish.smartcart.dto.admin.KycUpdateRequest;
-import com.manish.smartcart.dto.order.OrderResponse;
+import com.manish.smartcart.dto.admin.*;
+import com.manish.smartcart.dto.order.*;
 import com.manish.smartcart.dto.seller.SellerSummaryResponse;
-import com.manish.smartcart.dto.admin.StatusChangeRequest;
-import com.manish.smartcart.dto.order.ShipmentRequest;
-import com.manish.smartcart.mapper.OrderMapper;
-import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.model.user.SellerProfile;
 import com.manish.smartcart.service.*;
 import com.manish.smartcart.service.order.ReturnAdminService;
@@ -41,7 +36,6 @@ import jakarta.validation.Valid;
 public class AdminController {
 
     private final AdminService adminService;
-    private final OrderMapper orderMapper;
     private final CouponService couponService;
     private final OrderNotificationService orderNotificationService;
     private final ShipmentService shipmentService;
@@ -76,12 +70,8 @@ public class AdminController {
     public ResponseEntity<?> changeOrderStatus(@PathVariable Long orderId,
                                                @RequestBody StatusChangeRequest request) {
         request.setOrderId(orderId);
-        Order order = adminService.changeTheStatusOfOrders(request);
-
-        // Map to response and send notification
-        var response = orderMapper.toOrderResponse(order);
+        var response = adminService.changeTheStatusOfOrders(request);
         orderNotificationService.sendStatusUpdateEmail(response);
-
         return ResponseEntity.ok(response);
     }
 
