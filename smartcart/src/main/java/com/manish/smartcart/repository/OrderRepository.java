@@ -1,6 +1,7 @@
 package com.manish.smartcart.repository;
 
 import com.manish.smartcart.dto.admin.*;
+import com.manish.smartcart.dto.seller.SellerProductQualityDTO;
 import com.manish.smartcart.enums.OrderStatus;
 import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.model.user.Users;
@@ -251,7 +252,37 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "GROUP BY o.user.id, o.user.fullName " +
             "HAVING MAX(o.orderDate) < :churnThreshold " +
             "ORDER BY MAX(o.orderDate) ASC")
-    List<CustomerChurnRiskDTO> getChurnRiskCustomers(@Param("churnThreshold") LocalDateTime churnThreshold);
+    List<CustomerChurnRiskDTO> getChurnRiskCustomers(
+            @Param("churnThreshold") LocalDateTime churnThreshold);
+
+    // ─── 3D: SELLER PRODUCT QUALITY SCORE ───────────────────────────────────
+    /**
+     * Groups order items by product for a specific seller, counting total
+     * orders and returns for each product.
+     *
+     * The CASE WHEN trick:
+     * SQL can't directly "count only rows where X is true" — that's a filter.
+     * But CASE WHEN returns a value per row, and SUM adds them up.
+     * CASE WHEN returnRequestType IS NOT NULL THEN 1 ELSE 0 means:
+     *   → returned item contributes 1 to the sum
+     *   → normal item contributes 0 to the sum
+     * Result: totalReturns = count of items that were returned. Elegant and fast.
+     *
+     * ORDER BY totalReturns DESC puts worst-performing products first
+     * so sellers see their biggest problems at the top of the list.
+     */
+
+    @Query("SELECT new com.manish.smartcart.dto.seller.SellerProductQualityDTO(" +
+            "p.id, p.productName, COUNT(oi), " +
+            "SUM(CASE WHEN o.returnRequestType IS NOT NULL THEN 1L ELSE 0L END)) " +
+            "FROM OrderItem oi " +
+            "JOIN oi.order o " +
+            "JOIN oi.product p " +
+            "WHERE p.sellerId = :sellerId " +
+            "GROUP BY p.id, p.productName " +
+            "ORDER BY SUM(CASE WHEN o.returnRequestType IS NOT NULL THEN 1L ELSE 0L END) DESC")
+    List<com.manish.smartcart.dto.seller.SellerProductQualityDTO> getProductQualityBySeller(
+            @Param("sellerId") Long sellerId);
 }
 
 

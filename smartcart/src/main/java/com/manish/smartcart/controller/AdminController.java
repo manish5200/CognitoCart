@@ -2,6 +2,7 @@ package com.manish.smartcart.controller;
 
 import com.manish.smartcart.dto.admin.*;
 import com.manish.smartcart.dto.order.*;
+import com.manish.smartcart.dto.seller.SellerProductAnalyticsResponse;
 import com.manish.smartcart.dto.seller.SellerSummaryResponse;
 import com.manish.smartcart.model.user.SellerProfile;
 import com.manish.smartcart.service.*;
@@ -41,6 +42,7 @@ public class AdminController {
     private final ShipmentService shipmentService;
     private final WebhookDlqService webhookDlqService;
     private final ReturnAdminService returnAdminService;
+    private final SellerService sellerService;
 
     @Operation(summary = "Get Dashboard Stats", description = "Retrieves top-selling products and low-stock alerts. Access restricted to users with ROLE_ADMIN.")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved statistics")
@@ -118,6 +120,34 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getCustomerIntelligence(top, churnAfterDays));
     }
 
+    /**
+     * GET /api/v1/admin/sellers/{sellerId}/analytics
+     *
+     * Admin use cases:
+     *  1. KYC Review: Before approving a seller, check their product return rates.
+     *     A new seller with 40% CRITICAL products is a red flag.
+     *  2. Suspension Decisions: If a seller consistently has CRITICAL products,
+     *     the admin can suspend their listing rights.
+     *  3. Seller Support: When a seller raises a complaint, admin can
+     *     pull their quality data to understand the full picture.
+     *
+     * sellerId comes from the URL path — admin explicitly chooses which
+     * seller to inspect. There is zero chance of a data leak between sellers.
+     */
+    @Operation(
+            summary = "View a specific seller's product quality analytics",
+            description = "Admin-only view of a seller's product return rates and quality scores. " +
+                    "Use during KYC review or seller performance investigations."
+    )
+    @ApiResponse(responseCode = "200", description = "Seller product analytics retrieved")
+    @ApiResponse(responseCode = "404", description = "Seller not found")
+    @GetMapping("/sellers/{sellerId}/analytics")
+    public ResponseEntity<SellerProductAnalyticsResponse> getSellerProductAnalytics(
+            @PathVariable Long sellerId) {
+        return ResponseEntity.ok(
+                adminService.getSellerAnalyticsForAdmin(sellerId)
+        );
+    }
 
     @Operation(summary = "Update Order Status", description = "Change the lifecycle state of an order (e.g., PENDING to SHIPPED). Access restricted to Admin.")
     @ApiResponse(responseCode = "200", description = "Order status updated successfully")

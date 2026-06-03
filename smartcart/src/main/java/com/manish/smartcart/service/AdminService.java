@@ -2,6 +2,7 @@ package com.manish.smartcart.service;
 
 import com.manish.smartcart.dto.admin.*;
 import com.manish.smartcart.dto.order.OrderResponse;
+import com.manish.smartcart.dto.seller.SellerProductAnalyticsResponse;
 import com.manish.smartcart.dto.seller.SellerSummaryResponse;
 import com.manish.smartcart.enums.KycStatus;
 import com.manish.smartcart.enums.OrderStatus;
@@ -54,6 +55,7 @@ public class AdminService {
     private final EmailTemplateBuilder emailTemplateBuilder;
     private final EmailService emailService;
     private final OrderMapper orderMapper;
+    private final SellerService sellerService;
 
 
     @Transactional(readOnly = true)
@@ -316,4 +318,24 @@ public class AdminService {
 
         return new CustomerIntelligenceResponse(topCustomers, atRisk);
     }
+
+    // ─── ADMIN DELEGATION FOR SELLER ANALYTICS ──────────────────────────────
+
+    /**
+     * Admin explicitly passes an untrusted sellerId from the URL.
+     * We MUST validate it belongs to a seller before querying analytics,
+     * otherwise a customer's ID will silently return an empty dashboard.
+     */
+    public SellerProductAnalyticsResponse getSellerAnalyticsForAdmin(Long sellerId) {
+
+        // 1. Boundary Validation: Is this actually a seller?
+        sellerProfileRepository.findById(sellerId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No seller found with ID: " + sellerId +
+                                ". Ensure the ID belongs to a registered seller."));
+
+        // 2. Trust established -> Delegate to the fast shared service
+        return sellerService.getProductQualityAnalytics(sellerId);
+    }
+
 }

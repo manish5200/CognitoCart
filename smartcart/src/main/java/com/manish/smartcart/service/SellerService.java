@@ -1,6 +1,8 @@
 package com.manish.smartcart.service;
 
 import com.manish.smartcart.dto.seller.SellerDashboardResponse;
+import com.manish.smartcart.dto.seller.SellerProductAnalyticsResponse;
+import com.manish.smartcart.dto.seller.SellerProductQualityDTO;
 import com.manish.smartcart.enums.OrderStatus;
 import com.manish.smartcart.model.product.Product;
 import com.manish.smartcart.model.user.SellerProfile;
@@ -89,5 +91,27 @@ public class SellerService {
                 .deliveredOrders(deliveredOrders)
                 .topProducts(topProducts)
                 .build();
+    }
+
+    // ─── 3D: PRODUCT QUALITY ANALYTICS ──────────────────────────────────────
+    /**
+     * Fetches product quality scores for the authenticated seller and
+     * computes summary KPI counts so the frontend can render dashboard cards.
+     *
+     * Why compute counts in Java instead of 3 separate DB queries?
+     * We already have the full product list in memory. Streaming it once
+     * with a Java stream costs nothing extra. 3 extra DB round-trips for
+     * COUNT queries would add unnecessary network latency.
+     */
+    public SellerProductAnalyticsResponse getProductQualityAnalytics(Long sellerId){
+        List<SellerProductQualityDTO> products =
+                orderRepository.getProductQualityBySeller(sellerId);
+
+        // Compute summary counts in a single stream pass — O(n), no extra queries
+        long critical = products.stream().filter(p -> "CRITICAL".equals(p.getQualityScore())).count();
+        long warning   = products.stream().filter(p -> "WARNING".equals(p.getQualityScore())).count();
+        long excellent = products.stream().filter(p -> "EXCELLENT".equals(p.getQualityScore())).count();
+
+        return new SellerProductAnalyticsResponse(products, critical, warning, excellent);
     }
 }
