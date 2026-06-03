@@ -14,7 +14,7 @@
 
 > **Why This Project Stands Out:** Most portfolio projects stop at basic CRUD. CognitoCart tackles the brutal edge cases that define **real production systems** — surviving double-charge payment failures with **Redis idempotency locks**, decoupling heavy workloads via **RabbitMQ event streams**, preventing race conditions under high concurrency using **Pessimistic DB Locks**, and pioneering **Mathematical AI Search** using 384-dimensional vectors.
 
-[Core Architecture](#️-the-engineering) · [AI Features](#-ai--data-intelligence) · [API Domains](#-system-capabilities) · [Quick Start](#-quick-start-guide)
+[Core Architecture](#️-the-engineering) · [AI Features](#-ai--data-intelligence) · [System Capabilities](#-system-capabilities) · [Quick Start](#-quick-start-guide)
 
 </div>
 
@@ -47,9 +47,12 @@ CognitoCart rejects simplified logic in favor of robust, distributed architectur
 ### Semantic Vector Search
 Traditional `LIKE '%keyword%'` search fails when users think in sentences. CognitoCart converts product descriptions into **384-dimensional mathematical vectors** via HuggingFace AI, storing them in PostgreSQL (`pgvector`). 
 
+**Real Proof — Zero Keyword Overlap:**
+
 | User Searches For | Top Result Returned | Why It Works |
 |---|---|---|
 | `"earphones for blocking noise while studying"` | Noise Cancelling Headphones | AI maps "earphones" → "headphones", "blocking noise" → "noise cancellation" |
+| `"something to brew hot drinks at the office"` | Espresso Coffee Machine | AI maps "brew hot drinks" → "espresso/coffee", "office" → "home-office" |
 | `"comfortable footwear for morning fitness routine"` | Running Shoes | AI maps "footwear" → "shoes", "fitness routine" → "marathon/jogging" |
 
 ### AI Review Summarization
@@ -57,6 +60,42 @@ Uses the **HuggingFace BART (Large CNN)** model to aggregate raw product review 
 
 ### Deep Financial Intelligence
 Admin and Seller dashboards powered by raw **JPQL Aggregate DTO Projections**. Calculates dynamic Customer Lifetime Value (CLV), Customer Churn Risk signals, and generates algorithmic "Product Quality Scores" based on return funnel metrics — providing actionable business intelligence natively.
+
+---
+
+## ✨ System Capabilities
+
+<details open>
+<summary><b>B2B / B2C Operations</b></summary>
+<br>
+
+- **Multi-Tenant Scopes:** `ADMIN`, `SELLER`, and `CUSTOMER` endpoint isolation with role-restricted payloads.
+- **Dynamic Pricing Engine:** 5-stage checkout pipeline — Base Price → Coupon Validation → BOGO/Category Discounts → Delivery Offset → Net Payable.
+- **Seller KYC Pipeline:** Approval lifecycle for third-party sellers, gated by global Admins.
+- **Wishlist Intelligence:** Autonomous scheduler cross-referencing wishlists against active sales, sending personalised HTML digest emails.
+
+</details>
+
+<details open>
+<summary><b>Performance & Scale</b></summary>
+<br>
+
+- **OOM-Protected APIs:** Aggressive Spring Data `Pageable` enforcement across product catalogs and heavy order repositories.
+- **Sub-Millisecond Caching:** `@Cacheable` directives tied to **Upstash Redis**, dramatically offloading product and category DB reads with native eviction triggers.
+- **DDoS Mitigation:** Per-IP Token Bucket rate limiting via **Bucket4j** built into the Spring Security filter chain.
+- **Cloud Content Delivery:** Direct binary integration with the **Cloudinary CDN** — zero local disk dependency.
+
+</details>
+
+<details open>
+<summary><b>Automated Logistics</b></summary>
+<br>
+
+- **Instant Refund Processing:** Cancellation protocols invoke Razorpay's Reversal API and dispatch `rfnd_XXXXX` receipts automatically.
+- **Dynamic PDF Invoices:** On-the-fly PDF generation via **iText7** — GSTIN variables, zebra-striped tables, mathematical delivery dates.
+- **State Machine Enforcement:** Shipments are forced through `PLACED → SHIPPED → OUT_FOR_DELIVERY` — illegal backward state transitions are rejected at the API layer.
+
+</details>
 
 ---
 
@@ -99,6 +138,75 @@ graph TD
 | **Cache & State** | Upstash Redis | JWT blacklists, OTPs, idempotency locks, read caching |
 | **Payments** | Razorpay SDK | Orders, webhooks, instant refunds |
 | **Observability** | Micrometer + Prometheus + Grafana | 200+ live metrics — JVM, DB pool, RabbitMQ, HTTP latency |
+
+---
+
+## 🚀 Quick Start Guide
+
+### 1. Prerequisites
+- **Java 21+**, **Maven 3.8+**
+- **PostgreSQL** (with `pgvector` extension installed)
+- **Redis** (Upstash free tier works)
+- **HuggingFace** free account for semantic search
+- **Google Cloud Console** (OAuth2 Web Client Credentials)
+
+### 2. Install pgvector (Required for AI Search)
+```sql
+-- Run as PostgreSQL superuser (postgres) in pgAdmin:
+CREATE EXTENSION IF NOT EXISTS vector;
+```
+
+### 3. Clone & Configure
+```bash
+git clone https://github.com/manish5200/CognitoCart.git
+cd CognitoCart/smartcart
+
+# Create the database
+psql -U postgres -c "CREATE DATABASE cognitocart;"
+```
+
+Copy `application-demo.yml` → `application.yml` and explicitly define your credentials:
+- PostgreSQL Connection Details
+- Redis (Upstash) URL
+- Gmail SMTP App Password
+- HuggingFace API Token
+- **Google Client ID & Secret** for OAuth2 Authorization
+
+### 4. Run & Explore
+```bash
+./mvnw spring-boot:run
+```
+> Flyway will forcefully execute **20+ migrations** to map relations, inject pgvector structures, build the Category tree, and establish your default Admin account prior to Tomcat startup.
+
+Navigate directly to **`http://localhost:8080/swagger-ui.html`** to test your endpoints. Or, test the new Google OAuth2 implementation natively through your browser by visiting: `http://localhost:8080/oauth2/authorization/google`
+
+---
+
+## 🛣️ Engineering Roadmap
+
+<details>
+<summary><b>✅ Completed Phases (1 → 4.3)</b></summary>
+
+- **Phase 1 — Auth Hardening:** Redis JWT Blacklists · Pessimistic Stock Locks · Secure OTP verification
+- **Phase 2 — Fulfillment:** Razorpay refunds · iText7 PDF invoices · Logistical state machines
+- **Phase 3 — Scale:** Cloudinary CDN · Advanced JPQL analytics · Seller dashboards
+- **Phase 3.5 — Operations:** DLQs for failed webhooks · Guest-to-User cart migrations
+- **Phase 3.9 — Pre-AI:** Global `@SoftDelete` · Idempotency Locks · BOGO Engine · Wishlist HTML Schedulers
+- **Phase 4.1 — Semantic Search ✅:** pgvector + HuggingFace AI embeddings · Cosine similarity search
+- **Phase 4.3 — AI Review Summarization ✅:** HuggingFace BART Large CNN · Background `@Scheduled` workers · `ProductInsights` engine
+
+</details>
+
+**Phase 5 — Cloud & DevOps ☁️**
+- [x] **Distributed Schedulers ✅:** `ShedLock` + PostgreSQL ACID locking across 4 background jobs in multi-instance deployments.
+- [x] **Event-Driven Architecture ✅:** RabbitMQ (CloudAMQP) decouples PDF invoice generation & email dispatch — response time dropped from ~4s to <50ms. Dead Letter Queue (DLQ) ensures zero message loss.
+- [x] **Observability ✅:** Micrometer + Prometheus + Grafana Cloud — 200+ live metrics scraped every 15s via Grafana Alloy with live dashboards.
+- [x] **Enterprise Exception Hierarchy ✅:** `@RestControllerAdvice` standardization across logic boundaries (explicitly throwing ResourceNotFound, InsufficientStock algorithms).
+
+**Phase 7 — Advanced Analytics & Infrastructure Hardening 📊**
+- [x] **High-Performance Streaming ✅:** `StreamingResponseBody` + OpenCSV + `TransactionTemplate` for zero-memory background data exports.
+- [x] **Async Security Propagation ✅:** `RequestAttributeSecurityContextRepository` integration for safe user identity inheritance in Tomcat async dispatches.
+- [ ] **Logistics Webhooks:** Carrier status sync (In-Progress).
 
 ---
 
