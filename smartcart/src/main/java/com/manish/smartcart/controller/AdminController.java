@@ -62,6 +62,62 @@ public class AdminController {
         }
     }
 
+    @Operation(
+            summary = "Platform Intelligence Dashboard",
+            description = "Retrieves industry-standard BI metrics: Net Revenue, Refund Rates, and the Return Funnel insights."
+    )
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved intelligence metrics")
+    @GetMapping("/analytics/intelligence")
+    public ResponseEntity<PlatformIntelligenceResponse> getPlatformIntelligence() {
+        return ResponseEntity.ok(adminService.getPlatformIntelligence());
+    }
+
+    /**
+     * GET /api/v1/admin/analytics/revenue
+
+     * Returns revenue breakdown by product category — sorted highest to lowest.
+     * Use case: Admin spots that "Footwear" revenue dropped 40% this week →
+     * checks if supplier has a stock issue or a competitor launched a sale.
+
+     * No query params needed: the DB already returns all categories ranked.
+     * Frontend can slice/dice the array however it needs (top 5, pie chart, etc.)
+     */
+    @Operation(
+            summary = "Revenue by Category",
+            description = "Revenue breakdown grouped by product category. " +
+                    "Sorted highest to lowest. Only counts DELIVERED orders — real earned revenue."
+    )
+    @ApiResponse(responseCode = "200", description = "Category revenue breakdown retrieved")
+    @GetMapping("/analytics/category-revenue")
+    public ResponseEntity<List<CategoryRevenueDTO>> getCategoryRevenue() {
+        return ResponseEntity.ok(adminService.getCategoryRevenueBreakdown());
+    }
+
+
+    /**
+     * GET /api/v1/admin/analytics/customers
+     *
+     * Real-world use cases:
+     *  1. Marketing team pulls top=20 → runs VIP loyalty campaign for top spenders
+     *  2. Retention team pulls churnAfterDays=45 → sends win-back coupons to at-risk customers
+     *  3. Frontend uses riskLevel (HOT/WARM/COLD) to colour-code the customer list dashboard
+     *
+     * Both params have sensible defaults so the endpoint works with zero query params.
+     */
+    @Operation(
+            summary = "Customer Lifetime Value + Churn Risk",
+            description = "Returns top customers by lifetime spend AND customers at risk of churning. " +
+                    "Use 'top' to control how many VIPs to return. " +
+                    "Use 'churnAfterDays' to define what 'inactive' means for your business."
+    )
+    @ApiResponse(responseCode = "200", description = "Customer intelligence data retrieved")
+    @GetMapping("/analytics/customers")
+    public ResponseEntity<CustomerIntelligenceResponse>getCustomerIntelligence(
+            @RequestParam(defaultValue = "10") int top,
+            @RequestParam(defaultValue = "60") int churnAfterDays){
+        return ResponseEntity.ok(adminService.getCustomerIntelligence(top, churnAfterDays));
+    }
+
 
     @Operation(summary = "Update Order Status", description = "Change the lifecycle state of an order (e.g., PENDING to SHIPPED). Access restricted to Admin.")
     @ApiResponse(responseCode = "200", description = "Order status updated successfully")
@@ -74,7 +130,6 @@ public class AdminController {
         orderNotificationService.sendStatusUpdateEmail(response);
         return ResponseEntity.ok(response);
     }
-
 
     // --- COUPON MANAGEMENT ---
     @PostMapping("/coupons")
