@@ -4,6 +4,7 @@ import com.manish.smartcart.config.CustomUserDetails;
 import com.manish.smartcart.dto.product.ReturnPolicyRequest;
 import com.manish.smartcart.dto.product.ReturnPolicyResponse;
 import com.manish.smartcart.dto.seller.SellerDashboardResponse;
+import com.manish.smartcart.dto.seller.SellerProductAnalyticsResponse;
 import com.manish.smartcart.service.ReturnPolicyService;
 import com.manish.smartcart.service.SellerAnalyticsExportService;
 import com.manish.smartcart.service.SellerService;
@@ -129,6 +130,35 @@ public class SellerController {
         returnPolicyService.deletePolicy(extractSellerId(authentication), policyId);
         return ResponseEntity.ok(Map.of(
                 "message", "Policy deleted. Product now falls back to category or NON_RETURNABLE default."));
+    }
+
+
+    /**
+     * GET /api/v1/seller/analytics/products
+     *
+     * The seller sees each of their products with a quality badge.
+     * CRITICAL products are listed first — immediate action required.
+     *
+     * Real-world use: A seller logs into their dashboard, sees their
+     * "Cotton T-Shirt" is CRITICAL with 38% return rate and a WARNING
+     * on "Bluetooth Speaker" at 18%. They now know exactly where to
+     * focus their quality control team — without calling customer support.
+     *
+     * sellerId extracted from JWT — sellers can only see their own data.
+     */
+    @Operation(
+            summary = "Product Quality Score Dashboard",
+            description = "Returns each seller product with return rate and quality score " +
+                    "(EXCELLENT / GOOD / WARNING / CRITICAL). " +
+                    "CRITICAL products listed first. Includes KPI summary counts."
+    )
+    @ApiResponse(responseCode = "200", description = "Product quality analytics retrieved")
+    @GetMapping("/analytics/products")
+    public ResponseEntity<SellerProductAnalyticsResponse> getProductQualityAnalytics(
+            Authentication authentication) {
+        Long sellerId = extractSellerId(authentication);
+        return ResponseEntity.ok(
+                sellerService.getProductQualityAnalytics(sellerId));
     }
 
     private Long extractSellerId(Authentication authentication) {

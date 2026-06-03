@@ -2,6 +2,7 @@ package com.manish.smartcart.service;
 
 import com.manish.smartcart.dto.admin.*;
 import com.manish.smartcart.dto.order.OrderResponse;
+import com.manish.smartcart.dto.seller.SellerProductAnalyticsResponse;
 import com.manish.smartcart.dto.seller.SellerSummaryResponse;
 import com.manish.smartcart.enums.KycStatus;
 import com.manish.smartcart.enums.OrderStatus;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -41,8 +43,6 @@ public class AdminService {
             OrderStatus.CANCELLED,
             OrderStatus.RETURNED,
             OrderStatus.REFUNDED,
-            // Return lifecycle states — these MUST only be changed via
-            // the dedicated approve/reject endpoints, not the generic PATCH
             OrderStatus.RETURN_REQUESTED,
             OrderStatus.REPLACEMENT_REQUESTED,
             OrderStatus.EXCHANGE_REQUESTED,
@@ -55,6 +55,7 @@ public class AdminService {
     private final EmailTemplateBuilder emailTemplateBuilder;
     private final EmailService emailService;
     private final OrderMapper orderMapper;
+    private final SellerService sellerService;
 
 
     @Transactional(readOnly = true)
@@ -175,7 +176,6 @@ public class AdminService {
         return saved;
     }
 
-    
 
     private void sendKycDecisionEmail(
             SellerProfile profile,
@@ -232,6 +232,110 @@ public class AdminService {
                 .kycStatus(sp.getKycStatus())
                 .registeredAt(sp.getCreatedAt())
                 .build();
+    }
+
+
+    // ─── PLATFORM INTELLIGENCE (PHASE 3) ───────────────────────────────────
+    public PlatformIntelligenceResponse getPlatformIntelligence(){
+        // 1. Fetch raw financial data
+        BigDecimal grossRevenue = orderRepository.calculatePlatformGrossRevenue();
+        BigDecimal lostRevenue = orderRepository.calculatePlatformLostRevenue();
+
+        // 2. Business Logic: Net = Gross - Lost
+        BigDecimal netRevenue  = grossRevenue.subtract(lostRevenue);
+
+        // 3. Safe Percentage Calculation (Avoid Division by Zero)
+        double refundedRate = 0.0;
+
+        if(grossRevenue.compareTo(BigDecimal.ZERO) > 0){
+            // (Lost / Gross) * 100
+            BigDecimal rate = lostRevenue
+                    .divide(grossRevenue, 4, RoundingMode.HALF_UP)
+                    .multiply(new BigDecimal("100"));
+            refundedRate = rate.doubleValue();
+        }
+        FinancialHealthDTO  healthDTO = new FinancialHealthDTO(
+                grossRevenue, lostRevenue, netRevenue, refundedRate
+        );
+
+        // 4. Fetch Funnel Metrics
+        Long totalRequests = orderRepository.countTotalReturnRequests();
+        Long approvedReturns = orderRepository.countApprovedReturns();
+
+        double approvalRate = 0.0;
+        if (totalRequests > 0) {
+            approvalRate = ((double) approvedReturns / totalRequests) * 100.0;
+        }
+
+        // 5. Fetch Insights
+        List<ReturnReasonStats> topReasons = orderRepository.getReturnReasonInsights();
+
+        // 6. Package and Return
+        return new PlatformIntelligenceResponse(
+                healthDTO,
+                totalRequests,
+                approvalRate, // Auto unboxed to Double
+                topReasons
+        );
+    }
+
+    // ─── 3B: CATEGORY REVENUE BREAKDOWN ─────────────────────────────────────
+    /**
+     * Delegates pure aggregation to the DB layer.
+     * Service stays thin here because all the math (SUM, GROUP BY, ORDER BY)
+     * is already done at the PostgreSQL level — no Java-side processing needed.
+
+     * If tomorrow we need caching (e.g. @Cacheable("categoryRevenue")),
+     * this is the one place we add it — nothing else changes.
+     */
+    public List<CategoryRevenueDTO>getCategoryRevenueBreakdown() {
+        return orderRepository.getRevenueByCategoryStats();
+    }
+
+    // ─── 3C: CUSTOMER INTELLIGENCE ───────────────────────────────────────────
+    /**
+     * Combines two independent DB queries into one clean response.
+
+     * Why two separate queries instead of one big JOIN?
+     * CLV and Churn are different questions with different WHERE clauses.
+     * Forcing them into one query would create a messy UNION or subquery
+     * that's hard to read, harder to index, and slower to execute.
+     * Two fast, focused queries > one slow, complex query. Always.
+     *
+     * @param topLimit      How many top customers to return (default: 10)
+     * @param churnAfterDays  Days of inactivity that signals churn risk (default: 60)
+     */
+    public CustomerIntelligenceResponse getCustomerIntelligence(int topLimit, int churnAfterDays){
+
+        // Pageable limits the CLV result to topLimit rows at the DB level —
+        // far more efficient than fetching all customers and slicing in Java
+        Pageable topN = PageRequest.of(0, topLimit);
+        List<CustomerCLVDTO> topCustomers = orderRepository.getTopCustomersByLifetimeValue(topN);
+
+        // churnThreshold = "any customer whose last order was before this date is at risk"
+        LocalDateTime churnThreshold = LocalDateTime.now().minusDays(churnAfterDays);
+        List<CustomerChurnRiskDTO> atRisk = orderRepository.getChurnRiskCustomers(churnThreshold);
+
+        return new CustomerIntelligenceResponse(topCustomers, atRisk);
+    }
+
+    // ─── ADMIN DELEGATION FOR SELLER ANALYTICS ──────────────────────────────
+
+    /**
+     * Admin explicitly passes an untrusted sellerId from the URL.
+     * We MUST validate it belongs to a seller before querying analytics,
+     * otherwise a customer's ID will silently return an empty dashboard.
+     */
+    public SellerProductAnalyticsResponse getSellerAnalyticsForAdmin(Long sellerId) {
+
+        // 1. Boundary Validation: Is this actually a seller?
+        sellerProfileRepository.findById(sellerId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No seller found with ID: " + sellerId +
+                                ". Ensure the ID belongs to a registered seller."));
+
+        // 2. Trust established -> Delegate to the fast shared service
+        return sellerService.getProductQualityAnalytics(sellerId);
     }
 
 }

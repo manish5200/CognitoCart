@@ -2,6 +2,7 @@ package com.manish.smartcart.controller;
 
 import com.manish.smartcart.dto.admin.*;
 import com.manish.smartcart.dto.order.*;
+import com.manish.smartcart.dto.seller.SellerProductAnalyticsResponse;
 import com.manish.smartcart.dto.seller.SellerSummaryResponse;
 import com.manish.smartcart.model.user.SellerProfile;
 import com.manish.smartcart.service.*;
@@ -41,6 +42,7 @@ public class AdminController {
     private final ShipmentService shipmentService;
     private final WebhookDlqService webhookDlqService;
     private final ReturnAdminService returnAdminService;
+    private final SellerService sellerService;
 
     @Operation(summary = "Get Dashboard Stats", description = "Retrieves top-selling products and low-stock alerts. Access restricted to users with ROLE_ADMIN.")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved statistics")
@@ -62,6 +64,90 @@ public class AdminController {
         }
     }
 
+    @Operation(
+            summary = "Platform Intelligence Dashboard",
+            description = "Retrieves industry-standard BI metrics: Net Revenue, Refund Rates, and the Return Funnel insights."
+    )
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved intelligence metrics")
+    @GetMapping("/analytics/intelligence")
+    public ResponseEntity<PlatformIntelligenceResponse> getPlatformIntelligence() {
+        return ResponseEntity.ok(adminService.getPlatformIntelligence());
+    }
+
+    /**
+     * GET /api/v1/admin/analytics/revenue
+
+     * Returns revenue breakdown by product category — sorted highest to lowest.
+     * Use case: Admin spots that "Footwear" revenue dropped 40% this week →
+     * checks if supplier has a stock issue or a competitor launched a sale.
+
+     * No query params needed: the DB already returns all categories ranked.
+     * Frontend can slice/dice the array however it needs (top 5, pie chart, etc.)
+     */
+    @Operation(
+            summary = "Revenue by Category",
+            description = "Revenue breakdown grouped by product category. " +
+                    "Sorted highest to lowest. Only counts DELIVERED orders — real earned revenue."
+    )
+    @ApiResponse(responseCode = "200", description = "Category revenue breakdown retrieved")
+    @GetMapping("/analytics/category-revenue")
+    public ResponseEntity<List<CategoryRevenueDTO>> getCategoryRevenue() {
+        return ResponseEntity.ok(adminService.getCategoryRevenueBreakdown());
+    }
+
+
+    /**
+     * GET /api/v1/admin/analytics/customers
+     *
+     * Real-world use cases:
+     *  1. Marketing team pulls top=20 → runs VIP loyalty campaign for top spenders
+     *  2. Retention team pulls churnAfterDays=45 → sends win-back coupons to at-risk customers
+     *  3. Frontend uses riskLevel (HOT/WARM/COLD) to colour-code the customer list dashboard
+     *
+     * Both params have sensible defaults so the endpoint works with zero query params.
+     */
+    @Operation(
+            summary = "Customer Lifetime Value + Churn Risk",
+            description = "Returns top customers by lifetime spend AND customers at risk of churning. " +
+                    "Use 'top' to control how many VIPs to return. " +
+                    "Use 'churnAfterDays' to define what 'inactive' means for your business."
+    )
+    @ApiResponse(responseCode = "200", description = "Customer intelligence data retrieved")
+    @GetMapping("/analytics/customers")
+    public ResponseEntity<CustomerIntelligenceResponse>getCustomerIntelligence(
+            @RequestParam(defaultValue = "10") int top,
+            @RequestParam(defaultValue = "60") int churnAfterDays){
+        return ResponseEntity.ok(adminService.getCustomerIntelligence(top, churnAfterDays));
+    }
+
+    /**
+     * GET /api/v1/admin/sellers/{sellerId}/analytics
+     *
+     * Admin use cases:
+     *  1. KYC Review: Before approving a seller, check their product return rates.
+     *     A new seller with 40% CRITICAL products is a red flag.
+     *  2. Suspension Decisions: If a seller consistently has CRITICAL products,
+     *     the admin can suspend their listing rights.
+     *  3. Seller Support: When a seller raises a complaint, admin can
+     *     pull their quality data to understand the full picture.
+     *
+     * sellerId comes from the URL path — admin explicitly chooses which
+     * seller to inspect. There is zero chance of a data leak between sellers.
+     */
+    @Operation(
+            summary = "View a specific seller's product quality analytics",
+            description = "Admin-only view of a seller's product return rates and quality scores. " +
+                    "Use during KYC review or seller performance investigations."
+    )
+    @ApiResponse(responseCode = "200", description = "Seller product analytics retrieved")
+    @ApiResponse(responseCode = "404", description = "Seller not found")
+    @GetMapping("/sellers/{sellerId}/analytics")
+    public ResponseEntity<SellerProductAnalyticsResponse> getSellerProductAnalytics(
+            @PathVariable Long sellerId) {
+        return ResponseEntity.ok(
+                adminService.getSellerAnalyticsForAdmin(sellerId)
+        );
+    }
 
     @Operation(summary = "Update Order Status", description = "Change the lifecycle state of an order (e.g., PENDING to SHIPPED). Access restricted to Admin.")
     @ApiResponse(responseCode = "200", description = "Order status updated successfully")
@@ -74,7 +160,6 @@ public class AdminController {
         orderNotificationService.sendStatusUpdateEmail(response);
         return ResponseEntity.ok(response);
     }
-
 
     // --- COUPON MANAGEMENT ---
     @PostMapping("/coupons")
