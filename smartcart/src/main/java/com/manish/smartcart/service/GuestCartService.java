@@ -2,13 +2,14 @@ package com.manish.smartcart.service;
 
 import com.manish.smartcart.model.cart.GuestCart;
 import com.manish.smartcart.model.cart.GuestCartItem;
-import com.manish.smartcart.model.product.Product;
+import com.manish.smartcart.model.product.ProductVariant;
 import com.manish.smartcart.repository.GuestCartRepository;
-import com.manish.smartcart.repository.ProductRepository;
+import com.manish.smartcart.repository.ProductVariantRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 @Slf4j
@@ -17,8 +18,8 @@ import java.util.Optional;
 public class GuestCartService {
 
      private final GuestCartRepository guestCartRepository;
-     private final ProductRepository productRepository; // Still need Postgres to verify prices/stock!
      private final CartService cartService;
+     private final ProductVariantRepository productVariantRepository;
 
     /**
      * Finds the cart in Redis by Session ID. If it doesn't exist, we create an empty one.
@@ -36,35 +37,48 @@ public class GuestCartService {
     /**
      * Adds an item to the Redis Cart.
      */
-    public GuestCart addItem(String sessionId, Long productId, Integer quantity){
+    public GuestCart addItem(String sessionId, Long variantId, Integer quantity){
         GuestCart cart = getCart(sessionId);
 
-        // 1. Validate Product exists in Postgres and has stock
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+        // 1. Validate variant exists in Postgres and has available stock
+        ProductVariant variant = productVariantRepository.findById(variantId)
+                .orElseThrow(() -> new RuntimeException("Product variant not found: " + variantId));
 
-        // 2. See if the item is already in the Redis cart
+        int available = variant.getAvailableStock();
+
+        // 2. See if this variant is already in the Redis cart
         Optional<GuestCartItem>existingItemOpt = cart.getItems().stream()
-                .filter(item -> item.getProductId().equals(product.getId()))
+                .filter(item -> item.getVariantId().equals(variantId))
                 .findFirst();
 
         if(existingItemOpt.isPresent()){
             GuestCartItem existingItem = existingItemOpt.get();
             int newQuantity = existingItem.getQuantity() + quantity;
 
-            if (newQuantity > product.getStockQuantity()) {
-                throw new RuntimeException("Insufficient stock. Available: " + product.getStockQuantity());
+            if (newQuantity > available) {
+                throw new RuntimeException("Insufficient stock. Available: " + available);
             }
             existingItem.setQuantity(newQuantity);
+            // Refresh effective price (base + modifier) in case it changed
+            BigDecimal effectivePrice = variant.getProduct().getPrice()
+                    .add(variant.getPriceModifier() != null
+                            ? variant.getPriceModifier()
+                            : BigDecimal.ZERO);
+
             // Update price in case it changed since they last looked
-            existingItem.setPriceAtAdding(product.getPrice());
+            existingItem.setPriceAtAdding(effectivePrice);
         }else {
 
-            if (quantity > product.getStockQuantity()) {
-                throw new RuntimeException("Insufficient stock. Available: " + product.getStockQuantity());
+            if (quantity > available) {
+                throw new RuntimeException("Insufficient stock. Available: " + available);
             }
+
+            BigDecimal effectivePrice = variant.getProduct().getPrice()
+                    .add(variant.getPriceModifier() != null
+                            ? variant.getPriceModifier()
+                            : BigDecimal.ZERO);
             GuestCartItem newItem = new GuestCartItem(
-                    productId, quantity, product.getPrice());
+                    variantId, quantity, effectivePrice);
             cart.getItems().add(newItem);
         }
 
@@ -75,11 +89,11 @@ public class GuestCartService {
     /**
      * Removes a specific item from the Redis cart.
      */
-    public GuestCart removeItem(String sessionId, Long productId){
+    public GuestCart removeItem(String sessionId, Long variantId){
         GuestCart cart = getCart(sessionId);
         boolean removed = cart.getItems()
                 .removeIf(item ->
-                        item.getProductId().equals(productId));
+                        item.getVariantId().equals(variantId));
 
         if (!removed) {
             throw new RuntimeException("Item not found in guest cart");
@@ -104,10 +118,10 @@ public class GuestCartService {
             for(GuestCartItem item : guestCart.getItems()) {
                 try {
                     // Call the secure Postgres service to handle stock validation and Math Engine recalcs
-                    cartService.addItemToCart(userId, item.getProductId(), item.getQuantity());
+                    cartService.addItemToCart(userId, item.getVariantId(), item.getQuantity());
                 } catch (Exception e) {
                     log.error("Failed to merge product {} for user {}: {}",
-                            item.getProductId(), userId, e.getMessage());
+                            item.getVariantId(), userId, e.getMessage());
                 }
             }
             // Obliterate the temporary Redis cart so it isn't orphaned!

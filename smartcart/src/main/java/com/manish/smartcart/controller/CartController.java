@@ -50,7 +50,7 @@ public class CartController {
                 Long userId = extractUserId(authentication);
                 Cart updatedCart = cartService.addItemToCart(
                                 userId,
-                                cartRequest.getProductId(),
+                                cartRequest.getVariantId(),
                                 cartRequest.getQuantity());
                 CartResponse cartResponse = new CartResponse().getCartResponse(updatedCart);
                 return ResponseEntity.ok().body(Map.of("Cart updated :", cartResponse));
@@ -108,11 +108,11 @@ public class CartController {
             @ApiResponse(responseCode = "200", description = "Item removed successfully"),
             @ApiResponse(responseCode = "404", description = "Item not found in cart")
         })
-        @DeleteMapping("/item/{productId}")
-        public ResponseEntity<?> deleteItemFromCart(@PathVariable Long productId,
+        @DeleteMapping("/item/{variantId}")
+        public ResponseEntity<?> deleteItemFromCart(@PathVariable Long variantId,
                         Authentication auth) {
                 Long userId = extractUserId(auth);
-                Cart cart = cartService.removeItemFromCart(userId, productId);
+                Cart cart = cartService.removeItemFromCart(userId, variantId);
                 CartResponse cartResponse = new CartResponse().getCartResponse(cart);
                 return ResponseEntity.ok().body(cartResponse);
         }

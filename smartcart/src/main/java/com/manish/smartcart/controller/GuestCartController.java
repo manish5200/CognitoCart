@@ -40,7 +40,7 @@ public class GuestCartController {
             @PathVariable String sessionId,
             @RequestBody @Valid CartRequest cartRequest) {
 
-        GuestCart cart = guestCartService.addItem(sessionId, cartRequest.getProductId(), cartRequest.getQuantity());
+        GuestCart cart = guestCartService.addItem(sessionId, cartRequest.getVariantId(), cartRequest.getQuantity());
         return ResponseEntity.ok(cart);
     }
 

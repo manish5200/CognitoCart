@@ -3,13 +3,10 @@ package com.manish.smartcart.service;
 import com.manish.smartcart.dto.order.PromotionResult;
 import com.manish.smartcart.model.cart.Cart;
 import com.manish.smartcart.model.cart.CartItem;
-import com.manish.smartcart.model.product.Product;
+import com.manish.smartcart.model.product.ProductVariant;
 import com.manish.smartcart.model.user.Users;
-import com.manish.smartcart.repository.CartItemRepository;
-import com.manish.smartcart.repository.CartRepository;
-import com.manish.smartcart.repository.ProductRepository;
+import com.manish.smartcart.repository.*;
 import com.manish.smartcart.model.order.Coupon;
-import com.manish.smartcart.repository.UsersRepository;
 import com.manish.smartcart.exception.BusinessLogicException;
 import com.manish.smartcart.exception.InsufficientStockException;
 import com.manish.smartcart.exception.ResourceNotFoundException;
@@ -28,7 +25,7 @@ public class CartService {
 
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
-    private final ProductRepository productRepository;
+    private final ProductVariantRepository productVariantRepository;
     private final UsersRepository usersRepository;
     private final CouponService couponService;
     private final PromotionEngineService promotionEngine;
@@ -38,35 +35,55 @@ public class CartService {
     // The cost of Delivery if they don't meet the threshold
     private static final BigDecimal STANDARD_DELIVERY_FEE = new BigDecimal("50.00");
 
+
     @Transactional
-    public Cart addItemToCart(Long userId, Long productId, Integer quantity) {
+    public Cart addItemToCart(Long userId, Long variantId, Integer quantity) {
         // 1. Get or Create Cart for User
         Cart cart = cartRepository.findByUserId(userId).orElseGet(() -> creatNewCart(userId));
 
-        // 2. Find Product & Check stock
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+        // 2. Find the specific variant the customer selected
+        ProductVariant variant = productVariantRepository.findById(variantId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product variant not found: " + variantId));
 
-        // 3. Update existing item or add new one
-        CartItem cartItem = cartItemRepository.findByCartIdAndProductId(cart.getId(), productId).orElse(new CartItem());
-
-        // RECTIFICATION: Validate against TOTAL quantity (Current in Cart + New
-        // Request)
-        int requestedQuantity = (cartItem.getId() == null) ? quantity : cartItem.getQuantity() + quantity;
-        if (requestedQuantity > product.getStockQuantity()) {
-            throw new InsufficientStockException("Insufficient stock. Available: " + product.getStockQuantity());
+        // Guard: Cannot add inactive/delisted variants to cart
+        if (!variant.isActive()) {
+            throw new BusinessLogicException(
+                    "'" + variant.getDisplayLabel() + "' (SKU: " + variant.getSku() + ") is no longer available.");
         }
 
-        // 4. check if are getting else add to the new one
+        // 3. Update existing item or add new one
+        CartItem cartItem = cartItemRepository.findByCartIdAndVariantId(cart.getId(), variantId)
+                .orElse(new CartItem());
+
+        // Validate against TOTAL quantity (existing in cart + new request)
+        // This prevents splitting the same SKU across two requests to bypass stock limits.
+        int requestedQuantity = (cartItem.getId() == null) ? quantity : cartItem.getQuantity() + quantity;
+
+        // Check available stock = stockQuantity - reservedQuantity (units held by other live carts)
+        int available = variant.getAvailableStock();
+        if (requestedQuantity >available) {
+            throw new InsufficientStockException(
+                    "Insufficient stock for: " + variant.getDisplayLabel() +
+                            " (SKU: " + variant.getSku() + "). Available: " + available);
+        }
+
+        // 4. Set fields or update quantity
         if (cartItem.getId() == null) {
             cartItem.setCart(cart);
-            cartItem.setProduct(product);
-            cartItem.setPriceAtAdding(product.getPrice());
+            cartItem.setVariant(variant);
+
+            // Compute effective price: base product price + variant price modifier
+            BigDecimal effectivePrice = variant.getProduct().getPrice()
+                            .add(variant.getPriceModifier() != null
+                                    ? variant.getPriceModifier()
+                                    : BigDecimal.ZERO);
+
+            cartItem.setPriceAtAdding(effectivePrice);
             cartItem.setQuantity(quantity);
             // Final add to the list of the cart
             cart.addCartItem(cartItem); // Using helper
         } else {
-            cartItem.setQuantity(cartItem.getQuantity() + quantity);
+            cartItem.setQuantity(requestedQuantity);
         }
 
         // 4. Recalculate Total
@@ -77,7 +94,7 @@ public class CartService {
 
     // Helper method to create a cart
     @Transactional
-    private Cart creatNewCart(Long userId) {
+    protected Cart creatNewCart(Long userId) {
         Users user = usersRepository.getReferenceById(userId);
         Cart cart = new Cart();
         cart.setUser(user);
@@ -135,7 +152,7 @@ public class CartService {
      * It recalculates the 5-step algebraic pipeline securely and logs its decisions using SLF4J.
      */
     @Transactional
-    private void updateCartTotal(Cart cart) {
+    protected void updateCartTotal(Cart cart) {
 
         log.debug("Initiating Cart Math Engine for User ID: {}", cart.getUser().getId());
 
@@ -203,13 +220,14 @@ public class CartService {
 
     // Remove a specific item from the cart
     @Transactional
-    public Cart removeItemFromCart(Long userId, Long productId) {
+    public Cart removeItemFromCart(Long userId, Long variantId) {
         Cart cart = cartRepository.findByUserId(userId).orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
 
         CartItem itemToRemove = cart.getItems().stream()
-                .filter(item -> item.getProduct().getId().equals(productId))
+                .filter(item -> item.getVariant() != null  && item.getVariant().getId().equals(variantId))
                 .findFirst()
-                .orElseThrow(() -> new ResourceNotFoundException("Item not in the cart"));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Variant (ID: " + variantId + ") not found in your cart."));
 
         cart.removeCartItem(itemToRemove);
 

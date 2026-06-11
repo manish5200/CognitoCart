@@ -9,11 +9,13 @@ import com.manish.smartcart.enums.OrderStatus;
 import com.manish.smartcart.mapper.OrderMapper;
 import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.model.product.Product;
+import com.manish.smartcart.model.product.ProductVariant;
 import com.manish.smartcart.model.user.SellerProfile;
 import com.manish.smartcart.repository.OrderRepository;
 import com.manish.smartcart.repository.ProductRepository;
 import com.manish.smartcart.exception.BusinessLogicException;
 import com.manish.smartcart.exception.ResourceNotFoundException;
+import com.manish.smartcart.repository.ProductVariantRepository;
 import com.manish.smartcart.repository.SellerProfileRepository;
 import com.manish.smartcart.service.email.EmailTemplateBuilder;
 import lombok.RequiredArgsConstructor;
@@ -50,6 +52,7 @@ public class AdminService {
     );
 
     private final ProductRepository productRepository;
+    private final ProductVariantRepository productVariantRepository;
     private final OrderRepository orderRepository;
     private final SellerProfileRepository sellerProfileRepository;
     private final EmailTemplateBuilder emailTemplateBuilder;
@@ -59,21 +62,21 @@ public class AdminService {
 
 
     @Transactional(readOnly = true)
-    public DashboardResponse getAdminStats(int stockThreshold,int pageNumber,int pageSize) {
+    public DashboardResponse getAdminStats(int pageNumber,int pageSize) {
         // 1. Calculate Metrics
         BigDecimal revenue = orderRepository.calculateRevenue();// Using your JPQL query
         Long successful = orderRepository.countByOrderStatus(OrderStatus.DELIVERED);
         Long canceled = orderRepository.countByOrderStatus(OrderStatus.CANCELLED);
 
         // 2. Fetch Low Stock Products (threshold < 5) and  Map to LowStockResponse DTO
-        List<Product> products = productRepository.findByStockQuantityLessThan(stockThreshold);
-        List<LowStockResponse>lowStockResponse = products.stream()
-                .map(product -> new LowStockResponse(
-                        product.getId(),
-                        product.getProductName(),
-                        product.getStockQuantity(),
-                        product.getSellerId(),
-                        product.getSku()
+        List<ProductVariant> lowStockVariants  = productVariantRepository.findLowStockVariants();
+        List<LowStockResponse>lowStockResponse = lowStockVariants.stream()
+                .map(variant -> new LowStockResponse(
+                        variant.getId(),                           // variantId (the purchasable SKU)
+                        variant.getProduct().getProductName(),     // master product name
+                        variant.getAvailableStock(),              // net available (gross - reserved)
+                        variant.getProduct().getSellerId(),        // seller who owns the product
+                        variant.getSku()                           // the actual warehouse SKU
                 )).toList();
 
         //3. Identify Top Sellers (Requesting top 5) using Pageable

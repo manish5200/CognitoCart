@@ -55,7 +55,9 @@ public class OrderMapper {
 
     private OrderResponse.OrderItemDTO toItemDTO(OrderItem orderItem) {
         return new OrderResponse.OrderItemDTO(
-                orderItem.getProduct().getProductName(),
+                orderItem.getProductNameSnapshot(),
+                // Snapshot is frozen at checkout — always correct even if product is renamed/deleted.
+                // InvoiceService reads this via OrderItemDTO.productName → no PDF change needed.
                 orderItem.getQuantity(),
                 orderItem.getPriceAtPurchase() // Correctly uses the "Frozen" price
         );
