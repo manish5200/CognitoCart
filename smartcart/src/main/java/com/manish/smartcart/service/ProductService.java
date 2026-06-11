@@ -6,8 +6,10 @@ import com.manish.smartcart.dto.product.ProductSearchDTO;
 import com.manish.smartcart.mapper.ProductMapper;
 import com.manish.smartcart.model.product.Category;
 import com.manish.smartcart.model.product.Product;
+import com.manish.smartcart.model.product.ProductVariant;
 import com.manish.smartcart.repository.CategoryRepository;
 import com.manish.smartcart.repository.ProductRepository;
+import com.manish.smartcart.repository.ProductVariantRepository;
 import com.manish.smartcart.repository.specifications.ProductSpecifications;
 import com.manish.smartcart.util.VectorAttributeConverter;
 import com.manish.smartcart.exception.BusinessLogicException;
@@ -23,7 +25,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -33,6 +34,7 @@ import java.util.UUID;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final ProductVariantRepository productVariantRepository;
     private final CategoryRepository categoryRepository;
     private final ProductMapper productMapper;
     private final CategoryService categoryService;
@@ -75,17 +77,38 @@ public class ProductService {
                 .replaceAll("^-+|-+$", ""); // strip leading/trailing dashes
         product.setSlug(slug);
 
-        // 5. Smart SKU Generation, if not provided
-        // Warehouse-ready ID if the seller leaves it blank.
-        if (productRequest.getSku() == null || productRequest.getSku().isBlank()) {
-            product.setSku("SKU-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-        } else {
-            product.setSku(productRequest.getSku());
-        }
+        // 5. SKU is now a Variant-level concern.
+        // We resolve it below AFTER the Product is saved (need the product ID first).
+        // The SKU string is carried in a local variable for use in the default variant.
+        String resolvedSku = (productRequest.getSku() == null || productRequest.getSku().isBlank())
+                ? "SKU-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase()
+                : productRequest.getSku();
 
         // STEP 1: Save the product first without the embedding.
         // JPA handles all regular columns (price, name, stock, etc.) cleanly here.
         Product savedProduct = productRepository.save(product);
+
+
+        // DEFAULT VARIANT CREATION — The "Simple Product" Pattern
+        // Every product needs at least one purchasable variant to be checkout-eligible.
+        // For simple products (no size/color options), we silently create a single
+        // "Standard" variant so the checkout flow has a uniform code path.
+        // Sellers can add more variants later via POST /api/v1/products/{id}/variants
+        ProductVariant productVariant = ProductVariant.builder()
+                .product(savedProduct)
+                .sku(resolvedSku)
+                .stockQuantity(productRequest.getStockQuantity() != null
+                ? productRequest.getStockQuantity() : 0)
+                .reservedQuantity(0)
+                .priceModifier(java.math.BigDecimal.ZERO)  // No modifier — use product base price
+                .attributes(new java.util.LinkedHashMap<>(
+                        java.util.Map.of("Type", "Standard"))) // Signals a default/simple variant
+                .isActive(true)
+                .sortOrder(0)
+                .build();
+
+        productVariantRepository.save(productVariant);
+        log.info("Default variant created (SKU={}) for product ID {}", resolvedSku, savedProduct.getId());
 
         // STEP 2: Generate the embedding and write it via a separate native UPDATE.
         // CONCEPT: We do this AFTER save() because we need the product's DB-generated ID.
@@ -144,25 +167,17 @@ public class ProductService {
     }
 
     /**
-     * ACTIVITY: Stock Management
-     * ACTIVITY: Inventory Management
-     * Handles inventory updates safely.
-     * Positive quantity adds stock, negative removes it.
+     * Stock management has moved to the Variant layer.
+     * Use ProductVariantService.updateVariantStock(variantId, quantityChange, sellerId, isAdmin)
+     * which operates on ProductVariant.stockQuantity — the correct inventory field.
+     *
+     * @deprecated Since product-variant migration. Use variant-level stock management instead.
      */
-    @Transactional
+    @Deprecated
     public Product updateStock(Long productId, Integer quantityChange, Long currentSellerId, boolean isAdmin) {
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID: " + productId));
-
-        if (!isAdmin && !product.getSellerId().equals(currentSellerId)) {
-            throw new BusinessLogicException("Access Denied: Inventory updates restricted to product owner.");
-        }
-        int newQuantity = product.getStockQuantity() + quantityChange;
-        if (newQuantity < 0) {
-            throw new BusinessLogicException("Insufficient stock: cannot reduce below zero.");
-        }
-        product.setStockQuantity(newQuantity);
-        return productRepository.save(product);
+        throw new UnsupportedOperationException(
+                "Stock management has moved to the variant layer. " +
+                        "Use PATCH /api/v1/products/{productId}/variants/{variantId}/stock instead.");
     }
 
     /**

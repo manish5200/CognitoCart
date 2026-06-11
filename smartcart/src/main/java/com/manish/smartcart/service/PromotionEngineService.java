@@ -98,7 +98,9 @@ public class PromotionEngineService {
         }
         // 1. Scan cart to see if the required BOGO product is actually present
         CartItem targetItem = cart.getItems().stream()
-                .filter(item -> item.getProduct().getId().equals(coupon.getApplicableProductId()))
+                .filter(item -> item.getVariant() != null
+                        && item.getVariant().getProduct() != null
+                && item.getVariant().getProduct().getId().equals(coupon.getApplicableProductId()))
                 .findFirst()
                 .orElse(null);
 
@@ -108,7 +110,7 @@ public class PromotionEngineService {
             return BigDecimal.ZERO;
         }
 
-        // 3. The Math: e.g., Buy 2 get 1 Free. If they buy 5 => (5 / 2) = 2. Free items = 2 * 1 = 2.
+        // 3. The Math: e.g.,Buy 2, get 1 Free. If they buy 5 => (5 / 2) = 2. Free items = 2 * 1 = 2.
         int timesOfferApplies = targetItem.getQuantity() / coupon.getBuyXQuantity();
         int freeQuantity = timesOfferApplies * coupon.getGetYQuantity();
 

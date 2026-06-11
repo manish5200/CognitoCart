@@ -8,9 +8,9 @@ import com.manish.smartcart.exception.ResourceNotFoundException;
 import com.manish.smartcart.mapper.OrderMapper;
 import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.model.order.OrderItem;
-import com.manish.smartcart.model.product.Product;
+import com.manish.smartcart.model.product.ProductVariant;
 import com.manish.smartcart.repository.OrderRepository;
-import com.manish.smartcart.repository.ProductRepository;
+import com.manish.smartcart.repository.ProductVariantRepository;
 import com.manish.smartcart.service.RazorpayRefundService;
 import com.manish.smartcart.service.notifications.OrderNotificationService;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +32,7 @@ import java.util.List;
 public class ReturnAdminService {
 
     private final OrderRepository orderRepository;
-    private final ProductRepository productRepository;
+    private final ProductVariantRepository productVariantRepository;
     private final OrderMapper orderMapper;
     private final OrderNotificationService orderNotificationService;
     private final RazorpayRefundService razorpayRefundService;
@@ -50,11 +50,17 @@ public class ReturnAdminService {
                     "Order is not in RETURN_REQUESTED state. Current: " + order.getOrderStatus());
         }
 
-        // Restore stock to warehouse
+        // Restore stock to warehouse — stock lives on the variant, not the product
         for (OrderItem item : order.getOrderItems()) {
-            Product p = item.getProduct();
-            p.setStockQuantity(p.getStockQuantity() + item.getQuantity());
-            productRepository.save(p);
+            // Guard: variant may be null if it was hard-deleted after the order was placed.
+            // Physical stock is already gone — nothing to restore, skip safely.
+            if (item.getVariant() == null) {
+                log.warn("Skipping stock restore for order item on approved return {}: variant was deleted.", orderId);
+                continue;
+            }
+            ProductVariant variant = item.getVariant();
+            variant.setStockQuantity(variant.getStockQuantity() + item.getQuantity());
+            productVariantRepository.save(variant);
         }
 
         order.setOrderStatus(OrderStatus.RETURNED);
@@ -100,18 +106,30 @@ public class ReturnAdminService {
         // Re-check stock at approval time — may have dropped since customer's request
         for(OrderItem item : order.getOrderItems()) {
 
-            Product freshProduct = productRepository.findById(item.getProduct().getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Product no longer exists in the system."));
+            // Guard: variant null means it was hard-deleted — cannot ship a replacement
+            if (item.getVariant() == null) {
+                throw new BusinessLogicException(
+                        "Cannot approve replacement — the original variant no longer exists. " +
+                                "Approve a RETURN (refund) instead.");
+            }
 
-            if(freshProduct.getStockQuantity() < item.getQuantity()) {
+            // Re-fetch fresh from DB — item.getVariant() may have stale cache values
+            ProductVariant freshVariant = productVariantRepository.findById(item.getVariant().getId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Variant no longer exists. Approve a RETURN (refund) instead."));
+
+            int available = freshVariant.getAvailableStock(); // stockQuantity - reservedQuantity
+            if(available < item.getQuantity()) {
                 throw new BusinessLogicException(
                         "Cannot approve replacement — insufficient stock for: " +
-                                freshProduct.getProductName() + ". Available: " + freshProduct.getStockQuantity() +
+                                freshVariant.getDisplayLabel() +
+                                " (SKU: " + freshVariant.getSku() + ")" +
+                                ". Available: " + available +
                                 ". Consider approving a RETURN (refund) instead.");
             }
 
-            freshProduct.setStockQuantity(freshProduct.getStockQuantity() - item.getQuantity());
-            productRepository.save(freshProduct);
+            freshVariant.setStockQuantity(freshVariant.getStockQuantity() - item.getQuantity());
+            productVariantRepository.save(freshVariant);
         }
         order.setOrderStatus(OrderStatus.REPLACEMENT_SHIPPED);
         Order saved = orderRepository.save(order);

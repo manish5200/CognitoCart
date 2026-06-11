@@ -3,7 +3,6 @@ package com.manish.smartcart.model.base;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.hibernate.annotations.SoftDelete;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -14,21 +13,22 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * Base abstract class for all entities to provide common audit fields.
- * Uses @MappedSuperclass so that child entities inherit these columns.
+ * Abstract base entity providing unified primary keys and JPA auditing.
+ * Inherited by all domain models to ensure consistent tracking of creation,
+ * modification, and optimistic locking across the system.
  */
 @Setter
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
 @MappedSuperclass
-@SuperBuilder // Required so child builders can see these fields
-@EntityListeners(AuditingEntityListener.class)// The "Sensor" for timestamps
+@SuperBuilder
+@EntityListeners(AuditingEntityListener.class)
 public abstract class BaseEntity implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // Now unified for the entire system
+    private Long id;
 
     @CreatedDate
     @Column(name = "created_at", updatable = false, nullable = false)
@@ -46,7 +46,7 @@ public abstract class BaseEntity implements Serializable {
     @Column(name = "modified_by")
     private String modifiedBy;
 
+    // Handles optimistic locking for all child entities to prevent concurrent update anomalies.
     @Version
-    private Long version; // Managed automatically by Hibernate
-
+    private Long version;
 }

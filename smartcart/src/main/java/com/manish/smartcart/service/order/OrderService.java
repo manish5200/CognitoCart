@@ -14,11 +14,9 @@ import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.model.order.OrderItem;
 import com.manish.smartcart.model.order.UserCouponUsage;
 import com.manish.smartcart.model.product.Product;
+import com.manish.smartcart.model.product.ProductVariant;
 import com.manish.smartcart.model.user.Users;
-import com.manish.smartcart.repository.OrderRepository;
-import com.manish.smartcart.repository.ProductRepository;
-import com.manish.smartcart.repository.UserCouponUsageRepository;
-import com.manish.smartcart.repository.UsersRepository;
+import com.manish.smartcart.repository.*;
 import com.manish.smartcart.exception.BusinessLogicException;
 import com.manish.smartcart.exception.InsufficientStockException;
 import com.manish.smartcart.exception.ResourceNotFoundException;
@@ -40,7 +38,7 @@ import java.util.*;
 public class OrderService {
 
     private final OrderRepository orderRepository;
-    private final ProductRepository productRepository;
+    private final ProductVariantRepository productVariantRepository;
     private final CartService cartService;
     private final OrderMapper orderMapper;
     private final OrderNotificationService orderNotificationService;
@@ -121,37 +119,58 @@ public class OrderService {
         List<OrderItem> orderItems = new ArrayList<>();
 
         for (CartItem cartItem : cart.getItems()) {
-            // RACE CONDITION FIX: Fetch product with SELECT FOR UPDATE (PESSIMISTIC_WRITE)
-            // This DB-level row lock ensures that if two customers checkout simultaneously,
-            // the second request WAITS at this line until the first transaction commits.
-            // Without this, both could read stockQuantity = 1 and both would pass the
-            // stock check — resulting in stock going to -1 (oversell).
-            Product product = productRepository.findByIdForUpdate(cartItem.getProduct().getId())
+            // RACE CONDITION FIX: Lock the VARIANT row (stock now lives on variant, not product).
+            // Two customers checking out the last unit simultaneously:
+            //   → Second transaction BLOCKS here until the first commits.
+            //   → Second then reads the already-decremented stock and throws InsufficientStockException.
+            ProductVariant variant = productVariantRepository.findByIdForUpdate(cartItem.getVariant().getId())
                     .orElseThrow(() -> new ResourceNotFoundException(
-                            "Product not found: " + cartItem.getProduct().getId()));
+                            "Variant no longer exists: SKU " + cartItem.getVariant().getSku()));
 
-            // CRITICAL: Re-check stock on the freshly locked row
-            if (product.getStockQuantity() < cartItem.getQuantity()) {
-                throw new InsufficientStockException("Insufficient stock for: " + product.getProductName());
+            // CRITICAL: Re-check available stock on the freshly-locked row.
+            // availableStock = stockQuantity - reservedQuantity (units held in other live carts)
+            int availableStock = variant.getAvailableStock();
+            if (availableStock < cartItem.getQuantity()) {
+                throw new InsufficientStockException(
+                        "Insufficient stock for: " + variant.getDisplayLabel() +
+                                " (SKU: " + variant.getSku() + "). Available: " + availableStock);
             }
-            // Deduct stock — safe because we hold the row lock
-            product.setStockQuantity(product.getStockQuantity() - cartItem.getQuantity());
-            productRepository.save(product);
+            // Deduct from gross stock — safe because we hold the PESSIMISTIC_WRITE row lock
+            variant.setStockQuantity(variant.getStockQuantity() - cartItem.getQuantity());
+            productVariantRepository.save(variant);
 
+            // Navigate variant → product for name + images + policy
+            Product product = variant.getProduct();
 
-            // Create the snapshot record
+            // Build the immutable OrderItem snapshot
+            // SNAPSHOT RULE: All string/price fields are copied at checkout.
+            // Even if the seller renames the product tomorrow, this order shows
+            // exactly what the customer saw and paid for.
+            BigDecimal lineTotal = cartItem.getPriceAtAdding()
+                    .multiply(BigDecimal.valueOf(cartItem.getQuantity()));
+
             OrderItem orderItem = new OrderItem();
-            orderItem.setOrder(order); // Link back to parent
-            orderItem.setProduct(product);
-            orderItem.setQuantity(cartItem.getQuantity());
-            orderItem.setPriceAtPurchase(cartItem.getPriceAtAdding()); // Freeze the price!
-            orderItems.add(orderItem);
 
-            BigDecimal subtotal = cartItem.getPriceAtAdding().multiply(new BigDecimal(cartItem.getQuantity()));
-            computedTotal = computedTotal.add(subtotal);
+            orderItem.setOrder(order); // Link back to parent
+            orderItem.setVariant(variant);   // Live FK (nullable — survives hard deletes)
+            orderItem.setQuantity(cartItem.getQuantity());
+            orderItem.setPriceAtPurchase(cartItem.getPriceAtAdding());            // Frozen unit price
+            orderItem.setLineTotal(lineTotal);                                    // Frozen line total
+            orderItem.setProductNameSnapshot(product.getProductName());           // Frozen product name
+            orderItem.setVariantLabelSnapshot(variant.getDisplayLabel());         // e.g., "Navy Blue / UK 9"
+            orderItem.setSkuSnapshot(variant.getSku());                           // Frozen SKU for disputes
+
+            orderItem.setImageUrlSnapshot(
+                    variant.getVariantImageUrl() != null
+                    ? variant.getVariantImageUrl()
+                            : (product.getImageUrls() != null && !product.getImageUrls().isEmpty()
+                            ? product.getImageUrls().get(0)
+                            : null));
+
+            orderItems.add(orderItem);
+            computedTotal = computedTotal.add(lineTotal);
         }
         order.setOrderItems(orderItems);
-
         // ─── SNAPSHOT THE RETURN POLICY AT CHECKOUT TIME ─────────────────────
         // This freezes the return policy at the moment the customer pays.
         //Even if the seller updates their policy tomorrow, this order is protected.
@@ -159,7 +178,10 @@ public class OrderService {
         if(!orderItems.isEmpty()){
             Map<Long, PolicySnapshot> policyMap = new HashMap<>();
             for(OrderItem item : orderItems){
-                Product product = item.getProduct();
+                // Navigate variant → product for the policy chain (product → category → default)
+                // Guard: variant may be null if SKU was hard-deleted mid-session (extremely rare)
+                if(item.getVariant() == null) continue;
+                Product product = item.getVariant().getProduct();
                 if(!policyMap.containsKey(product.getId())){
                     try{
                         PolicySnapshot policySnapshot = returnPolicyService.getPolicySnapshotForCheckout(product);
@@ -273,13 +295,18 @@ public class OrderService {
         // 3. Inventory Restoration: Return stock to Product table - every product
         // RESTORE STOCK: Loop through items and update products
         for (OrderItem orderItem : order.getOrderItems()) {
-            Product product = orderItem.getProduct();
+            // Guard: variant may be null if it was hard-deleted after the order was placed.
+            // In that case, we skip stock restore — the physical unit is already gone.
+            if (orderItem.getVariant() == null) {
+                log.warn("Skipping stock restore for order item on order {}: variant was deleted.", orderId);
+                continue;
+            }
+            ProductVariant variant = orderItem.getVariant();
 
             // Add the quantity back to the warehouse
-            int updatedStock = product.getStockQuantity() + orderItem.getQuantity();
-            product.setStockQuantity(updatedStock);
+            variant.setStockQuantity(variant.getStockQuantity() + orderItem.getQuantity());
             // saveAndFlush pushes the update to the DB immediately
-            productRepository.saveAndFlush(product);
+            productVariantRepository.saveAndFlush(variant);
         }
 
         // 4. REFUND : Handle Refunds if the order was already PAID
@@ -317,11 +344,14 @@ public class OrderService {
 
         // 1. Restore stock to the products
         for (OrderItem orderItem : order.getOrderItems()) {
-            Product product = orderItem.getProduct();
-            int updatedStock = product.getStockQuantity() + orderItem.getQuantity();
-            product.setStockQuantity(updatedStock);
+            if (orderItem.getVariant() == null) {
+                log.warn("Skipping stock restore for abandoned order {}: variant was deleted.", order.getId());
+                continue;
+            }
+            ProductVariant variant = orderItem.getVariant();
+            variant.setStockQuantity(variant.getStockQuantity() + orderItem.getQuantity());
             // saveAndFlush pushes the update to the DB immediately
-            productRepository.saveAndFlush(product);
+            productVariantRepository.saveAndFlush(variant);
         }
         // 2. Update order status
         order.setOrderStatus(OrderStatus.CANCELLED);

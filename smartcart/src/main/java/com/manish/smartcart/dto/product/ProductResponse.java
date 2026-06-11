@@ -20,8 +20,8 @@ public class ProductResponse {
     private String description;
     private BigDecimal price;
     private BigDecimal discountPrice;
-    private String sku;
-    private Integer stockQuantity;
+    // Variant-level fields (sku, stockQuantity) intentionally omitted.
+    // Use GET /api/v1/products/{id}/variants to get per-SKU inventory details.
     private String categoryName;
     private Set<String> tags;
     private Double averageRating;

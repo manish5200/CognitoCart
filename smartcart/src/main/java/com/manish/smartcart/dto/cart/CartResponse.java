@@ -35,8 +35,13 @@ public class CartResponse {
     public CartResponse getCartResponse(Cart updatedCart) {
         List<ItemDTO> items = new ArrayList<>();
         for (CartItem item : updatedCart.getItems()) {
+            // Navigate variant → product for the product name.
+            // Guard: variant could theoretically be null if hard-deleted mid-session (extremely rare).
+            String productName = (item.getVariant() != null && item.getVariant().getProduct() != null)
+                    ? item.getVariant().getProduct().getProductName()
+                    : "Unknown Product";
             ItemDTO newItem = new ItemDTO(
-                    item.getProduct().getProductName(),
+                    productName,
                     item.getPriceAtAdding(),
                     item.getQuantity(),
                     item.getPriceAtAdding().multiply(new BigDecimal(item.getQuantity())));

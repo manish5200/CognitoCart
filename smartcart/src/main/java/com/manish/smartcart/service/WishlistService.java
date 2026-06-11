@@ -6,6 +6,7 @@ import com.manish.smartcart.dto.product.WishlistSummaryDTO;
 import com.manish.smartcart.mapper.ProductMapper;
 import com.manish.smartcart.model.cart.Cart;
 import com.manish.smartcart.model.product.Product;
+import com.manish.smartcart.model.product.ProductVariant;
 import com.manish.smartcart.model.user.Wishlist;
 import com.manish.smartcart.repository.*;
 import com.manish.smartcart.exception.ResourceNotFoundException;
@@ -14,6 +15,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,6 +25,7 @@ public class WishlistService {
 
     private final WishlistRepository wishlistRepository;
     private final ProductRepository productRepository;
+    private final ProductVariantRepository productVariantRepository;
     private final UsersRepository usersRepository;
     private final ProductMapper  productMapper;
     private final CartService cartService;
@@ -64,9 +67,21 @@ public class WishlistService {
        Wishlist existedProductInWishlist = wishlistRepository.findByUserIdAndProductId(userId, productId)
                .orElseThrow(() -> new ResourceNotFoundException("Item not found in your wishlist"));
 
-        // 2. Use existing CartService to add to cart
-        // This ensures cart totals and stock checks are handled correctly
-        Cart cart = cartService.addItemToCart(userId, productId, quantity);
+        //2. Find the default/first active variant for this product.
+        // Wishlist stores the master Product. Cart requires a specific variant (SKU).
+        //    We pick the lowest sortOrder active variant — this is the default SKU
+        //    created automatically at product creation time.
+
+        ProductVariant defaultVariant = productVariantRepository
+                .findByProductIdAndIsActiveTrue(productId)
+                .stream()
+                .min(Comparator.comparingInt(ProductVariant::getSortOrder))
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No active variant available for product ID: " + productId +
+                                ". The product may be out of stock or delisted."));
+
+        // 3. Add to cart via CartService (handles stock check + math engine)
+        Cart cart = cartService.addItemToCart(userId, defaultVariant.getId(), quantity);
 
         // 3. Remove from Wishlist
         wishlistRepository.delete(existedProductInWishlist);

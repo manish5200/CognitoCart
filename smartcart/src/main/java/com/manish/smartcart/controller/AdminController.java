@@ -49,13 +49,11 @@ public class AdminController {
     @ApiResponse(responseCode = "403", description = "Access Denied: Admin role required", content = @Content)
     @GetMapping("/stats")
     public ResponseEntity<?> getStats(
-            @RequestParam(name = "stockThreshold", defaultValue = AppConstants.LOW_STOCK_THRESHOLD
-                    + "") int stockThreshold,
             @RequestParam(name = "pageNumber", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNumber,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int pageSize) {
         // threshold: items with stock less than this
         // page/size: pagination for the Top Sellers list
-        DashboardResponse adminStats = adminService.getAdminStats(stockThreshold, pageNumber, pageSize);
+        DashboardResponse adminStats = adminService.getAdminStats(pageNumber, pageSize);
         if (adminStats.getTopSellingProducts().isEmpty()) {
             return ResponseEntity.status(HttpStatus.OK)
                     .body(Map.of("message", "There is no top selling product in the system"));
@@ -98,12 +96,10 @@ public class AdminController {
 
     /**
      * GET /api/v1/admin/analytics/customers
-     *
      * Real-world use cases:
      *  1. Marketing team pulls top=20 → runs VIP loyalty campaign for top spenders
      *  2. Retention team pulls churnAfterDays=45 → sends win-back coupons to at-risk customers
-     *  3. Frontend uses riskLevel (HOT/WARM/COLD) to colour-code the customer list dashboard
-     *
+     *  3. Frontend uses riskLevel (HOT/WARM/COLD) to color-code the customer list dashboard
      * Both params have sensible defaults so the endpoint works with zero query params.
      */
     @Operation(
@@ -122,7 +118,7 @@ public class AdminController {
 
     /**
      * GET /api/v1/admin/sellers/{sellerId}/analytics
-     *
+
      * Admin use cases:
      *  1. KYC Review: Before approving a seller, check their product return rates.
      *     A new seller with 40% CRITICAL products is a red flag.
@@ -130,7 +126,7 @@ public class AdminController {
      *     the admin can suspend their listing rights.
      *  3. Seller Support: When a seller raises a complaint, admin can
      *     pull their quality data to understand the full picture.
-     *
+
      * sellerId comes from the URL path — admin explicitly chooses which
      * seller to inspect. There is zero chance of a data leak between sellers.
      */

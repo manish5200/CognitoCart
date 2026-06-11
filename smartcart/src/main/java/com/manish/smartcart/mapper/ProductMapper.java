@@ -26,8 +26,9 @@ public class ProductMapper {
         productResponse.setDescription(product.getDescription());
         productResponse.setPrice(product.getPrice());
         productResponse.setDiscountPrice(product.getDiscountPrice());
-        productResponse.setSku(product.getSku());
-        productResponse.setStockQuantity(product.getStockQuantity());
+        // NOTE: sku and stockQuantity live on ProductVariant, not Product.
+        // The product response intentionally omits them at this layer.
+        // Variant-level detail is returned by GET /api/v1/products/{id}/variants
         productResponse.setAverageRating(product.getAverageRating());
         productResponse.setTotalReviews(product.getTotalReviews());
         // Copy into plain Java collections — CRITICAL for Redis serialization.
@@ -63,7 +64,8 @@ public class ProductMapper {
             product.setDiscountPrice(productRequest.getDiscountPrice());
         }
         product.setDescription(productRequest.getDescription());
-        product.setStockQuantity(productRequest.getStockQuantity());
+        // NOTE: stockQuantity lives on ProductVariant — NOT set here.
+        // ProductService.createProduct() will create the default variant separately.
         // Handle Images and Tags safely
         if (productRequest.getImageUrls() != null)
             product.setImageUrls(productRequest.getImageUrls());

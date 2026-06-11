@@ -14,8 +14,9 @@ import com.manish.smartcart.mapper.OrderMapper;
 import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.model.order.OrderItem;
 import com.manish.smartcart.model.product.Product;
+import com.manish.smartcart.model.product.ProductVariant;
 import com.manish.smartcart.repository.OrderRepository;
-import com.manish.smartcart.repository.ProductRepository;
+import com.manish.smartcart.repository.ProductVariantRepository;
 import com.manish.smartcart.service.CloudinaryService;
 import com.manish.smartcart.service.ReturnPolicyService;
 import com.manish.smartcart.service.notifications.OrderNotificationService;
@@ -54,7 +55,7 @@ import java.util.Map;
 public class OrderReturnService {
 
     private final OrderRepository orderRepository;
-    private final ProductRepository productRepository;
+    private final ProductVariantRepository productVariantRepository;
     private final OrderMapper orderMapper;
     private final OrderNotificationService  orderNotificationService;
     private final ReturnPolicyService returnPolicyService;
@@ -94,8 +95,12 @@ public class OrderReturnService {
 
         // Validate each item in the order
         for(OrderItem item : order.getOrderItems()) {
-            PolicySnapshot itemPolicy = resolvePolicy(item.getProduct(), policyMap, orderId);
-            validatePolicyForItem(item, itemPolicy, requestType, orderId);
+            // Navigate variant → product for the policy chain (product → category → default).
+            // If variant was hard-deleted, skip policy validation (edge case — order stays intact).
+            if (item.getVariant() == null) continue;
+            Product product = item.getVariant().getProduct();
+            PolicySnapshot itemPolicy = resolvePolicy(product, policyMap, orderId);
+            validatePolicyForItem(item, itemPolicy, requestType);
         }
 
         // Guard 8: Image proof enforcement
@@ -181,14 +186,18 @@ public class OrderReturnService {
     }
 
     private void validatePolicyForItem(OrderItem item, PolicySnapshot policy,
-                                       ReturnType requestType, Long orderId) {
-        Product product = item.getProduct();
+                                       ReturnType requestType) {
+        // Navigate variant → product for name lookups in error messages
+        // Fallback to snapshot name if variant was hard-deleted
+        String productName = (item.getVariant() != null && item.getVariant().getProduct() != null)
+                ? item.getVariant().getProduct().getProductName()
+                : item.getProductNameSnapshot(); // Always available — frozen at checkout
 
         if(policy == null){
             // No snapshot, no live fallback — only RETURN (refund) is permitted by safe default
             if (requestType != ReturnType.RETURN) {
                 throw new BusinessLogicException(
-                        "No return policy found for product '" + product.getProductName() +
+                        "No return policy found for product '" + productName +
                                 "'. Only RETURN (refund) is permitted by default.");
             }
             return;
@@ -199,7 +208,7 @@ public class OrderReturnService {
             LocalDateTime deadline = item.getOrder().getDeliveredAt().plusDays(policy.getReturnWindowDays());
             if(LocalDateTime.now().isAfter(deadline)){
                 throw new BusinessLogicException(
-                        "Return window expired for product '" + product.getProductName() +
+                        "Return window expired for product '" + productName +
                                 "'. You had " + policy.getReturnWindowDays() +
                                 " days from delivery. Deadline was: " + deadline);
             }
@@ -208,7 +217,7 @@ public class OrderReturnService {
         // Guard 6: Hard stop for NON_RETURNABLE
         if(policy.getPolicyType()  == PolicyType.NON_RETURNABLE){
             throw new BusinessLogicException(
-                    "Product '" + product.getProductName() +
+                    "Product '" + productName +
                             "' is not eligible for any post-purchase action " +
                             "(non-returnable as per seller's policy at time of purchase).");
         }
@@ -219,7 +228,7 @@ public class OrderReturnService {
                 if (!policy.isReturnAllowed()) {
                     throw new BusinessLogicException(
                             "Return (refund) is not available for product '" +
-                                    product.getProductName() + "'." + buildHint(policy));
+                                    productName + "'." + buildHint(policy));
                 }
             }
 
@@ -227,7 +236,7 @@ public class OrderReturnService {
                 if (!policy.isExchangeAllowed()) {
                     throw new BusinessLogicException(
                             "Exchange is not available for product '" +
-                                    product.getProductName() + "'." + buildHint(policy));
+                                    productName + "'." + buildHint(policy));
                 }
             }
 
@@ -235,22 +244,30 @@ public class OrderReturnService {
                 if(!policy.isReplacementAllowed()){
                     throw new BusinessLogicException(
                             "Replacement is not available for product '" +
-                                    product.getProductName() + "'." + buildHint(policy));
+                                    productName + "'." + buildHint(policy));
                 }
 
-                // Real-time stock check at request time
-                Product fresh = productRepository.findById(product.getId())
-                        .orElseThrow(() -> new ResourceNotFoundException(
-                                "Product no longer exists: " + product.getProductName()));
-
-                if(fresh.getStockQuantity() < item.getQuantity()){
-                    String hint =  policy.isReturnAllowed()
-                            ? " You may request a RETURN (refund) instead." : "";
-
+                // Real-time stock check at request time — stock lives on the VARIANT
+                if (item.getVariant() == null) {
                     throw new BusinessLogicException(
-                            "Replacement unavailable for '" + product.getProductName() +
-                                    "' — insufficient stock (requested: " + item.getQuantity() +
-                                    ", available: " + fresh.getStockQuantity() + ")." + hint);
+                            "Replacement unavailable — the variant for '" + productName +
+                                    "' no longer exists." +
+                                    (policy.isReturnAllowed() ? " You may request a RETURN (refund) instead." : ""));
+                }
+
+                ProductVariant freshVariant = productVariantRepository.findById(item.getVariant().getId())
+                        .orElseThrow(() -> new ResourceNotFoundException(
+                                "Variant no longer exists for: " + productName));
+
+                int available = freshVariant.getAvailableStock(); // stockQuantity - reservedQuantity
+                if(available < item.getQuantity()){
+                    String hint = policy.isReturnAllowed()
+                            ? " You may request a RETURN (refund) instead." : "";
+                    throw new BusinessLogicException(
+                            "Replacement unavailable for '" + productName +
+                                    "' (SKU: " + freshVariant.getSku() + ")" +
+                                    " — insufficient stock (requested: " + item.getQuantity() +
+                                    ", available: " + available + ")." + hint);
                 }
             }
         }
