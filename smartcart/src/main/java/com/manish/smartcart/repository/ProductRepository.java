@@ -47,9 +47,11 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
        // Get Top Selling Products (Custom JPQL) — Admin, global
        // Navigate via variant → product since OrderItem.product no longer exists
        @Query("SELECT i.variant.product, SUM(i.quantity) as totalSold " +
-                     "from OrderItem i " +
-                     "join i.order o " + // We 'Join' the Order table to check its status
-                     "WHERE o.orderStatus = 'DELIVERED' " + // The strictest, most accurate filter
+                     "FROM OrderItem i " +
+                     "JOIN i.order o " +
+                     "JOIN i.variant v " +        // REQUIRED: explicit JOIN prevents cross-join on multi-hop path
+                     "WHERE o.orderStatus = 'DELIVERED' " +
+                     "AND v IS NOT NULL " +        // Guard: skip orphaned items whose variant was hard-deleted
                      "GROUP BY i.variant.product " +
                      "ORDER BY totalSold DESC")
        List<Object[]> findToSellingProducts(Pageable pageable);

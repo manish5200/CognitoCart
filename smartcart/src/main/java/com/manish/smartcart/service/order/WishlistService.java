@@ -1,4 +1,4 @@
-package com.manish.smartcart.service;
+package com.manish.smartcart.service.order;
 
 import com.manish.smartcart.dto.cart.CartResponse;
 import com.manish.smartcart.dto.product.ProductResponse;
@@ -10,6 +10,7 @@ import com.manish.smartcart.model.product.ProductVariant;
 import com.manish.smartcart.model.user.Wishlist;
 import com.manish.smartcart.repository.*;
 import com.manish.smartcart.exception.ResourceNotFoundException;
+import com.manish.smartcart.service.CartService;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;

@@ -5,7 +5,7 @@ import com.manish.smartcart.dto.cart.CartResponse;
 import com.manish.smartcart.dto.product.ProductResponse;
 import com.manish.smartcart.dto.product.WishlistSummaryDTO;
 import com.manish.smartcart.exception.BusinessLogicException;
-import com.manish.smartcart.service.WishlistService;
+import com.manish.smartcart.service.order.WishlistService;
 import com.manish.smartcart.util.AppConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

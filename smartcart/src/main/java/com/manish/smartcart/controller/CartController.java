@@ -37,7 +37,7 @@ public class CartController {
         }
 
         // POST: Add item to cart
-        // Request Body: { "productId": 1, "quantity": 2 }
+        // Request Body: { "variantId": 5, "quantity": 2 }
         @Operation(summary = "Add item to cart", description = "Adds a product to the user's cart or updates quantity if already present.")
         @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Item added successfully"),

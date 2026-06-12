@@ -90,7 +90,7 @@ public class WebhookProcessingService {
         String eventType = json.getString("event");
 
         if("payment.captured".equals(eventType) || "order.paid".equals(eventType)){
-            JSONObject paymentEntity = json.getJSONObject(payload)
+            JSONObject paymentEntity = json.getJSONObject("payload")
                     .getJSONObject("payment")
                     .getJSONObject("entity");
 

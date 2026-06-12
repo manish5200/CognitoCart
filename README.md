@@ -1,225 +1,315 @@
-<div align="center">
+# CognitoCart — AI-Driven E-Commerce Backend API
 
-# 🛒 CognitoCart (Enterprise E-Commerce API)
-### **Distributed Systems · Event-Driven Architecture · AI Semantic Search · Observability**
+> **Production-grade Spring Boot 3 REST API** covering the complete e-commerce lifecycle:
+> Product Catalog → Cart → Checkout → Payment → Returns → AI Search → Analytics
 
-[![Java](https://img.shields.io/badge/Java_21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://openjdk.org/)
-[![Spring Boot](https://img.shields.io/badge/Spring_Boot_3.4-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL_pgvector-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Redis](https://img.shields.io/badge/Redis_Upstash-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://upstash.com/)
-[![RabbitMQ](https://img.shields.io/badge/RabbitMQ_CloudAMQP-FF6600?style=for-the-badge&logo=rabbitmq&logoColor=white)](https://www.rabbitmq.com/)
-[![OAuth2](https://img.shields.io/badge/OAuth_2.0-Google_Identity-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://developers.google.com/identity/protocols/oauth2)
-[![Grafana](https://img.shields.io/badge/Grafana_Alloy-F46800?style=for-the-badge&logo=grafana&logoColor=white)](https://grafana.com/)
-[![HuggingFace](https://img.shields.io/badge/HuggingFace_AI-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black)](https://huggingface.co/)
-
-> **Why This Project Stands Out:** Most portfolio projects stop at basic CRUD. CognitoCart tackles the brutal edge cases that define **real production systems** — surviving double-charge payment failures with **Redis idempotency locks**, decoupling heavy workloads via **RabbitMQ event streams**, preventing race conditions under high concurrency using **Pessimistic DB Locks**, and pioneering **Mathematical AI Search** using 384-dimensional vectors.
-
-[Core Architecture](#️-the-engineering) · [AI Features](#-ai--data-intelligence) · [System Capabilities](#-system-capabilities) · [Quick Start](#-quick-start-guide)
-
-</div>
+[![Java 17](https://img.shields.io/badge/Java-17-orange)](https://openjdk.org/projects/jdk/17/)
+[![Spring Boot 3.4](https://img.shields.io/badge/Spring%20Boot-3.4.1-brightgreen)](https://spring.io/projects/spring-boot)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-pgvector-blue)](https://github.com/pgvector/pgvector)
+[![Redis](https://img.shields.io/badge/Redis-Upstash-red)](https://upstash.com/)
+[![RabbitMQ](https://img.shields.io/badge/RabbitMQ-DLQ-orange)](https://www.rabbitmq.com/)
 
 ---
 
-## 🏗️ The Engineering (How it solves real problems)
+## 🏗️ Architecture Overview
 
-CognitoCart rejects simplified logic in favor of robust, distributed architecture. Here is exactly what it handles gracefully:
-
-### 🛡️ Transactional Integrity & Concurrency (Flash Sales)
-> **The Threat:** Two users click 'Checkout' on the last unit of a product simultaneously.
-> **The Solution:** **Pessimistic Locking (`SELECT FOR UPDATE`)** in PostgreSQL. The checkout flow mathematically locks the row, evaluates promotions, deducts stock, and generates the invoice within a single immutable `@Transactional` boundary, preventing race conditions entirely.
-
-### 💳 Webhook Idempotency & Resiliency
-> **The Threat:** A user's internet drops after paying, or Razorpay's webhook fires twice.
-> **The Solution:** Dual lifecycle modeling (`orderStatus` & `paymentStatus`) + a strictly **idempotent Redis `SETNX` lock layer**. An async DLQ processes HMAC-SHA256 verified webhooks — if a node fails mid-transaction, it retries safely without ever double-charging the customer.
-
-### 🚄 Zero-Memory Streaming (Seller Analytics)
-> **The Threat:** A seller requests a CSV export of 500,000 orders, crashing the JVM via Out-Of-Memory (OOM).
-> **The Solution:** Implemented **`StreamingResponseBody`** combined with a JPA cursor (Fetch Size: 500) and manual `EntityManager.detach()`. Data streams directly to the network socket, keeping JVM memory footprint perfectly flat regardless of file size.
-
-### 🔐 OAuth 2.0 Identity Server & Defenses
-> **The Threat:** Malicious actors attempting to bypass password restrictions via social login vector endpoints.
-> **The Solution:** A locked-down Spring Security filter chain tightly coupling **Google OAuth 2.0** profiles with internal accounts. It autonomously denies cross-hijacking attempts and issues dual-token JWTs securely.
-
----
-
-## 🤖 AI & Data Intelligence
-
-### Semantic Vector Search
-Traditional `LIKE '%keyword%'` search fails when users think in sentences. CognitoCart converts product descriptions into **384-dimensional mathematical vectors** via HuggingFace AI, storing them in PostgreSQL (`pgvector`). 
-
-**Real Proof — Zero Keyword Overlap:**
-
-| User Searches For | Top Result Returned | Why It Works |
-|---|---|---|
-| `"earphones for blocking noise while studying"` | Noise Cancelling Headphones | AI maps "earphones" → "headphones", "blocking noise" → "noise cancellation" |
-| `"something to brew hot drinks at the office"` | Espresso Coffee Machine | AI maps "brew hot drinks" → "espresso/coffee", "office" → "home-office" |
-| `"comfortable footwear for morning fitness routine"` | Running Shoes | AI maps "footwear" → "shoes", "fitness routine" → "marathon/jogging" |
-
-### AI Review Summarization
-Uses the **HuggingFace BART (Large CNN)** model to aggregate raw product review clusters into a single, high-impact sentiment summary (e.g. "Loved the bass, but the ear-tips are stiff"). Summaries are pre-computed by a **ShedLock-coordinated distributed background worker** for sub-millisecond retrieval.
-
-### Deep Financial Intelligence
-Admin and Seller dashboards powered by raw **JPQL Aggregate DTO Projections**. Calculates dynamic Customer Lifetime Value (CLV), Customer Churn Risk signals, and generates algorithmic "Product Quality Scores" based on return funnel metrics — providing actionable business intelligence natively.
-
----
-
-## ✨ System Capabilities
-
-<details open>
-<summary><b>B2B / B2C Operations</b></summary>
-<br>
-
-- **Multi-Tenant Scopes:** `ADMIN`, `SELLER`, and `CUSTOMER` endpoint isolation with role-restricted payloads.
-- **Dynamic Pricing Engine:** 5-stage checkout pipeline — Base Price → Coupon Validation → BOGO/Category Discounts → Delivery Offset → Net Payable.
-- **Seller KYC Pipeline:** Approval lifecycle for third-party sellers, gated by global Admins.
-- **Wishlist Intelligence:** Autonomous scheduler cross-referencing wishlists against active sales, sending personalised HTML digest emails.
-
-</details>
-
-<details open>
-<summary><b>Performance & Scale</b></summary>
-<br>
-
-- **OOM-Protected APIs:** Aggressive Spring Data `Pageable` enforcement across product catalogs and heavy order repositories.
-- **Sub-Millisecond Caching:** `@Cacheable` directives tied to **Upstash Redis**, dramatically offloading product and category DB reads with native eviction triggers.
-- **DDoS Mitigation:** Per-IP Token Bucket rate limiting via **Bucket4j** built into the Spring Security filter chain.
-- **Cloud Content Delivery:** Direct binary integration with the **Cloudinary CDN** — zero local disk dependency.
-
-</details>
-
-<details open>
-<summary><b>Automated Logistics</b></summary>
-<br>
-
-- **Instant Refund Processing:** Cancellation protocols invoke Razorpay's Reversal API and dispatch `rfnd_XXXXX` receipts automatically.
-- **Dynamic PDF Invoices:** On-the-fly PDF generation via **iText7** — GSTIN variables, zebra-striped tables, mathematical delivery dates.
-- **State Machine Enforcement:** Shipments are forced through `PLACED → SHIPPED → OUT_FOR_DELIVERY` — illegal backward state transitions are rejected at the API layer.
-
-</details>
-
----
-
-## 🗺️ System Architecture
-
-```mermaid
-graph TD
-    Client((Client App)) --> RL[⚙️ Bucket4j Rate Limiter]
-    RL --> JWT[🔒 JWT / OAuth2 Auth]
-    JWT --> API[REST Controllers]
-
-    API --> SVC[Service Layer]
-    API -->|OrderPaidEvent| MQ[🐇 RabbitMQ CloudAMQP]
-
-    SVC <--> Cache[(⚡ Upstash Redis)]
-    SVC <--> DB[(🐘 PostgreSQL + pgvector + ShedLock)]
-    SVC --> AI[🤖 HuggingFace Embeddings API]
-
-    MQ -->|async consumer| Worker[📦 OrderRabbitListener]
-    Worker --> PDF[iText7 PDF Engine]
-    Worker --> Email[Gmail SMTP]
-
-    AI -->|float384 vector| DB
-    DB -->|Cosine Similarity| SEARCH[Semantic Search Results]
-    DB -.->|Distributed Lock| SCHED[4x ShedLock Schedulers]
+```
+Client (Postman / Frontend)
+        │
+        ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     Spring Boot API                          │
+│                                                             │
+│  ┌──────────┐   ┌──────────┐   ┌──────────┐  ┌──────────┐ │
+│  │  Auth    │   │ Products │   │   Cart   │  │  Orders  │ │
+│  │ JWT+OTP  │   │ Variants │   │ PG+Redis │  │ Checkout │ │
+│  │ Google   │   │ pgvector │   │ GuestTTL │  │ Razorpay │ │
+│  └──────────┘   └──────────┘   └──────────┘  └──────────┘ │
+│                                                             │
+│  ┌──────────┐   ┌──────────┐   ┌──────────┐  ┌──────────┐ │
+│  │ Returns  │   │Analytics │   │   Infra  │  │ Async    │ │
+│  │ Policy   │   │ CLV/Churn│   │ Bucket4j │  │ RabbitMQ │ │
+│  │ Snapshot │   │ CSV/Dash │   │ ShedLock │  │ Invoice  │ │
+│  └──────────┘   └──────────┘   └──────────┘  └──────────┘ │
+└─────────────────────────────────────────────────────────────┘
+        │                           │
+        ▼                           ▼
+   PostgreSQL                    Redis
+   + pgvector                  (Upstash)
 ```
 
 ---
 
-## 💻 Tech Stack
+## 🚀 Technology Stack
 
 | Layer | Technology | Purpose |
 |---|---|---|
-| **Runtime** | Java 21 / Spring Boot 3.4 | LTS stability, Virtual Threads readiness |
-| **Database** | PostgreSQL + pgvector | ACID transactions + vector similarity search |
-| **Message Broker** | RabbitMQ (CloudAMQP) + DLQ | Async event-driven PDF & email processing, zero message loss |
-| **Distributed Lock** | ShedLock + JDBC | Safe multi-instance scheduler coordination |
-| **AI Embeddings** | HuggingFace `all-MiniLM-L6-v2` | Semantic text embeddings |
-| **Migrations** | Flyway | Deterministic, version-controlled schema evolution |
-| **Cache & State** | Upstash Redis | JWT blacklists, OTPs, idempotency locks, read caching |
-| **Payments** | Razorpay SDK | Orders, webhooks, instant refunds |
-| **Observability** | Micrometer + Prometheus + Grafana | 200+ live metrics — JVM, DB pool, RabbitMQ, HTTP latency |
+| Framework | Spring Boot 3.4.1 | Core API |
+| Language | Java 17 | Records, Sealed classes, Text Blocks |
+| Database | PostgreSQL + pgvector | Relational data + vector similarity search |
+| Cache | Redis (Upstash) | Guest carts (TTL), Product caching, Rate limit buckets |
+| ORM | Spring Data JPA + Hibernate 6 | `@SoftDelete`, `@Lock`, `@QueryHints` |
+| Migrations | Flyway | Versioned schema migrations |
+| Security | Spring Security + JWT (jjwt 0.12.6) | Stateless auth |
+| OAuth2 | Google Sign-In | Social login |
+| Payments | Razorpay | Payment gateway + webhook |
+| Messaging | RabbitMQ | Async invoice + DLQ pattern |
+| Email | Spring Mail + HTML templates | Transactional emails |
+| PDF | iText 7 | Invoice generation |
+| CDN | Cloudinary | Product image upload/delete |
+| AI Embeddings | HuggingFace API | 384-dim semantic search vectors |
+| Rate Limiting | Bucket4j + Redis | Per-IP token bucket |
+| Distributed Lock | ShedLock + PostgreSQL | Prevents duplicate scheduler execution |
+| Observability | Micrometer + Prometheus + Actuator | Metrics, health checks |
+| API Docs | SpringDoc OpenAPI 3 | Swagger UI |
 
 ---
 
-## 🚀 Quick Start Guide
+## 📦 Module Structure
 
-### 1. Prerequisites
-- **Java 21+**, **Maven 3.8+**
-- **PostgreSQL** (with `pgvector` extension installed)
-- **Redis** (Upstash free tier works)
-- **HuggingFace** free account for semantic search
-- **Google Cloud Console** (OAuth2 Web Client Credentials)
-
-### 2. Install pgvector (Required for AI Search)
-```sql
--- Run as PostgreSQL superuser (postgres) in pgAdmin:
-CREATE EXTENSION IF NOT EXISTS vector;
+```
+src/main/java/com/manish/smartcart/
+├── config/              # Security, Redis, RabbitMQ, ShedLock, Cloudinary, Swagger
+│   ├── SecurityConfig.java         # JWT filter chain, CORS, OAuth2, Rate limit
+│   ├── RabbitMQConfig.java         # Main queue + DLQ + TopicExchange
+│   ├── RedisConfig.java            # Cache + Guest cart (Jackson serializer)
+│   └── ShedLockConfig.java         # Distributed scheduler lock
+├── controller/          # 15 REST controllers (no business logic)
+├── service/             # 29 services (all business logic)
+│   ├── order/           # OrderService, OrderReturnService, ReturnAdminService
+│   ├── email/           # EmailTemplateBuilder (premium HTML)
+│   └── notifications/   # OrderNotificationService
+├── model/               # JPA entities
+│   ├── product/         # Product, ProductVariant, Category, ProductInsights
+│   ├── order/           # Order, OrderItem, Coupon, Shipment
+│   ├── cart/            # Cart, CartItem, GuestCart, GuestCartItem
+│   └── user/            # Users, Wishlist, Address, SellerProfile
+├── repository/          # Spring Data JPA repositories (custom JPQL)
+├── dto/                 # Request/Response DTOs
+├── mapper/              # OrderMapper, ProductMapper, ReviewMapper
+├── scheduler/           # ShedLock-protected batch jobs
+├── exception/           # Global @ControllerAdvice
+└── util/                # VectorAttributeConverter, AppConstants, FileValidator
 ```
 
-### 3. Clone & Configure
+---
+
+## 🔑 Core Domain Concepts
+
+### 1. Product → Variant Architecture
+```
+Product (Marketing Shell)
+├── productName, description, slug, tags, price (base)
+├── averageRating, totalReviews, imageUrls
+└── ProductVariant[] (purchasable SKUs)
+    ├── sku, barcode
+    ├── attributes: { "Size": "L", "Color": "Red" }
+    ├── stockQuantity, reservedQuantity
+    ├── priceModifier (delta applied to base price)
+    └── availableStock = stockQuantity - reservedQuantity
+```
+
+> **Rule:** Every Product auto-creates a default `{Type: Standard}` variant on creation.
+> Cart and Checkout always work with `variantId` — never `productId`.
+
+### 2. OrderItem — Dual-Layer Design
+```
+OrderItem
+├── LIVE REFERENCE (nullable)
+│   └── variant → ProductVariant (for stock ops, null if deleted)
+│
+└── IMMUTABLE SNAPSHOTS (frozen at checkout)
+    ├── productNameSnapshot   → "Nike Air Max 90"
+    ├── skuSnapshot           → "NIKE-AIR-L-RED"
+    ├── variantLabelSnapshot  → "Navy Blue / UK 9"
+    ├── priceAtPurchase       → 4999.00
+    └── imageUrlSnapshot      → "https://cdn.../nike.jpg"
+```
+
+> Even if the seller renames the product or deletes the variant tomorrow,
+> every invoice remains 100% accurate.
+
+### 3. Cart Math Engine (`CartService.updateCartTotal`)
+```
+Gross Subtotal = Σ (priceAtAdding × quantity)
+      ↓
+Promotion Engine (FLAT / PERCENT / BOGO / FREE_SHIPPING)
+      ↓
+Net Subtotal = Gross - Discount
+      ↓
+Delivery Fee = Net < ₹599 ? ₹50 : ₹0  (overridden by FREE_SHIPPING coupon)
+      ↓
+Final Total = Net + Delivery
+```
+
+### 4. Checkout — Race Condition Protection
+```
+For each CartItem:
+  1. SELECT * FROM product_variants WHERE id = ? FOR UPDATE  ← BLOCKS second thread
+  2. Re-read availableStock = stockQuantity - reservedQuantity
+  3. If insufficient → throw InsufficientStockException
+  4. Deduct stockQuantity
+  5. Freeze 5 snapshots → OrderItem
+```
+
+### 5. Return Policy Chain of Responsibility
+```
+getApplicablePolicy(product):
+  1. Check product-level ReturnPolicy → if found, return it
+  2. Check category-level ReturnPolicy → if found, return it
+  3. Default → NON_RETURNABLE (never throws NPE)
+
+→ Snapshot serialized as JSONB into Order.returnPolicySnapshot at checkout
+→ Customer rights frozen at purchase time even if seller changes policy
+```
+
+### 6. Semantic AI Search Flow
+```
+User query: "earphones for studying in a noisy café"
+     ↓
+EmbeddingService → HuggingFace API → float[384] vector
+     ↓
+VectorAttributeConverter → "[0.021,-0.455,...]"
+     ↓
+ProductRepository.findBySimilarity():
+  SELECT * FROM products
+  WHERE embedding IS NOT NULL
+  ORDER BY embedding <=> CAST(:queryVector AS vector)
+  LIMIT :limit
+     ↓
+Returns: "Noise Cancelling Headphones" (0 keyword overlap)
+```
+
+---
+
+## 🌐 API Reference (Key Endpoints)
+
+### Authentication
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/api/v1/auth/register` | Public | Register + OTP email |
+| POST | `/api/v1/auth/login` | Public | JWT + Refresh token |
+| POST | `/api/v1/auth/verify-otp` | Public | Email verification |
+| POST | `/api/v1/auth/refresh-token` | Public | Rotate access token |
+| GET | `/oauth2/authorization/google` | Public | Google OAuth2 login |
+
+### Products & Search
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| GET | `/api/v1/products` | Public | Paginated catalog |
+| GET | `/api/v1/products/{slug}` | Public | Product detail (cached) |
+| GET | `/api/v1/products/search` | Public | Filter (price, rating, category) |
+| GET | `/api/v1/products/search/semantic?q=...` | Public | AI semantic search |
+| POST | `/api/v1/products` | SELLER | Create product + default variant |
+| GET | `/api/v1/products/{productId}/return-policy` | Public | Live policy chain |
+
+### Cart (Authenticated)
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/api/v1/cart/add` | USER | Add variant to cart (body: variantId, quantity) |
+| GET | `/api/v1/cart/summary` | USER | Full cart with totals |
+| DELETE | `/api/v1/cart/item/{variantId}` | USER | Remove specific variant |
+| POST | `/api/v1/cart/apply-coupon?code=...` | USER | Apply promo code |
+
+### Guest Cart (No Auth)
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/api/v1/guest-cart/{sessionId}/add` | Public | Add to Redis guest cart |
+| GET | `/api/v1/guest-cart/{sessionId}` | Public | View guest cart |
+| POST | `/api/v1/guest-cart/{sessionId}/merge` | USER | Merge on login |
+
+### Orders & Checkout
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/api/v1/orders/checkout` | USER | Place order → Razorpay ID |
+| GET | `/api/v1/orders/my` | USER | Paginated order history |
+| DELETE | `/api/v1/orders/{orderId}/cancel` | USER | Cancel + refund + restore stock |
+| POST | `/api/v1/orders/{orderId}/return` | USER | Return/replacement/exchange request |
+
+### Payments
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/api/v1/payments/verify` | Public | Frontend payment confirmation |
+| POST | `/api/v1/payments/webhook` | Public | Razorpay server-to-server webhook |
+
+### Admin
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| GET | `/api/v1/admin/dashboard` | ADMIN | Revenue, low stock, top products, trend |
+| GET | `/api/v1/admin/analytics/clv` | ADMIN | Customer Lifetime Value |
+| GET | `/api/v1/admin/analytics/churn` | ADMIN | Churn risk customers |
+| GET | `/api/v1/admin/analytics/category-revenue` | ADMIN | Category performance |
+
+---
+
+## ⚙️ Running Locally
+
+### Prerequisites
+- Java 17+
+- PostgreSQL with `pgvector` extension enabled
+- Redis instance
+- RabbitMQ broker
+
+### Setup
 ```bash
+# Clone
 git clone https://github.com/manish5200/CognitoCart.git
-cd CognitoCart/smartcart
+cd cognitocart/smartcart
 
-# Create the database
-psql -U postgres -c "CREATE DATABASE cognitocart;"
-```
+# Configure application.properties or set environment variables:
+# SPRING_DATASOURCE_URL, REDIS_URL, RABBITMQ_HOST
+# RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET
+# CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
+# HUGGINGFACE_API_KEY
+# SPRING_MAIL_USERNAME, SPRING_MAIL_PASSWORD
 
-Copy `application-demo.yml` → `application.yml` and explicitly define your credentials:
-- PostgreSQL Connection Details
-- Redis (Upstash) URL
-- Gmail SMTP App Password
-- HuggingFace API Token
-- **Google Client ID & Secret** for OAuth2 Authorization
-
-### 4. Run & Explore
-```bash
+# Run
 ./mvnw spring-boot:run
 ```
-> Flyway will forcefully execute **20+ migrations** to map relations, inject pgvector structures, build the Category tree, and establish your default Admin account prior to Tomcat startup.
 
-Navigate directly to **`http://localhost:8080/swagger-ui.html`** to test your endpoints. Or, test the new Google OAuth2 implementation natively through your browser by visiting: `http://localhost:8080/oauth2/authorization/google`
+### Docker Compose (PostgreSQL + Redis + RabbitMQ)
+```bash
+docker-compose up -d
+```
 
----
+### API Documentation
+Visit: `http://localhost:8080/swagger-ui/index.html`
 
-## 🛣️ Engineering Roadmap
-
-<details>
-<summary><b>✅ Completed Phases (1 → 4.3)</b></summary>
-
-- **Phase 1 — Auth Hardening:** Redis JWT Blacklists · Pessimistic Stock Locks · Secure OTP verification
-- **Phase 2 — Fulfillment:** Razorpay refunds · iText7 PDF invoices · Logistical state machines
-- **Phase 3 — Scale:** Cloudinary CDN · Advanced JPQL analytics · Seller dashboards
-- **Phase 3.5 — Operations:** DLQs for failed webhooks · Guest-to-User cart migrations
-- **Phase 3.9 — Pre-AI:** Global `@SoftDelete` · Idempotency Locks · BOGO Engine · Wishlist HTML Schedulers
-- **Phase 4.1 — Semantic Search ✅:** pgvector + HuggingFace AI embeddings · Cosine similarity search
-- **Phase 4.3 — AI Review Summarization ✅:** HuggingFace BART Large CNN · Background `@Scheduled` workers · `ProductInsights` engine
-
-</details>
-
-**Phase 5 — Cloud & DevOps ☁️**
-- [x] **Distributed Schedulers ✅:** `ShedLock` + PostgreSQL ACID locking across 4 background jobs in multi-instance deployments.
-- [x] **Event-Driven Architecture ✅:** RabbitMQ (CloudAMQP) decouples PDF invoice generation & email dispatch — response time dropped from ~4s to <50ms. Dead Letter Queue (DLQ) ensures zero message loss.
-- [x] **Observability ✅:** Micrometer + Prometheus + Grafana Cloud — 200+ live metrics scraped every 15s via Grafana Alloy with live dashboards.
-- [x] **Enterprise Exception Hierarchy ✅:** `@RestControllerAdvice` standardization across logic boundaries (explicitly throwing ResourceNotFound, InsufficientStock algorithms).
-
-**Phase 7 — Advanced Analytics & Infrastructure Hardening 📊**
-- [x] **High-Performance Streaming ✅:** `StreamingResponseBody` + OpenCSV + `TransactionTemplate` for zero-memory background data exports.
-- [x] **Async Security Propagation ✅:** `RequestAttributeSecurityContextRepository` integration for safe user identity inheritance in Tomcat async dispatches.
-- [ ] **Logistics Webhooks:** Carrier status sync (In-Progress).
+### Metrics
+Visit: `http://localhost:8080/actuator/prometheus`
 
 ---
 
-## 👨‍💻 Primary Architect
+## 🔒 Security Model
 
-**Manish Kumar Singh**  
-*Backend Systems Engineer · Java · Spring Boot · AI Integration · Distributed Systems*
+| Layer | Mechanism |
+|---|---|
+| Auth | Stateless JWT (HS256, 15min expiry) + Refresh Token (30d, Redis blacklist) |
+| Rate Limit | Bucket4j token bucket per IP — 20 req/10s (Redis-backed for cluster) |
+| RBAC | Spring `@PreAuthorize("hasRole('SELLER')")` — method-level security |
+| Input | `@Valid` + Bean Validation on all DTOs |
+| Passwords | BCrypt (strength 10) |
+| Payments | Razorpay HMAC-SHA256 signature verification |
+| Upload | `FileValidator` checks MIME type + extension + size before Cloudinary |
 
-I engineer resilient software capable of surviving heavy load and dynamic scaling requirements. CognitoCart demonstrates the full spectrum — from raw PostgreSQL schema design and distributed transaction management, to integrating live AI embeddings and asynchronous event-driven architectures.
+---
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/maniish5200/)
-[![GitHub](https://img.shields.io/badge/GitHub-Follow-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/manish5200)
+## 🧪 Scheduled Jobs
 
-<div align="center">
-  <sub>⭐ Star this repo if you appreciate rigorous, production-grade software engineering!</sub>
-</div>
+| Job | Schedule | ShedLock? | Purpose |
+|---|---|---|---|
+| `OrderCleanupScheduler` | Every 5 min | ✅ | Cancel stale PAYMENT_PENDING orders > 15min |
+| `CartAbandonmentJob` | Daily 10 PM | ✅ | Email users with items left in cart |
+| `ReviewSummarizationScheduler` | Daily 3 AM | ✅ | AI batch summary of all product reviews |
+| `WishlistConversionScheduler` | Daily 2 AM | ✅ | Price-drop email alerts (14-day cooldown) |
+
+---
+
+## 📊 Analytics Capabilities
+
+- **Revenue:** Total + daily trend (last 7 days) + per-seller breakdown
+- **Inventory:** Low stock alerts per variant (threshold configurable per SKU)
+- **Products:** Top selling globally (Admin) + per seller
+- **Customers:** CLV ranking · Churn risk detection
+- **Returns:** Return reason distribution · Defect matrix per product
+- **Exports:** Seller analytics CSV export (streaming, memory-safe)
