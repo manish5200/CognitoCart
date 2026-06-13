@@ -85,7 +85,8 @@ public class SecurityConfig {
                                         "/swagger-ui/**",            // API documentation UI
                                         "/swagger-ui.html",
                                         "/v3/api-docs/**",           // OpenAPI spec JSON
-                                        "/actuator/**"               // Health, metrics, Prometheus scrape
+                                        "/actuator/**" ,              // Health, metrics, Prometheus scrape
+                                        "/api/v1/products/*/variants"
                                 )
                                 .permitAll()
 
