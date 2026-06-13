@@ -42,26 +42,26 @@ Client (Postman / Frontend)
 
 ## 🚀 Technology Stack
 
-| Layer | Technology | Purpose |
-|---|---|---|
-| Framework | Spring Boot 3.4.1 | Core API |
-| Language | Java 17 | Records, Sealed classes, Text Blocks |
-| Database | PostgreSQL + pgvector | Relational data + vector similarity search |
-| Cache | Redis (Upstash) | Guest carts (TTL), Product caching, Rate limit buckets |
-| ORM | Spring Data JPA + Hibernate 6 | `@SoftDelete`, `@Lock`, `@QueryHints` |
-| Migrations | Flyway | Versioned schema migrations |
-| Security | Spring Security + JWT (jjwt 0.12.6) | Stateless auth |
-| OAuth2 | Google Sign-In | Social login |
-| Payments | Razorpay | Payment gateway + webhook |
-| Messaging | RabbitMQ | Async invoice + DLQ pattern |
-| Email | Spring Mail + HTML templates | Transactional emails |
-| PDF | iText 7 | Invoice generation |
-| CDN | Cloudinary | Product image upload/delete |
-| AI Embeddings | HuggingFace API | 384-dim semantic search vectors |
-| Rate Limiting | Bucket4j + Redis | Per-IP token bucket |
-| Distributed Lock | ShedLock + PostgreSQL | Prevents duplicate scheduler execution |
-| Observability | Micrometer + Prometheus + Actuator | Metrics, health checks |
-| API Docs | SpringDoc OpenAPI 3 | Swagger UI |
+| Layer            | Technology                          | Purpose                                                |
+| ---------------- | ----------------------------------- | ------------------------------------------------------ |
+| Framework        | Spring Boot 3.4.1                   | Core API                                               |
+| Language         | Java 17                             | Records, Sealed classes, Text Blocks                   |
+| Database         | PostgreSQL + pgvector               | Relational data + vector similarity search             |
+| Cache            | Redis (Upstash)                     | Guest carts (TTL), Product caching, Rate limit buckets |
+| ORM              | Spring Data JPA + Hibernate 6       | `@SoftDelete`, `@Lock`, `@QueryHints`                  |
+| Migrations       | Flyway                              | Versioned schema migrations                            |
+| Security         | Spring Security + JWT (jjwt 0.12.6) | Stateless auth                                         |
+| OAuth2           | Google Sign-In                      | Social login                                           |
+| Payments         | Razorpay                            | Payment gateway + webhook                              |
+| Messaging        | RabbitMQ                            | Async invoice + DLQ pattern                            |
+| Email            | Spring Mail + HTML templates        | Transactional emails                                   |
+| PDF              | iText 7                             | Invoice generation                                     |
+| CDN              | Cloudinary                          | Product image upload/delete                            |
+| AI Embeddings    | HuggingFace API                     | 384-dim semantic search vectors                        |
+| Rate Limiting    | Bucket4j + Redis                    | Per-IP token bucket                                    |
+| Distributed Lock | ShedLock + PostgreSQL               | Prevents duplicate scheduler execution                 |
+| Observability    | Micrometer + Prometheus + Actuator  | Metrics, health checks                                 |
+| API Docs         | SpringDoc OpenAPI 3                 | Swagger UI                                             |
 
 ---
 
@@ -97,6 +97,7 @@ src/main/java/com/manish/smartcart/
 ## 🔑 Core Domain Concepts
 
 ### 1. Product → Variant Architecture
+
 ```
 Product (Marketing Shell)
 ├── productName, description, slug, tags, price (base)
@@ -113,6 +114,7 @@ Product (Marketing Shell)
 > Cart and Checkout always work with `variantId` — never `productId`.
 
 ### 2. OrderItem — Dual-Layer Design
+
 ```
 OrderItem
 ├── LIVE REFERENCE (nullable)
@@ -130,6 +132,7 @@ OrderItem
 > every invoice remains 100% accurate.
 
 ### 3. Cart Math Engine (`CartService.updateCartTotal`)
+
 ```
 Gross Subtotal = Σ (priceAtAdding × quantity)
       ↓
@@ -143,6 +146,7 @@ Final Total = Net + Delivery
 ```
 
 ### 4. Checkout — Race Condition Protection
+
 ```
 For each CartItem:
   1. SELECT * FROM product_variants WHERE id = ? FOR UPDATE  ← BLOCKS second thread
@@ -153,6 +157,7 @@ For each CartItem:
 ```
 
 ### 5. Return Policy Chain of Responsibility
+
 ```
 getApplicablePolicy(product):
   1. Check product-level ReturnPolicy → if found, return it
@@ -164,6 +169,7 @@ getApplicablePolicy(product):
 ```
 
 ### 6. Semantic AI Search Flow
+
 ```
 User query: "earphones for studying in a noisy café"
      ↓
@@ -185,72 +191,91 @@ Returns: "Noise Cancelling Headphones" (0 keyword overlap)
 ## 🌐 API Reference (Key Endpoints)
 
 ### Authentication
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| POST | `/api/v1/auth/register` | Public | Register + OTP email |
-| POST | `/api/v1/auth/login` | Public | JWT + Refresh token |
-| POST | `/api/v1/auth/verify-otp` | Public | Email verification |
-| POST | `/api/v1/auth/refresh-token` | Public | Rotate access token |
-| GET | `/oauth2/authorization/google` | Public | Google OAuth2 login |
+
+| Method | Endpoint                       | Auth   | Description          |
+| ------ | ------------------------------ | ------ | -------------------- |
+| POST   | `/api/v1/auth/register`        | Public | Register + OTP email |
+| POST   | `/api/v1/auth/login`           | Public | JWT + Refresh token  |
+| POST   | `/api/v1/auth/verify-otp`      | Public | Email verification   |
+| POST   | `/api/v1/auth/refresh-token`   | Public | Rotate access token  |
+| GET    | `/oauth2/authorization/google` | Public | Google OAuth2 login  |
 
 ### Products & Search
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| GET | `/api/v1/products` | Public | Paginated catalog |
-| GET | `/api/v1/products/{slug}` | Public | Product detail (cached) |
-| GET | `/api/v1/products/search` | Public | Filter (price, rating, category) |
-| GET | `/api/v1/products/search/semantic?q=...` | Public | AI semantic search |
-| POST | `/api/v1/products` | SELLER | Create product + default variant |
-| GET | `/api/v1/products/{productId}/return-policy` | Public | Live policy chain |
+
+| Method | Endpoint                                     | Auth   | Description                      |
+| ------ | -------------------------------------------- | ------ | -------------------------------- |
+| GET    | `/api/v1/products`                           | Public | Paginated catalog                |
+| GET    | `/api/v1/products/{slug}`                    | Public | Product detail (cached)          |
+| GET    | `/api/v1/products/search`                    | Public | Filter (price, rating, category) |
+| GET    | `/api/v1/products/search/semantic?q=...`     | Public | AI semantic search               |
+| POST   | `/api/v1/products`                           | SELLER | Create product + default variant |
+| GET    | `/api/v1/products/{productId}/return-policy` | Public | Live policy chain                |
+
+### Product Variants (Multi-SKU)
+
+| Method | Endpoint                                            | Auth           | Description                                 |
+| ------ | --------------------------------------------------- | -------------- | ------------------------------------------- |
+| GET    | `/api/v1/products/{id}/variants`                    | Public         | Fetch all active sizes/colors for catalog   |
+| POST   | `/api/v1/products/{id}/variants`                    | SELLER         | Add a new variant SKU to a product          |
+| PUT    | `/api/v1/products/{id}/variants/{vId}`              | SELLER         | Update stock and price modifier             |
+| PATCH  | `/api/v1/products/{id}/variants/{vId}/status`       | SELLER / ADMIN | Soft delete / toggle SKU availability       |
+| POST   | `/api/v1/products/{id}/variants/{vId}/upload-image` | SELLER         | Upload SKU-specific image to Cloudinary CDN |
 
 ### Cart (Authenticated)
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| POST | `/api/v1/cart/add` | USER | Add variant to cart (body: variantId, quantity) |
-| GET | `/api/v1/cart/summary` | USER | Full cart with totals |
-| DELETE | `/api/v1/cart/item/{variantId}` | USER | Remove specific variant |
-| POST | `/api/v1/cart/apply-coupon?code=...` | USER | Apply promo code |
+
+| Method | Endpoint                             | Auth | Description                                     |
+| ------ | ------------------------------------ | ---- | ----------------------------------------------- |
+| POST   | `/api/v1/cart/add`                   | USER | Add variant to cart (body: variantId, quantity) |
+| GET    | `/api/v1/cart/summary`               | USER | Full cart with totals                           |
+| DELETE | `/api/v1/cart/item/{variantId}`      | USER | Remove specific variant                         |
+| POST   | `/api/v1/cart/apply-coupon?code=...` | USER | Apply promo code                                |
 
 ### Guest Cart (No Auth)
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| POST | `/api/v1/guest-cart/{sessionId}/add` | Public | Add to Redis guest cart |
-| GET | `/api/v1/guest-cart/{sessionId}` | Public | View guest cart |
-| POST | `/api/v1/guest-cart/{sessionId}/merge` | USER | Merge on login |
+
+| Method | Endpoint                               | Auth   | Description             |
+| ------ | -------------------------------------- | ------ | ----------------------- |
+| POST   | `/api/v1/guest-cart/{sessionId}/add`   | Public | Add to Redis guest cart |
+| GET    | `/api/v1/guest-cart/{sessionId}`       | Public | View guest cart         |
+| POST   | `/api/v1/guest-cart/{sessionId}/merge` | USER   | Merge on login          |
 
 ### Orders & Checkout
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| POST | `/api/v1/orders/checkout` | USER | Place order → Razorpay ID |
-| GET | `/api/v1/orders/my` | USER | Paginated order history |
-| DELETE | `/api/v1/orders/{orderId}/cancel` | USER | Cancel + refund + restore stock |
-| POST | `/api/v1/orders/{orderId}/return` | USER | Return/replacement/exchange request |
+
+| Method | Endpoint                          | Auth | Description                         |
+| ------ | --------------------------------- | ---- | ----------------------------------- |
+| POST   | `/api/v1/orders/checkout`         | USER | Place order → Razorpay ID           |
+| GET    | `/api/v1/orders/my`               | USER | Paginated order history             |
+| DELETE | `/api/v1/orders/{orderId}/cancel` | USER | Cancel + refund + restore stock     |
+| POST   | `/api/v1/orders/{orderId}/return` | USER | Return/replacement/exchange request |
 
 ### Payments
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| POST | `/api/v1/payments/verify` | Public | Frontend payment confirmation |
-| POST | `/api/v1/payments/webhook` | Public | Razorpay server-to-server webhook |
+
+| Method | Endpoint                   | Auth   | Description                       |
+| ------ | -------------------------- | ------ | --------------------------------- |
+| POST   | `/api/v1/payments/verify`  | Public | Frontend payment confirmation     |
+| POST   | `/api/v1/payments/webhook` | Public | Razorpay server-to-server webhook |
 
 ### Admin
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| GET | `/api/v1/admin/dashboard` | ADMIN | Revenue, low stock, top products, trend |
-| GET | `/api/v1/admin/analytics/clv` | ADMIN | Customer Lifetime Value |
-| GET | `/api/v1/admin/analytics/churn` | ADMIN | Churn risk customers |
-| GET | `/api/v1/admin/analytics/category-revenue` | ADMIN | Category performance |
+
+| Method | Endpoint                                   | Auth  | Description                             |
+| ------ | ------------------------------------------ | ----- | --------------------------------------- |
+| GET    | `/api/v1/admin/dashboard`                  | ADMIN | Revenue, low stock, top products, trend |
+| GET    | `/api/v1/admin/analytics/clv`              | ADMIN | Customer Lifetime Value                 |
+| GET    | `/api/v1/admin/analytics/churn`            | ADMIN | Churn risk customers                    |
+| GET    | `/api/v1/admin/analytics/category-revenue` | ADMIN | Category performance                    |
 
 ---
 
 ## ⚙️ Running Locally
 
 ### Prerequisites
+
 - Java 17+
 - PostgreSQL with `pgvector` extension enabled
 - Redis instance
 - RabbitMQ broker
 
 ### Setup
+
 ```bash
 # Clone
 git clone https://github.com/manish5200/CognitoCart.git
@@ -268,40 +293,50 @@ cd cognitocart/smartcart
 ```
 
 ### Docker Compose (PostgreSQL + Redis + RabbitMQ)
+
 ```bash
 docker-compose up -d
 ```
 
 ### API Documentation
+
+The entire API is documented and testable via SpringDoc OpenAPI 3.
 Visit: `http://localhost:8080/swagger-ui/index.html`
 
+<br>
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/0856ec28-129a-4f67-ac04-cce202e590c4" alt="Swagger UI Screenshot" width="800">
+</div>
+
 ### Metrics
+
 Visit: `http://localhost:8080/actuator/prometheus`
 
 ---
 
 ## 🔒 Security Model
 
-| Layer | Mechanism |
-|---|---|
-| Auth | Stateless JWT (HS256, 15min expiry) + Refresh Token (30d, Redis blacklist) |
-| Rate Limit | Bucket4j token bucket per IP — 20 req/10s (Redis-backed for cluster) |
-| RBAC | Spring `@PreAuthorize("hasRole('SELLER')")` — method-level security |
-| Input | `@Valid` + Bean Validation on all DTOs |
-| Passwords | BCrypt (strength 10) |
-| Payments | Razorpay HMAC-SHA256 signature verification |
-| Upload | `FileValidator` checks MIME type + extension + size before Cloudinary |
+| Layer      | Mechanism                                                                  |
+| ---------- | -------------------------------------------------------------------------- |
+| Auth       | Stateless JWT (HS256, 15min expiry) + Refresh Token (30d, Redis blacklist) |
+| Rate Limit | Bucket4j token bucket per IP — 20 req/10s (Redis-backed for cluster)       |
+| RBAC       | Spring `@PreAuthorize("hasRole('SELLER')")` — method-level security        |
+| Input      | `@Valid` + Bean Validation on all DTOs                                     |
+| Passwords  | BCrypt (strength 10)                                                       |
+| Payments   | Razorpay HMAC-SHA256 signature verification                                |
+| Upload     | `FileValidator` checks MIME type + extension + size before Cloudinary      |
 
 ---
 
 ## 🧪 Scheduled Jobs
 
-| Job | Schedule | ShedLock? | Purpose |
-|---|---|---|---|
-| `OrderCleanupScheduler` | Every 5 min | ✅ | Cancel stale PAYMENT_PENDING orders > 15min |
-| `CartAbandonmentJob` | Daily 10 PM | ✅ | Email users with items left in cart |
-| `ReviewSummarizationScheduler` | Daily 3 AM | ✅ | AI batch summary of all product reviews |
-| `WishlistConversionScheduler` | Daily 2 AM | ✅ | Price-drop email alerts (14-day cooldown) |
+| Job                            | Schedule    | ShedLock? | Purpose                                     |
+| ------------------------------ | ----------- | --------- | ------------------------------------------- |
+| `OrderCleanupScheduler`        | Every 5 min | ✅        | Cancel stale PAYMENT_PENDING orders > 15min |
+| `CartAbandonmentJob`           | Daily 10 PM | ✅        | Email users with items left in cart         |
+| `ReviewSummarizationScheduler` | Daily 3 AM  | ✅        | AI batch summary of all product reviews     |
+| `WishlistConversionScheduler`  | Daily 2 AM  | ✅        | Price-drop email alerts (14-day cooldown)   |
 
 ---
 
