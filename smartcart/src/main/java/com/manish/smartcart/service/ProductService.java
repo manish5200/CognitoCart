@@ -66,7 +66,6 @@ public class ProductService {
             // Map the full entity to the Product's @ManyToOne field
             product.setCategory(category);
         }
-
         // 4. Generate SEO-friendly slug: "Apple iPhone 15" -> "apple-iphone-15"
         // Only a-z, 0-9 are kept; everything else becomes a dash.
         // Trailing/leading dashes are stripped for clean URLs.
