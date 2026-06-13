@@ -84,9 +84,7 @@ public class SecurityConfig {
                                         "/login/oauth2/**",          // OAuth2 callback from Google
                                         "/swagger-ui/**",            // API documentation UI
                                         "/swagger-ui.html",
-                                        "/v3/api-docs/**",           // OpenAPI spec JSON
-                                        "/actuator/**" ,              // Health, metrics, Prometheus scrape
-                                        "/api/v1/products/*/variants"
+                                        "/v3/api-docs/**"        // OpenAPI spec JSON
                                 )
                                 .permitAll()
 
@@ -99,9 +97,11 @@ public class SecurityConfig {
                                         "/api/v1/products/{slug}",
                                         "/api/v1/products/category/{categoryId}",
                                         "/api/v1/products/search/semantic",
-                                        "/api/v1/reviews/**" // View reviews and rating distribution
+                                        "/api/v1/reviews/**", // View reviews and rating distribution
+                                        "/api/v1/products/*/variants"
                                 )
                                 .permitAll()
+                                .requestMatchers("/actuator/**").hasRole("ADMIN") // Health, metrics, Prometheus scrape
                                 .anyRequest().authenticated())
 
                         // Register our custom filters in order:
