@@ -1,4 +1,4 @@
-package com.manish.smartcart.scheduler;
+package com.manish.smartcart.job;
 
 import com.manish.smartcart.model.feedback.Review;
 import com.manish.smartcart.model.product.Product;

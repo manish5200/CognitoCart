@@ -1,4 +1,4 @@
-package com.manish.smartcart.scheduler;
+package com.manish.smartcart.job;
 
 import com.manish.smartcart.model.user.Users;
 import com.manish.smartcart.model.user.Wishlist;

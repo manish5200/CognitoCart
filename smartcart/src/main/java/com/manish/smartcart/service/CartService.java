@@ -3,6 +3,7 @@ package com.manish.smartcart.service;
 import com.manish.smartcart.dto.order.PromotionResult;
 import com.manish.smartcart.model.cart.Cart;
 import com.manish.smartcart.model.cart.CartItem;
+import com.manish.smartcart.model.product.FlashSaleItem;
 import com.manish.smartcart.model.product.ProductVariant;
 import com.manish.smartcart.model.user.Users;
 import com.manish.smartcart.repository.*;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -29,6 +31,7 @@ public class CartService {
     private final UsersRepository usersRepository;
     private final CouponService couponService;
     private final PromotionEngineService promotionEngine;
+    private final FlashSaleItemRepository flashSaleItemRepository;
 
     // The threshold for Free Delivery
     private static final BigDecimal FREE_DELIVERY_THRESHOLD = new BigDecimal("599.00");
@@ -71,13 +74,34 @@ public class CartService {
         if (cartItem.getId() == null) {
             cartItem.setCart(cart);
             cartItem.setVariant(variant);
+            // --- FLASH SALE OVERRIDE INTERCEPTION ---
+            // Calculate base standard price first
+            BigDecimal basePrice = variant.getProduct().getPrice()
+                    .add(variant.getPriceModifier() != null ?  variant.getPriceModifier() : BigDecimal.ZERO);
 
-            // Compute effective price: base product price + variant price modifier
-            BigDecimal effectivePrice = variant.getProduct().getPrice()
-                            .add(variant.getPriceModifier() != null
-                                    ? variant.getPriceModifier()
-                                    : BigDecimal.ZERO);
+            // Query if this exact Variant is currently in a LIVE, Admin-Approved Flash Sale
+            Optional<FlashSaleItem> activeFlashSale = flashSaleItemRepository.findActiveDiscountForVariant(variant.getId());
 
+            BigDecimal effectivePrice;
+            if(activeFlashSale.isPresent()) {
+
+                FlashSaleItem sale = activeFlashSale.get();
+
+                // Validate anti-bot limit: You cannot add more than the Max Units Per User
+                if(requestedQuantity > sale.getMaxUnitsPerUser()){
+                    throw new BusinessLogicException("Flash Sale Limit: You can only buy "
+                            + sale.getMaxUnitsPerUser() + " unit(s) per user.");
+                }
+
+                // Apply the discount math: e.g., 20% off -> basePrice * (1 - 0.20)
+                BigDecimal discountMultiplier = BigDecimal.ONE.subtract(sale.getDiscountPercentage().divide(BigDecimal.valueOf(100)));
+                effectivePrice = basePrice.multiply(discountMultiplier);
+
+                log.info("Flash Sale active for SKU {}: Original ₹{}, Discounted to ₹{}", variant.getSku(), basePrice, effectivePrice);
+            }else{
+                // Standard Pricing
+                effectivePrice = basePrice;
+            }
             cartItem.setPriceAtAdding(effectivePrice);
             cartItem.setQuantity(quantity);
             // Final add to the list of the cart

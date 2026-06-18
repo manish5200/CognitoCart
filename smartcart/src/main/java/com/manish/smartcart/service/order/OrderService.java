@@ -13,6 +13,7 @@ import com.manish.smartcart.model.order.Coupon;
 import com.manish.smartcart.model.order.Order;
 import com.manish.smartcart.model.order.OrderItem;
 import com.manish.smartcart.model.order.UserCouponUsage;
+import com.manish.smartcart.model.product.FlashSaleItem;
 import com.manish.smartcart.model.product.Product;
 import com.manish.smartcart.model.product.ProductVariant;
 import com.manish.smartcart.model.user.Users;
@@ -50,6 +51,7 @@ public class OrderService {
     private final MeterRegistry meterRegistry;
     private final ReturnPolicyService returnPolicyService;
     private final ObjectMapper objectMapper;
+    private final FlashSaleItemRepository flashSaleItemRepository;
 
 
     @Transactional
@@ -130,11 +132,49 @@ public class OrderService {
             // CRITICAL: Re-check available stock on the freshly-locked row.
             // availableStock = stockQuantity - reservedQuantity (units held in other live carts)
             int availableStock = variant.getAvailableStock();
+
             if (availableStock < cartItem.getQuantity()) {
                 throw new InsufficientStockException(
                         "Insufficient stock for: " + variant.getDisplayLabel() +
                                 " (SKU: " + variant.getSku() + "). Available: " + availableStock);
             }
+            // --- FLASH SALE RACE CONDITION & ABANDONED CART GUARD ---
+            Optional<FlashSaleItem>activeFlashSale = flashSaleItemRepository.findActiveDiscountForVariant(variant.getId());
+
+            // Determine what the price SHOULD be right now
+            BigDecimal currentExpectedPrice = variant.getProduct().getPrice()
+                    .add(variant.getPriceModifier() != null ?  variant.getPriceModifier() : BigDecimal.ZERO);
+            boolean isFlashSaleItem = false;
+            if(activeFlashSale.isPresent()){
+                FlashSaleItem sale = activeFlashSale.get();
+                BigDecimal discountMultiplier = BigDecimal.ONE.subtract(sale.getDiscountPercentage().divide(BigDecimal.valueOf(100)));
+                currentExpectedPrice = currentExpectedPrice.multiply(discountMultiplier);
+                isFlashSaleItem = true;
+            }
+
+            // THE ABANDONED CART EXPLOIT CHECK:
+            // If they added it to their cart at 11:59 PM for ₹800, but checkout at 12:05 AM and the sale ended (so currentExpectedPrice is ₹1000)...
+            // Or if the price mismatch is greater than 1 paisa (rounding errors)
+            if(cartItem.getPriceAtAdding().subtract(currentExpectedPrice).abs().compareTo(BigDecimal.valueOf(0.05)) > 0){
+                throw new BusinessLogicException(
+                        "Price changed during checkout for " + variant.getDisplayLabel() +
+                                ". Please refresh your cart to see the updated price."
+                );
+            }
+
+            // THE RACE CONDITION CHECK (Overselling Prevention):
+            if (isFlashSaleItem) {
+                FlashSaleItem sale = activeFlashSale.get();
+                // Use the native @Modifying query to atomically update the usedUnits, bypassing Hibernate cache
+                int rowsUpdated = flashSaleItemRepository.atomicallyIncrementUsedUnits(sale.getId(), cartItem.getQuantity());
+                if (rowsUpdated == 0) {
+                    throw new BusinessLogicException(
+                            "Sorry, the Flash Sale deal for " + variant.getDisplayLabel() + " just sold out! " +
+                                    "Only standard priced units remain. Please refresh your cart."
+                    );
+                }
+            }
+
             // Deduct from gross stock — safe because we hold the PESSIMISTIC_WRITE row lock
             variant.setStockQuantity(variant.getStockQuantity() - cartItem.getQuantity());
             productVariantRepository.save(variant);
