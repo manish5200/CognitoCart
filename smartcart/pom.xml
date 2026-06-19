@@ -210,6 +210,8 @@
         </dependency>
 
         <!-- ===== OPENCSV (Analytics Exports) ===== -->
+        <!-- OpenCSV: Parses seller-uploaded CSV files for bulk flash sale opt-ins -->
+        <!-- Used in SellerBulkSaleService to read each row safely -->
         <dependency>
             <groupId>com.opencsv</groupId>
             <artifactId>opencsv</artifactId>

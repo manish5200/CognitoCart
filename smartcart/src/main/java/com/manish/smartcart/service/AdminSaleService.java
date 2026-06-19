@@ -1,5 +1,7 @@
 package com.manish.smartcart.service;
 
+import com.manish.smartcart.config.RabbitMQConfig;
+import com.manish.smartcart.dto.event.FlashSaleCreatedEvent;
 import com.manish.smartcart.dto.product.PlatformSaleEventRequest;
 import com.manish.smartcart.dto.product.PlatformSaleEventResponse;
 import com.manish.smartcart.enums.ApprovalStatus;
@@ -12,6 +14,7 @@ import com.manish.smartcart.repository.FlashSaleItemRepository;
 import com.manish.smartcart.repository.PlatformSaleEventRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,8 +22,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Enterprise Admin Service for orchestrating Platform-wide Flash Sales.
- * Controls the global marketing events and serves as the Quality Control gatekeeper.
+ * Orchestrator service for platform-wide promotional events and flash sales.
+ * * Acts as the central authority for campaign scheduling and seller discount validation.
+ * Employs event-driven architecture to decouple heavy background processes (e.g., mass communications)
+ * from the primary HTTP request thread, ensuring high availability for the Admin portal.
  */
 @Slf4j
 @Service
@@ -29,15 +34,18 @@ public class AdminSaleService {
 
     private final PlatformSaleEventRepository eventRepository;
     private final FlashSaleItemRepository itemRepository;
+    private final RabbitTemplate rabbitTemplate;
 
     /**
-     * Schedules a massive global event (e.g., "Big Billion Days").
-     * The ShedLock background job will automatically activate this when startTime hits.
+     * Provisions a new global platform sale event and broadcasts its creation.
+     * * @param request The scheduling parameters for the new campaign.
+     * @return PlatformSaleEventResponse The successfully provisioned event details.
+     * @throws BusinessLogicException if the chronological ordering of timestamps is invalid.
      */
     @Transactional
     public PlatformSaleEventResponse createEvent(PlatformSaleEventRequest request){
-        if(request.getEndTime().isBefore(request.getStartTime())){
-            log.error("End time must be before start time");
+        if (request.getEndTime().isBefore(request.getStartTime())) {
+            log.error("Campaign provision failed: End time is strictly before the start time.");
             throw new BusinessLogicException("Event end time must be strictly after the start time.");
         }
 
@@ -50,34 +58,55 @@ public class AdminSaleService {
                 .build();
 
         PlatformSaleEvent savedEvent =  eventRepository.save(event);
+        log.info("Provisioned new Platform Sale Event: {} [ID: {}]", savedEvent.getEventName(), savedEvent.getId());
 
-        log.info("Admin scheduled new Platform Sale Event: {} [ID: {}]", savedEvent.getEventName(), savedEvent.getId());
-        // Note: In Phase 4C, we will trigger a RabbitMQ event here to Mass-Email all Sellers!
+        // Asynchronously broadcast campaign creation to downstream consumer groups (e.g., Seller Notification Service).
+        // Failure to publish will be handled by RabbitMQ retries/DLQ, preventing primary transaction rollback.
+        FlashSaleCreatedEvent rmqPayload = FlashSaleCreatedEvent.builder()
+                .eventId(savedEvent.getId())
+                .eventName(savedEvent.getEventName())
+                .startTime(savedEvent.getStartTime())
+                .endTime(savedEvent.getEndTime())
+                .build();
 
+        rabbitTemplate.convertAndSend(
+                RabbitMQConfig.EXCHANGE_MARKETING,
+                RabbitMQConfig.ROUTING_KEY_FLASH_SALE,
+                rmqPayload
+        );
+        log.info("Dispatched FlashSaleCreatedEvent to message broker [Exchange: {}]", RabbitMQConfig.EXCHANGE_MARKETING);
         return mapToEventResponse(savedEvent);
     }
 
     /**
-     * The QC Gatekeeper: Approves or Rejects a Seller's submitted discount.
-     * Prevents sellers from offering fake discounts (e.g. raising base price 50%, then discounting 50%).
+     * Executes quality control validation on seller-submitted flash sale inventory.
+     * Prevents unauthorized pricing manipulations and enforces marketplace compliance.
+     *
+     * @param flashSaleItemId The unique identifier of the seller's submitted inventory item.
+     * @param status The final approval decision (APPROVED or REJECTED).
+     * @throws BusinessLogicException if attempting to revert a finalized decision to PENDING.
+     * @throws ResourceNotFoundException if the specified submission ID does not exist.
      */
     @Transactional
     public void reviewSellerSubmission(Long flashSaleItemId, ApprovalStatus status){
-        if(status == ApprovalStatus.PENDING){
+        if (status == ApprovalStatus.PENDING) {
+            log.warn("Attempted illegal state transition: Reverting reviewed item [{}] to PENDING.", flashSaleItemId);
             throw new BusinessLogicException("Cannot revert a reviewed item back to PENDING status.");
         }
 
         FlashSaleItem item = itemRepository.findById(flashSaleItemId)
-                .orElseThrow(() -> new ResourceNotFoundException("Flash Sale Submission not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Flash Sale Submission not found for ID: " + flashSaleItemId));
 
         item.setApprovalStatus(status);
         itemRepository.save(item);
 
-        log.info("Admin {} submission ID: {}", status.name(), flashSaleItemId);
+        log.info("Executed compliance review: Item [{}] assigned status [{}]", flashSaleItemId, status.name());
     }
 
     /**
-     * Fetches all events for the Admin Dashboard.
+     * Retrieves a complete manifest of all historical and upcoming platform sale events.
+     *
+     * @return List containing the summarized details of all platform events.
      */
     public List<PlatformSaleEventResponse> getAllEvents(){
         return eventRepository.findAll().stream()
@@ -85,6 +114,9 @@ public class AdminSaleService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Maps the internal domain entity to the external data transfer object.
+     */
     private PlatformSaleEventResponse mapToEventResponse(PlatformSaleEvent event) {
         return PlatformSaleEventResponse.builder()
                 .id(event.getId())

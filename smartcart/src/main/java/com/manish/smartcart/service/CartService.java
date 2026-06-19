@@ -107,6 +107,13 @@ public class CartService {
             // Final add to the list of the cart
             cart.addCartItem(cartItem); // Using helper
         } else {
+            // GUARD: Also enforce Flash Sale per-user limit when UPDATING an existing cart item.
+            // Without this check, a bot could call addItemToCart 100 times to bypass the limit.
+            Optional<FlashSaleItem> activeFlashSaleOnUpdate = flashSaleItemRepository.findActiveDiscountForVariant(variant.getId());
+            if (activeFlashSaleOnUpdate.isPresent() && requestedQuantity > activeFlashSaleOnUpdate.get().getMaxUnitsPerUser()) {
+                throw new BusinessLogicException("Flash Sale Limit: You can only buy "
+                        + activeFlashSaleOnUpdate.get().getMaxUnitsPerUser() + " unit(s) per user.");
+            }
             cartItem.setQuantity(requestedQuantity);
         }
 

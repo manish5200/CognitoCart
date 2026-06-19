@@ -204,5 +204,25 @@ public class EmailTemplateBuilder {
 
         return templateEngine.process("emails/order-status", context);
     }
+
+    /**
+     * Builds the Flash Sale Seller Invite HTML email.
+     *
+     * Called by SellerEmailWorker once per seller.
+     * Uses the existing Thymeleaf TemplateEngine — no new infra needed.
+     * Template file: resources/templates/emails/flash-sale-invite.html
+     *
+     * NOTE: startTime and endTime arrive as pre-formatted Strings from the
+     * Orchestrator. No date formatting needed here.
+     */
+    public String buildFlashSaleInviteEmail(String sellerName, String eventName,
+                                            String startTime, String endTime) {
+            Context context = new Context();
+            context.setVariable("sellerName", sellerName);
+            context.setVariable("eventName", eventName);
+            context.setVariable("startTime", startTime);
+            context.setVariable("endTime", endTime);
+            return templateEngine.process("emails/flash-sale-invite", context);
+    }
 }
 
