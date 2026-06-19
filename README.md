@@ -53,7 +53,7 @@ Client (Postman / Frontend)
 | Security         | Spring Security + JWT (jjwt 0.12.6) | Stateless auth                                         |
 | OAuth2           | Google Sign-In                      | Social login                                           |
 | Payments         | Razorpay                            | Payment gateway + webhook                              |
-| Messaging        | RabbitMQ                            | Async invoice + DLQ pattern                            |
+| Messaging        | RabbitMQ (CloudAMQP)                | Async invoice + mass email + DLQ pattern               |
 | Email            | Spring Mail + HTML templates        | Transactional emails                                   |
 | PDF              | iText 7                             | Invoice generation                                     |
 | CDN              | Cloudinary                          | Product image upload/delete                            |
@@ -77,17 +77,17 @@ src/main/java/com/manish/smartcart/
 ├── controller/          # 15 REST controllers (no business logic)
 ├── service/             # 29 services (all business logic)
 │   ├── order/           # OrderService, OrderReturnService, ReturnAdminService
-│   ├── email/           # EmailTemplateBuilder (premium HTML)
-│   └── notifications/   # OrderNotificationService
+│   ├── email/           # EmailTemplateBuilder (premium HTML templates)
+│   └── notifications/   # OrderNotificationService, FlashSaleNotificationListener
+├── job/                 # ShedLock-protected cron jobs (FlashSaleActivationJob, etc.)
 ├── model/               # JPA entities
 │   ├── product/         # Product, ProductVariant, Category, ProductInsights
 │   ├── order/           # Order, OrderItem, Coupon, Shipment
 │   ├── cart/            # Cart, CartItem, GuestCart, GuestCartItem
 │   └── user/            # Users, Wishlist, Address, SellerProfile
-├── repository/          # Spring Data JPA repositories (custom JPQL)
-├── dto/                 # Request/Response DTOs
+├── repository/          # Spring Data JPA repositories (custom JPQL + @Modifying atomic)
+├── dto/                 # Request/Response DTOs + RabbitMQ event payloads (dto/event/)
 ├── mapper/              # OrderMapper, ProductMapper, ReviewMapper
-├── scheduler/           # ShedLock-protected batch jobs
 ├── exception/           # Global @ControllerAdvice
 └── util/                # VectorAttributeConverter, AppConstants, FileValidator
 ```
@@ -186,11 +186,119 @@ ProductRepository.findBySimilarity():
 Returns: "Noise Cancelling Headphones" (0 keyword overlap)
 ```
 
+### 7. ⚡ Flash Sale Engine (Phase 4B + 4C)
+
+#### 3-Tier Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ TIER 1 — ADMIN    Creates global events · Approves/Rejects QC   │
+├─────────────────────────────────────────────────────────────────┤
+│ TIER 2 — SELLER   Opts-in SKUs (single form or Bulk CSV)        │
+│                   Submissions default to PENDING until reviewed  │
+├─────────────────────────────────────────────────────────────────┤
+│ TIER 3 — USER     Cart auto-detects live sale → applies price   │
+│                   Checkout re-validates price + atomic stock     │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### Event Lifecycle (ShedLock Polling, every 60s)
+
+```
+Admin creates event
+      │
+      ▼
+ SCHEDULED ──── ShedLock job polls DB every 60s ────▶ ACTIVE ──▶ ENDED
+                                                         │
+                                              CartService applies
+                                              flash sale price override
+```
+
+> **Why polling?** Unlike `ScheduledExecutorService`, a DB-polled ShedLock job survives server restarts, scales across N instances, and guarantees only one node executes at a time.
+
+#### Phase 4C — RabbitMQ Mass Email Flow (Fan-Out Architecture)
+
+```
+  POST /api/v1/admin/sales/events
+            │
+    ┌───────┴───────────────────────────────┐
+    ▼                                       ▼
+  Save to DB (10ms)               Publish FlashSaleCreatedEvent
+  201 CREATED ✅                  to exchange.marketing
+  Admin unblocked!                          │
+                                            ▼ (async, background)
+                          FlashSaleNotificationListener [ORCHESTRATOR]
+                                            │
+                           Slice<SellerEmailProjection> page loop
+                           (SELECT email, full_name only — no OOM)
+                           500 sellers per page — bounded JVM memory
+                           Publishes 1 SellerInviteEmailEvent per seller
+                           Finishes in seconds → ACKs RabbitMQ ✅
+                                            │
+                              queue.seller.email.individual
+                              (50,000 tiny messages, ~200 bytes each)
+                                            │
+                    ┌───────────────────────┼───────────────────────┐
+                    ▼                       ▼                       ▼
+             Worker Thread 1        Worker Thread 2      ... Thread 10
+             sendMail(seller1)      sendMail(seller2)   (concurrency=5-10)
+                    │                       │
+               Success ✅             Exception ❌
+             Email sent            NACK → only THIS seller
+                                   → DLQ (others unaffected ✅)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SELLER BULK CSV UPLOAD  →  500 SKUs in one request
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  variant_id, discount_percentage, max_units, max_units_per_user
+  101,        20,                  50,        2
+  102,        30,                  100,       1   ← bad row → skip
+
+  POST /api/v1/seller/sales/{eventId}/bulk-upload
+            │
+    Extract all variant IDs → findAllById(Set) ← 1 DB call (batch pre-fetch)
+    per row: validate rules → IDOR ownership check → add to batch list
+    bad row: log + skip (partial success — never aborts whole batch)
+            │
+    flashSaleItemRepository.saveAll(validItems)  ← 1 DB call for all rows
+            │
+    "✅ 498 submitted for Admin review. ❌ 2 rows skipped"
+```
+
+#### Key Design Decisions
+
+| Concern | Solution |
+|---|---|
+| 10k concurrent checkouts overselling | `@Modifying` native SQL `atomicallyIncrementUsedUnits` — bypasses Hibernate cache |
+| Abandoned cart price exploit | OrderService re-checks price at checkout; rejects if deviation > ₹0.05 |
+| Bot buying entire flash stock | `maxUnitsPerUser` guard enforced on **both** add-new AND update-quantity cart paths |
+| Seller discounting competitor's product | IDOR check: `variant.getSellerId() == loggedInSellerId` per CSV row |
+| Admin thread blocked during mass email | RabbitMQ decouples event creation from email delivery completely |
+| Email server down = invites lost | DLQ stores failed messages for safe replay |
+| OOM loading 50k seller entities | `Slice<SellerEmailProjection>` — fetches only email + fullName, 500 at a time |
+| 50k SMTP emails blocking RabbitMQ ACK | Fan-Out: Orchestrator publishes 50k messages (seconds); Worker sends 1 email per message |
+| 500-row CSV causing N DB queries | Batch pre-fetch: `findAllById(Set)` loads all variants in 1 query before loop |
+
+#### Flash Sale Endpoints
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/api/v1/admin/sales/events` | ADMIN | Schedule a platform-wide sale event |
+| GET | `/api/v1/admin/sales/events` | ADMIN | View all events |
+| PATCH | `/api/v1/admin/sales/items/{id}/review` | ADMIN | Approve / Reject seller submission |
+| POST | `/api/v1/seller/sales/items` | SELLER | Submit a single SKU to an event |
+| GET | `/api/v1/seller/sales/items` | SELLER | View own submissions + approval status |
+| POST | `/api/v1/seller/sales/{eventId}/bulk-upload` | SELLER | Bulk CSV upload (multipart/form-data) |
+| GET | `/api/v1/public/sales/live` | Public | Active events for frontend banners |
+| GET | `/api/v1/public/sales/upcoming` | Public | Scheduled events for countdown timers |
+
 ---
 
 ## 🌐 API Reference (Key Endpoints)
 
 ### Authentication
+
 
 | Method | Endpoint                       | Auth   | Description          |
 | ------ | ------------------------------ | ------ | -------------------- |
@@ -333,6 +441,7 @@ Visit: `http://localhost:8080/actuator/prometheus`
 
 | Job                            | Schedule    | ShedLock? | Purpose                                     |
 | ------------------------------ | ----------- | --------- | ------------------------------------------- |
+| `FlashSaleActivationJob`       | Every 60s   | ✅        | Activates / deactivates sale events by time |
 | `OrderCleanupScheduler`        | Every 5 min | ✅        | Cancel stale PAYMENT_PENDING orders > 15min |
 | `CartAbandonmentJob`           | Daily 10 PM | ✅        | Email users with items left in cart         |
 | `ReviewSummarizationScheduler` | Daily 3 AM  | ✅        | AI batch summary of all product reviews     |
