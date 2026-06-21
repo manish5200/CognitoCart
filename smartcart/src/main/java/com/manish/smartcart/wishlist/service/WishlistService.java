@@ -1,0 +1,113 @@
+package com.manish.smartcart.wishlist.service;
+
+import com.manish.smartcart.cart.dto.CartResponse;
+import com.manish.smartcart.product.dto.ProductResponse;
+import com.manish.smartcart.product.repository.ProductRepository;
+import com.manish.smartcart.product.repository.ProductVariantRepository;
+import com.manish.smartcart.user.repository.UsersRepository;
+import com.manish.smartcart.wishlist.dto.WishlistSummaryDTO;
+import com.manish.smartcart.shared.mapper.ProductMapper;
+import com.manish.smartcart.cart.model.Cart;
+import com.manish.smartcart.product.model.Product;
+import com.manish.smartcart.product.model.ProductVariant;
+import com.manish.smartcart.wishlist.model.Wishlist;
+import com.manish.smartcart.shared.exception.ResourceNotFoundException;
+import com.manish.smartcart.cart.service.CartService;
+import com.manish.smartcart.wishlist.repository.WishlistRepository;
+import org.springframework.transaction.annotation.Transactional;
+import lombok.AllArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+@AllArgsConstructor
+public class WishlistService {
+
+    private final WishlistRepository wishlistRepository;
+    private final ProductRepository productRepository;
+    private final ProductVariantRepository productVariantRepository;
+    private final UsersRepository usersRepository;
+    private final ProductMapper  productMapper;
+    private final CartService cartService;
+
+    @Transactional
+    public String toggleWishlist(Long userId, Long productId) {
+
+        // 1. Actually verify the product exists first
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID: " + productId));
+
+        Optional<Wishlist> existing = wishlistRepository.findByUserIdAndProductId(userId, productId);
+        if(existing.isPresent()) {
+            wishlistRepository.delete(existing.get());
+            return "Product Removed from Wishlist";
+        }else{
+            Wishlist wishlist = new Wishlist();
+            wishlist.setUser(usersRepository.getReferenceById(userId));
+            wishlist.setProduct(product);
+            wishlistRepository.save(wishlist);
+            return "Product Added to Wishlist";
+        }
+    }
+
+
+    @Transactional(readOnly = true)
+    public List<ProductResponse>getWishlistForUser(Long userId) {
+        List<Wishlist> wishlists = wishlistRepository.findByUserId(userId);
+        return wishlists.stream()
+                .map(item -> productMapper.toProductResponse(item.getProduct()))// Convert to DTO
+                .toList();
+    }
+
+
+    //wishlist -> cart
+    @Transactional
+    public CartResponse wishlistToCart(Long userId, Long productId, Integer quantity) {
+        // 1. Verify item exists in Wishlist
+       Wishlist existedProductInWishlist = wishlistRepository.findByUserIdAndProductId(userId, productId)
+               .orElseThrow(() -> new ResourceNotFoundException("Item not found in your wishlist"));
+
+        //2. Find the default/first active variant for this product.
+        // Wishlist stores the master Product. Cart requires a specific variant (SKU).
+        //    We pick the lowest sortOrder active variant — this is the default SKU
+        //    created automatically at product creation time.
+
+        ProductVariant defaultVariant = productVariantRepository
+                .findByProductIdAndIsActiveTrue(productId)
+                .stream()
+                .min(Comparator.comparingInt(ProductVariant::getSortOrder))
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No active variant available for product ID: " + productId +
+                                ". The product may be out of stock or delisted."));
+
+        // 3. Add to cart via CartService (handles stock check + math engine)
+        Cart cart = cartService.addItemToCart(userId, defaultVariant.getId(), quantity);
+
+        // 3. Remove from Wishlist
+        wishlistRepository.delete(existedProductInWishlist);
+
+        return new CartResponse().getCartResponse(cart);
+
+    }
+
+    @Transactional(readOnly = true)
+    public WishlistSummaryDTO getWishlistSummary(Long userId) {
+        List<Wishlist>wishlistItems = wishlistRepository.findByUserId(userId);
+        // 1. Convert to ProductResponse
+        List<ProductResponse>productResponses = wishlistItems.stream()
+                .map(item -> productMapper.toProductResponse(item.getProduct()))
+                .toList();
+        // 2. Calculate Total Value of all wishlisted items
+        BigDecimal totalValue = wishlistItems.stream()
+                .map(item -> item.getProduct().getPrice())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return new WishlistSummaryDTO(
+                productResponses, productResponses.size(),  totalValue
+        );
+    }
+
+}

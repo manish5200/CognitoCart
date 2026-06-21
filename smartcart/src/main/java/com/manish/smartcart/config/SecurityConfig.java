@@ -1,6 +1,8 @@
 package com.manish.smartcart.config;
 
-import com.manish.smartcart.config.filter.JwtFilter;
+import com.manish.smartcart.security.filter.JwtFilter;
+import com.manish.smartcart.security.filter.RateLimitFilter;
+import com.manish.smartcart.security.oauth2.OAuth2LoginSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
