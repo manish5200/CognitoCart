@@ -12,14 +12,14 @@ import java.math.BigDecimal;
 
 /**
  * Represents an immutable line item on a finalized order.
- * * ARCHITECTURE RULE: Employs a Dual-Layer design to balance operational needs with legal compliance.
- * * LAYER 1 — Live Reference (variant_id):
- * Points to the active ProductVariant for operational workflows (stock deduction, return processing).
- * Nullable to ensure the historical order record survives even if a variant is hard-deleted.
- * * LAYER 2 — Immutable Snapshots:
- * String and BigDecimal values captured securely at checkout.
- * Guarantees that Order Mappers and Invoice Services always generate accurate historical
- * documents, even if the seller completely alters the product's name, price, or SKU tomorrow.
+ * * ARCHITECTURE RULE: Dual-Layer Design
+ * Balances operational needs with financial and legal compliance:
+ * * - Layer 1 (Live Reference): Points to the active ProductVariant for workflows like
+ * stock deduction. This is purposefully nullable to ensure order history survives
+ * hard-deletions in the catalog.
+ * * - Layer 2 (Immutable Snapshots): Prices, SKUs, and names are captured securely
+ * at checkout. Guarantees that invoices and ledgers remain historically accurate
+ * even if product details change globally.
  */
 @NoArgsConstructor
 @AllArgsConstructor
@@ -33,10 +33,12 @@ import java.math.BigDecimal;
         // Optimizes reverse-lookups for seller analytics (e.g., "Which orders contain my SKU?").
         @Index(name = "idx_order_items_variant_id", columnList = "variant_id")
 })
+@SequenceGenerator(name = "entity_seq", sequenceName = "order_item_seq", allocationSize = 50)
 public class OrderItem extends BaseEntity {
 
-    // ─── LIVE REFERENCES ──────────────────────────────────────────────────────
-
+    /**
+     * The parent order this item belongs to.
+     **/
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
     @JsonBackReference

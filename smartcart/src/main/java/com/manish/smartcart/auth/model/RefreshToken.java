@@ -15,6 +15,7 @@ import java.time.Instant;
 
 @Entity
 @Table(name = "refresh_tokens")
+@SequenceGenerator(name = "entity_seq", sequenceName = "refresh_token_seq", allocationSize = 50)
 @AllArgsConstructor
 @NoArgsConstructor
 @Setter

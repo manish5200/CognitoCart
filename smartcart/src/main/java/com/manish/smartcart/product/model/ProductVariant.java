@@ -31,6 +31,7 @@ import java.util.Map;
         @Index(name = "idx_variant_product_id", columnList = "product_id"),
         @Index(name = "idx_variant_active", columnList = "is_active")
 })
+@SequenceGenerator(name = "entity_seq", sequenceName = "product_variant_seq",  allocationSize = 50)
 public class ProductVariant extends BaseEntity {
 
     // ─── IDENTITY ─────────────────────────────────────────────────────────────

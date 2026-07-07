@@ -15,6 +15,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@SequenceGenerator(name = "entity_seq", sequenceName = "coupon_usage_seq",  allocationSize = 50)
 public class UserCouponUsage extends BaseEntity {
 
     @ManyToOne

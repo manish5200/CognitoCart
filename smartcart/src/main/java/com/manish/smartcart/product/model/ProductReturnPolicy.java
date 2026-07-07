@@ -24,13 +24,14 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder // Must match BaseEntity's @SuperBuilder
 @Entity
 @Table(name = "product_return_policy")
+@SequenceGenerator(name = "entity_seq", sequenceName = "return_policy_seq", allocationSize = 50)
 public class ProductReturnPolicy extends BaseEntity {
 
     /**
      * If set, this policy applies to this specific product only.
      * Mutually exclusive with category (enforced by DB constraint chk_policy_target).
      */
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id")
     private Product product;
 
@@ -38,7 +39,7 @@ public class ProductReturnPolicy extends BaseEntity {
      * If set, this policy applies to ALL products in this category.
      * Mutually exclusive with product (enforced by DB constraint chk_policy_target).
      */
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;
 

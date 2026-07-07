@@ -1,6 +1,5 @@
 package com.manish.smartcart.product.controller;
 
-import com.manish.smartcart.infrastructure.ai.EmbeddingService;
 import com.manish.smartcart.infrastructure.returnpolicy.ReturnPolicyService;
 import com.manish.smartcart.infrastructure.storage.CloudinaryService;
 import com.manish.smartcart.product.service.CategoryService;
@@ -10,12 +9,10 @@ import com.manish.smartcart.product.dto.ProductRequest;
 import com.manish.smartcart.product.dto.ProductResponse;
 import com.manish.smartcart.product.dto.ProductSearchDTO;
 import com.manish.smartcart.product.dto.ReturnPolicyResponse;
-import com.manish.smartcart.shared.mapper.ProductMapper;
 import com.manish.smartcart.product.model.Product;
 import com.manish.smartcart.product.repository.ProductRepository;
 import com.manish.smartcart.shared.util.AppConstants;
 import com.manish.smartcart.shared.util.FileValidator;
-import com.manish.smartcart.shared.util.VectorAttributeConverter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -50,8 +47,6 @@ public class ProductController {
         private final CategoryService categoryService;
         private final ProductRepository productRepository;
         private final CloudinaryService cloudinaryService;
-        private final EmbeddingService embeddingService;
-        private final ProductMapper productMapper;
         private final ReturnPolicyService returnPolicyService;
 
 
@@ -313,24 +308,9 @@ public class ProductController {
         public ResponseEntity<List<ProductResponse>> semanticSearch(
                         @RequestParam String q,
                         @RequestParam(defaultValue = "10") int limit) {
-
-                // Step 1: Convert the user's plain-English query into a 384-dim vector
-                // using the same HuggingFace model used when products were indexed
-                float[] queryVector = embeddingService.generateEmbedding(q);
-
-                // Step 2: Format float[] → "[0.021,-0.455,...]" for the native SQL CAST
-                String vectorString = new VectorAttributeConverter()
-                                .convertToDatabaseColumn(queryVector);
-
-                // Step 3: PostgreSQL cosine distance (<=> operator) finds closest product vectors
-                List<Product> results = productRepository.findBySimilarity(vectorString, limit);
-
-                // Step 4: Map entities → response DTOs
-                List<ProductResponse> response = results.stream()
-                                .map(productMapper::toProductResponse)
-                                .collect(java.util.stream.Collectors.toList());
-
-                return ResponseEntity.ok(response);
+            // Delegate entirely to the service layer
+            List<ProductResponse> response = productService.semanticSearch(q, limit);
+            return ResponseEntity.ok(response);
         }
 
 
@@ -342,7 +322,5 @@ public class ProductController {
     public ResponseEntity<ReturnPolicyResponse> getProductReturnPolicy(@PathVariable Long productId) {
         return ResponseEntity.ok(returnPolicyService.getLivePolicyResponse(productId));
     }
-
-
 }
 

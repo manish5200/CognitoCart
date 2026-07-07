@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.manish.smartcart.shared.model.BaseEntity;
 import com.manish.smartcart.review.model.Review;
 import com.manish.smartcart.shared.util.AppConstants;
+import com.manish.smartcart.shared.util.HumanIdGenerator;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -30,12 +31,15 @@ import java.util.Set;
 @Entity
 @SuperBuilder
 @Table(name = "products")
-@SQLDelete(sql = "UPDATE products SET is_deleted = true WHERE id=?")
+@SequenceGenerator(name = "entity_seq", sequenceName = "product_seq",   allocationSize = 50)
+// ✅Appending ID to the slug upon deletion to free up the unique constraint
+@SQLDelete(sql = "UPDATE products SET is_deleted = true, slug = slug || '-deleted-' || id WHERE id=?")
 @SQLRestriction("is_deleted = false")
 public class Product extends BaseEntity {
 
     // ─── CATALOG IDENTITY ─────────────────────────────────────────────────────
-
+    @Column(name = "product_code", unique = true, nullable = false)
+    private String productCode;
     @NotBlank
     private String productName;
 
@@ -63,7 +67,7 @@ public class Product extends BaseEntity {
     // ─── DISCOVERY & SOCIAL PROOF ─────────────────────────────────────────────
 
     // Faceted search tags (e.g., "wireless", "waterproof").
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "product_tags", joinColumns = @JoinColumn(name = "product_id"))
     @Column(name = "tag")
     @Builder.Default
@@ -88,13 +92,17 @@ public class Product extends BaseEntity {
     @Builder.Default
     private Boolean isAvailable = true;
 
+    @Column(name = "is_deleted", nullable = false)
+    @Builder.Default
+    private boolean deleted = false;
+
     // ─── RELATIONSHIPS ────────────────────────────────────────────────────────
 
     // Microservice-ready loose coupling to the Seller domain.
     @Column(name = "seller_id", nullable = false)
     private Long sellerId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", foreignKey = @ForeignKey(name = "fk_product_category"))
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "parentCategory", "subCategories"})
     private Category category;
@@ -121,7 +129,7 @@ public class Product extends BaseEntity {
     private ProductInsights insights;
 
     // Master image gallery. Shared across all variants unless overridden by a variant swatch.
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "product_images", joinColumns = @JoinColumn(name = "product_id"))
     @Column(name = "image_url")
     @Builder.Default
@@ -135,5 +143,12 @@ public class Product extends BaseEntity {
     public void addReview(Review review) {
         this.reviews.add(review);
         this.totalReviews = reviews.size();
+    }
+
+    @PrePersist
+    private void humanIDGenerator(){
+        if(this.productCode == null){
+            this.productCode = HumanIdGenerator.generate("PRD");
+        }
     }
 }

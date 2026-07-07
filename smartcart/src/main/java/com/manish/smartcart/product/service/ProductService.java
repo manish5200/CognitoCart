@@ -26,8 +26,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -204,6 +206,27 @@ public class ProductService {
     }
 
     /**
+     * ACTIVITY: AI Semantic Vector Search
+     */
+    @Transactional(readOnly = true)
+    public List<ProductResponse>semanticSearch(String query, int limit){
+
+        // Step 1: Convert the user's plain-English query into a 384-dim vector
+        // using the same HuggingFace model used when products were indexed
+        float[] queryVector = embeddingService.generateEmbedding(query);
+        // Step 2: Format float[] → "[0.021,-0.455,...]" for the native SQL CAST
+        String vectorString = new VectorAttributeConverter().convertToDatabaseColumn(queryVector);
+
+        // Step 3: Fetch Product
+        List<Product> results = productRepository.findBySimilarity(vectorString, limit);
+
+        // Step 4: Map to DTOs (Hibernate Session is kept open here, so lazy loading works!)
+        return results.stream()
+                .map(productMapper::toProductResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * ACTIVITY: Discovery (Fetch by Slug)
      * Returns DTO so Redis can safely serialize/deserialize without Hibernate
      * session.
@@ -238,7 +261,6 @@ public class ProductService {
     }
 
     // Filter the product using specification
-
     @Transactional(readOnly = true)
     public Page<ProductResponse> getFilteredProduct(ProductSearchDTO searchDTO, Pageable pageable) {
 
@@ -278,4 +300,7 @@ public class ProductService {
         // 4. Transform entities to DTOs for the frontend
         return productPage.map(productMapper::toProductResponse);
     }
+
+
+
 }

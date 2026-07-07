@@ -19,6 +19,7 @@ import java.math.BigDecimal;
         @Index(name = "idx_fsi_event", columnList = "platform_sale_event_id"),
         @Index(name = "idx_fsi_variant", columnList = "product_variant_id")
 })
+@SequenceGenerator(name = "entity_seq", sequenceName = "flash_sale_item_seq", allocationSize = 50)
 @Getter
 @Setter
 @NoArgsConstructor
