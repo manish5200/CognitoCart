@@ -5,6 +5,7 @@ import com.manish.smartcart.shared.enums.PaymentStatus;
 import com.manish.smartcart.shared.enums.ReturnReason;
 import com.manish.smartcart.shared.enums.ReturnType;
 import com.manish.smartcart.shared.model.BaseEntity;
+import com.manish.smartcart.shared.util.HumanIdGenerator;
 import com.manish.smartcart.user.model.Users;
 import jakarta.persistence.*;
 import lombok.*;
@@ -24,7 +25,18 @@ import java.util.List;
 @SuperBuilder
 @Entity
 @Table(name = "orders")
+@SequenceGenerator(name = "entity_seq", sequenceName = "order_seq", allocationSize = 50)
 public class Order extends BaseEntity {
+
+    // ─── TIER 3: HUMAN ID ────────────────────────────────────────────────────────
+    // Customer-readable order number printed on invoices and shown in the "My Orders" page.
+    // Format: ORD-YYYYMMDD-XXXXXX (e.g. ORD-20260703-K7P2MQ)
+    // 32-char safe charset (no I/O/0/1) eliminates phone-call ambiguity errors.
+    // Generated once on first INSERT via @PrePersist. Never modified thereafter.
+    @Column(name = "order_number", unique = true, nullable = false, length = 33)
+    private String orderNumber;
+
+
 
     @ManyToOne
     @JoinColumn(name = "user_id")
@@ -32,7 +44,7 @@ public class Order extends BaseEntity {
 
     @Builder.Default
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
-    private List<OrderItem> orderItems = new ArrayList<OrderItem>();
+    private List<OrderItem> orderItems = new ArrayList<>();
 
     private LocalDateTime orderDate;
 
@@ -117,8 +129,22 @@ public class Order extends BaseEntity {
     /**
      * Stores CDN URLs for image proof if the item is defective or wrong.
      */
+    @Builder.Default
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
-    private List<String> returnProofImages;
+    private List<String> returnProofImages = new ArrayList<>();
+
+    // ─── LIFECYCLE HOOKS ─────────────────────────────────────────────────────────
+    /*
+     * Auto-generates the human-readable order number on first DB insert.
+     * Guard clause (null check) is mandatory: prevents accidental overwrite
+     * if the entity is ever passed through a second persist in a unit test.
+     */
+    @PrePersist
+    private void generateHumanId(){
+        if(this.orderNumber == null){
+            this.orderNumber = HumanIdGenerator.generate("ORD");
+        }
+    }
 
 }

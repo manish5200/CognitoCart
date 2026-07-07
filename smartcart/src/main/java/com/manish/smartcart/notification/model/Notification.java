@@ -5,14 +5,16 @@ import com.manish.smartcart.shared.model.BaseEntity;
 import com.manish.smartcart.user.model.Users;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(name = "notifications")
+@SequenceGenerator(name = "entity_seq", sequenceName = "notification_seq", allocationSize = 50)
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 public class Notification extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)

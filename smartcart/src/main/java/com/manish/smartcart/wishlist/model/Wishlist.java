@@ -5,6 +5,7 @@ import com.manish.smartcart.shared.model.BaseEntity;
 import com.manish.smartcart.product.model.Product;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
 
@@ -13,13 +14,10 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Setter
 @Getter
-@Builder
+@SuperBuilder
 @Table(name = "user_wishlist")
+@SequenceGenerator(name = "entity_seq", sequenceName = "wishlist_seq", allocationSize = 50)
 public class Wishlist extends BaseEntity {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

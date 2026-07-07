@@ -12,11 +12,12 @@ import org.hibernate.annotations.SQLRestriction;
 @AllArgsConstructor
 @Setter
 @Getter
-@SQLDelete(sql = "UPDATE addresses SET is_deleted = true WHERE id=?")
+@SQLDelete(sql = "UPDATE user_addresses SET is_deleted = true WHERE id=?")
 @SQLRestriction("is_deleted = false") // Preserves order history records
 @SuperBuilder
 @Entity
 @Table(name = "user_addresses")
+@SequenceGenerator(name = "entity_seq", sequenceName = "address_seq",  allocationSize = 50)
 public class Address extends BaseEntity{
 
     @NotBlank(message = "Recipient name is required")
@@ -47,6 +48,15 @@ public class Address extends BaseEntity{
     @Column(nullable = false)
     @Builder.Default
     private Boolean isDefault = false; // Flag for UI "Default" selection
+
+    /**
+     * Soft-delete flag. Set to true by the @SQLDelete hook instead of a physical DELETE.
+     * @SQLRestriction("is_deleted = false") filters this address from all queries automatically,
+     * preserving the row for historical order records while hiding it from the address book UI.
+     */
+    @Column(name = "is_deleted", nullable = false)
+    private boolean deleted = false;
+
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)

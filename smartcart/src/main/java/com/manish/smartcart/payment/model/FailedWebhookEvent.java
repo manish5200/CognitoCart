@@ -5,14 +5,16 @@ import com.manish.smartcart.shared.model.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.EqualsAndHashCode;
+import lombok.experimental.SuperBuilder;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
+@Setter
+@Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 @Entity
 @Table(name = "failed_webhook_events")
+@SequenceGenerator(name = "entity_seq", sequenceName = "failed_webhook_seq",  allocationSize = 50)
 public class FailedWebhookEvent extends BaseEntity {
 
     // Webhook JSON payloads can be huge! We strictly define this as TEXT in Postgres.

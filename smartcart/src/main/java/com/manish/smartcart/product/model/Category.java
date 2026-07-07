@@ -14,9 +14,8 @@ import java.util.List;
 
 /**
  * The Category Entity (Recursive Tree)
- * This allows for infinite sublevels (Electronics > Audio > Headphones).
+ * Allows for infinite sublevels (Electronics > Audio > Headphones).
  **/
-
 @Getter
 @Setter
 @NoArgsConstructor
@@ -24,26 +23,29 @@ import java.util.List;
 @SuperBuilder
 @Entity
 @Table(name = "categories")
+@SequenceGenerator(name = "entity_seq", sequenceName = "category_seq",  allocationSize = 50)
 @SQLDelete(sql = "UPDATE categories SET is_deleted = true WHERE id=?")
 @SQLRestriction("is_deleted = false")
-// Add this at the top of the class to skip any weird unknown JSON fields
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Category extends BaseEntity {
 
     @NotBlank
     private String name;
 
+    /** Smart: For SEO URLs (e.g., /category/laptops) */
     @NotBlank
     @Column(unique = true)
-    private String slug; // Smart: e.g., "men-footwear" // Smart: For SEO URLs (e.g., /category/laptops)
+    private String slug;
 
-    // Prevents "no session" errors when serializing the parent-child relationship.
-    // This allows the JSON to show the category details without crashing on
-    // Hibernate's lazy-loading proxies.
-    @ManyToOne
+    @Column(name = "is_deleted", nullable = false)
+    @Builder.Default
+    private boolean deleted = false;
+
+    /** The "Parent" node. JsonIgnoreProperties prevents Jackson serialization crashes on LAZY proxies. */
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
-    private Category parentCategory; //// The "Parent" node
+    private Category parentCategory;
 
     @JsonIgnore
     @OneToMany(mappedBy = "parentCategory", cascade = CascadeType.ALL)

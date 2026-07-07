@@ -4,11 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.manish.smartcart.shared.model.BaseEntity;
 import com.manish.smartcart.user.model.Users;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
@@ -19,22 +15,24 @@ import java.util.List;
  * Cart Entity: Represents the container. It has a One-to-One relationship with
  * the User.
  **/
-@Data
+@Setter
+@Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
 @SuperBuilder
-@EqualsAndHashCode(callSuper = true)
 @Table(name = "carts")
+@SequenceGenerator(name = "entity_seq", sequenceName = "cart_seq", allocationSize = 50)
 public class Cart extends BaseEntity { // Added BaseEntity for Versioning
 
     @OneToOne
     @JoinColumn(name = "user_id")
     private Users user;
+
     @JsonIgnoreProperties("cart") // Prevents CartItem from reaching back to this Cart
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private List<CartItem> items = new ArrayList<CartItem>();
+    private List<CartItem> items = new ArrayList<>();
 
     @Builder.Default
     private BigDecimal totalAmount = BigDecimal.ZERO;

@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 @SuperBuilder
 @Entity
 @Table(name = "product_insights")
+@SequenceGenerator(name = "entity_seq", sequenceName = "product_insights_seq",  allocationSize = 50)
 public class ProductInsights extends BaseEntity {
 
     @OneToOne(fetch = FetchType.LAZY)

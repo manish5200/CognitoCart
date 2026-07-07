@@ -2,33 +2,26 @@ package com.manish.smartcart.order.coupon.model;
 
 import com.manish.smartcart.shared.enums.DiscountType;
 import com.manish.smartcart.shared.model.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
 @SuperBuilder
-@EqualsAndHashCode(callSuper = true)
 @Table(name = "coupons")
+@SequenceGenerator(name = "entity_seq", sequenceName = "coupon_seq", allocationSize = 50)
 @SQLDelete(sql = "UPDATE coupons SET is_deleted = true WHERE id=?")
 @SQLRestriction("is_deleted = false")
 public class Coupon extends BaseEntity {
@@ -77,6 +70,16 @@ public class Coupon extends BaseEntity {
     @Builder.Default
     private Boolean isActive = true;
 
+    /**
+     * Soft-delete flag. Set to true by the @SQLDelete hook instead of issuing a
+     * physical DELETE. @SQLRestriction("is_deleted = false") auto-filters this
+     * entity from all SELECT queries, making the row invisible to the application
+     * while preserving the historical DB record (order history, audit trail).
+     */
+    @Builder.Default
+    @Column(name = "is_deleted", nullable = false)
+    private boolean deleted = false;
+
     // CONCEPT: "WELCOME100" can only be used on the user's very first purchase.
     @Builder.Default
     private Boolean isFirstOrderOnly = false;
@@ -119,11 +122,7 @@ public class Coupon extends BaseEntity {
         }
 
         // 2. If it was auto-generated for an Abandoned Cart Email, block other users from stealing it
-        if (targetUserId != null && !targetUserId.equals(requestingUserId)) {
-            return false;
-        }
-
-        return true;
+        return targetUserId == null || targetUserId.equals(requestingUserId);
     }
 
     /**

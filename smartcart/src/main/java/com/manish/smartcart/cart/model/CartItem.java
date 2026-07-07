@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 @Getter
 @SuperBuilder
 @Entity
+@SequenceGenerator(name = "entity_seq", sequenceName = "cart_item_seq", allocationSize = 50)
 @Table(name = "cart_items",
         indexes = {
                 @Index(name = "idx_cart_items_cart_id", columnList = "cart_id"),
