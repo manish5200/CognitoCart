@@ -17,6 +17,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -74,11 +75,15 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             countQuery = "SELECT COUNT(o) FROM Order o WHERE o.user.id = :userId")
     Page<Order> findByUserIdAndOrderItems(@Param("userId") Long userId, Pageable pageable);
 
-    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.orderItems " +
+    // Finds all orders in a given status that are older than the threshold.
+    // Used by the cleanup scheduler for both PAYMENT_PENDING and MANUAL_REFUND_REQUIRED sweeps.
+    // The JPQL join fetch prevents LazyInitializationException when the scheduler
+    // accesses order.getOrderItems() outside of a Hibernate session.
+    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.orderItems oi LEFT JOIN FETCH oi.variant " +
             "WHERE o.orderStatus = :status AND o.orderDate < :threshold")
     List<Order> findByOrderStatusAndOrderDateBeforeWithItems(
-            @Param("status") OrderStatus orderStatus,
-            @Param("threshold") LocalDateTime orderDateBefore);
+            @Param("status") OrderStatus status,
+            @Param("threshold") LocalDateTime threshold);
 
 
     // ─── SELLER DASHBOARD QUERIES ─────────────────────────────────────────────
@@ -252,4 +257,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "ORDER BY SUM(CASE WHEN o.returnRequestType IS NOT NULL THEN 1L ELSE 0L END) DESC")
     List<SellerProductQualityDTO> getProductQualityBySeller(
             @Param("sellerId") Long sellerId);
+
+    @Query("SELECT count(o) FROM Order o WHERE o.user.id = :userId AND o.orderStatus IN :statuses")
+    long countByUserIdAndOrderStatusIn(@Param("userId") Long userId,
+                                       @Param("statuses") Collection<OrderStatus> successStatuses);
 }
