@@ -8,8 +8,10 @@ import com.manish.smartcart.seller.dto.SellerProductAnalyticsResponse;
 import com.manish.smartcart.infrastructure.returnpolicy.ReturnPolicyService;
 import com.manish.smartcart.seller.service.SellerAnalyticsExportService;
 import com.manish.smartcart.seller.service.SellerService;
+import com.manish.smartcart.shared.exception.BusinessLogicException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,24 +28,36 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
+/**
+ * Pure Edge API Gateway for Seller Operations.
+ * <p>
+ * ARCHITECTURAL CONTEXT:
+ * This controller acts purely as an HTTP ingress point. It is responsible for:
+ * 1. Protocol Translation (HTTP -> Java Objects).
+ * 2. Hardened Security Assertion (Extracting & validating JWT claims).
+ * 3. Delegating business logic to the core domain services.
+ * <p>
+ * It intentionally contains zero business logic, ensuring the domain services
+ * remain agnostic of the delivery mechanism (HTTP/REST).
+ */
 @RestController
 @RequestMapping("/api/v1/sellers")
 @RequiredArgsConstructor
 @Tag(name = "Seller", description = "Seller profile and dashboard endpoints")
+@SecurityRequirement(name = "bearerAuth")
 public class SellerController {
 
     private final SellerService sellerService;
-    private final SellerAnalyticsExportService  sellerAnalyticsExportService;
+    private final SellerAnalyticsExportService sellerAnalyticsExportService;
     private final ReturnPolicyService returnPolicyService;
 
     /**
-     * GET /api/v1/sellers/dashboard
-     * Returns a complete snapshot of the authenticated seller's business:
-     * - Product counts (total / available / out-of-stock)
-     * - Revenue (delivered vs pending)
-     * - Order stats by status
-     * - Top 5 products by units sold
-     * Access: SELLER only (each seller sees ONLY their own data)
+     * Dashboard Data Aggregation endpoint.
+     * <p>
+     * PERFORMANCE IMPLICATION:
+     * Currently delegates to real-time transactional queries. If seller concurrency
+     * scales > 1,000 active sessions/min, this should be migrated to read from a
+     * Redis-cached Materialized View to protect the primary RDS instance from CPU spikes.
      */
     @GetMapping("/dashboard")
     @PreAuthorize("hasRole('SELLER')")
@@ -54,8 +68,17 @@ public class SellerController {
         return ResponseEntity.ok(sellerService.getDashboard(sellerId));
     }
 
-
-    //SELLER REVENUE GENERATION
+    /**
+     * High-Volume Data Egress (CSV Export).
+     * <p>
+     * MEMORY MANAGEMENT DESIGN:
+     * We return a StreamingResponseBody instead of a byte[] or String.
+     * Returning a byte[] for a seller with 50,000 orders would pull ~25MB of data
+     * into the JVM Heap all at once. Doing this concurrently would trigger an OutOfMemoryError.
+     * <p>
+     * By yielding a Stream, Spring writes the data directly to the HTTP Socket buffer
+     * in chunks (via the Tomcat thread pool), bypassing the JVM heap almost entirely.
+     */
     @GetMapping(value = "/reports/revenue.csv", produces = "text/csv")
     @PreAuthorize("hasRole('SELLER')")
     @Operation(summary = "Export Revenue CSV", description = "Streams an ultra-fast CSV file containing all delivered orders without locking the server.")
@@ -64,105 +87,106 @@ public class SellerController {
         Long sellerId = extractSellerId(authentication);
         StreamingResponseBody stream = sellerAnalyticsExportService.exportOrdersToCsvStream(sellerId);
 
-        // Generate timestamp
-        String timestamp = LocalDateTime.now()
-                .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
         String fileName = "seller_revenue_report_" + timestamp + ".csv";
 
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + fileName + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
                 .contentType(MediaType.parseMediaType("text/csv"))
                 .body(stream);
     }
 
-    //---------------- CRUD OPERATION RELATED TO RETURN POLICY -----------------------------
-    @Operation(summary = "Create return policy",
-            description = "Set return/exchange policy for your product OR a category. "
-                    + "productId XOR categoryId. returnWindowDays max=30. "
-                    + "NON_RETURNABLE must have all flags=false and days=0.")
-    @ApiResponse(responseCode = "201", description = "Policy created")
-    @ApiResponse(responseCode = "400", description = "Validation failed or duplicate policy exists")
-    @ApiResponse(responseCode = "403", description = "Product does not belong to you")
-    @PostMapping("/return-policy")
-    @PreAuthorize("hasRole('SELLER')")
-    public ReturnPolicyResponse createPolicy(
-            @Valid @RequestBody ReturnPolicyRequest request,
-            Authentication authentication) {
-        Long sellerId = extractSellerId(authentication);
-        ReturnPolicyResponse savedPolicy = returnPolicyService.createPolicy(sellerId, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedPolicy).getBody();
-    }
-
-    @Operation(summary = "List my return policies",
-            description = "Returns all return policies configured for your products.")
-    @ApiResponse(responseCode = "200", description = "Policies retrieved")
-    @GetMapping("/return-policy")
-    @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<List<ReturnPolicyResponse>> getMyPolicies(Authentication authentication) {
-        return ResponseEntity.ok(returnPolicyService.getMyPolicies(extractSellerId(authentication)));
-    }
-
-
-    @Operation(summary = "Update return policy",
-            description = "Update an existing policy. Only works on your own product policies.")
-    @ApiResponse(responseCode = "200", description = "Policy updated")
-    @ApiResponse(responseCode = "404", description = "Policy not found or not yours")
-    @PutMapping("/return-policy/{policyId}")
-    @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<ReturnPolicyResponse> updatePolicy(
-            @PathVariable Long policyId,
-            @Valid @RequestBody ReturnPolicyRequest request,
-            Authentication authentication) {
-        Long sellerId = extractSellerId(authentication);
-        return ResponseEntity.ok(returnPolicyService.updatePolicy(sellerId, policyId, request));
-    }
-
-    @Operation(summary = "Delete return policy",
-            description = "Removes a policy. Product falls back to category or NON_RETURNABLE default.")
-    @ApiResponse(responseCode = "200", description = "Policy deleted")
-    @DeleteMapping("/return-policy/{policyId}")
-    @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<?> deletePolicy(
-            @PathVariable Long policyId,
-            Authentication authentication) {
-        returnPolicyService.deletePolicy(extractSellerId(authentication), policyId);
-        return ResponseEntity.ok(Map.of(
-                "message", "Policy deleted. Product now falls back to category or NON_RETURNABLE default."));
-    }
-
+    // ---------------- CRUD OPERATIONS: RETURN POLICY -----------------------------
 
     /**
-     * GET /api/v1/seller/analytics/products
-     *
-     * The seller sees each of their products with a quality badge.
-     * CRITICAL products are listed first — immediate action required.
-     *
-     * Real-world use: A seller logs into their dashboard, sees their
-     * "Cotton T-Shirt" is CRITICAL with 38% return rate and a WARNING
-     * on "Bluetooth Speaker" at 18%. They now know exactly where to
-     * focus their quality control team — without calling customer support.
-     *
-     * sellerId extracted from JWT — sellers can only see their own data.
+     * Creates a new return policy configuration.
+     * <p>
+     * IDEMPOTENCY/STATE:
+     * POST is inherently non-idempotent. The underlying returnPolicyService must
+     * implement a UPSERT pattern or unique constraints to prevent duplicating policies
+     * if the client retries a timed-out network request.
      */
-    @Operation(
-            summary = "Product Quality Score Dashboard",
-            description = "Returns each seller product with return rate and quality score " +
-                    "(EXCELLENT / GOOD / WARNING / CRITICAL). " +
-                    "CRITICAL products listed first. Includes KPI summary counts."
-    )
-    @ApiResponse(responseCode = "200", description = "Product quality analytics retrieved")
-    @GetMapping("/analytics/products")
-    public ResponseEntity<SellerProductAnalyticsResponse> getProductQualityAnalytics(
+    @PostMapping("/return-policy")
+    @PreAuthorize("hasRole('SELLER')")
+    @Operation(summary = "Create return policy", description = "Set return/exchange policy for your product OR a category.")
+    @ApiResponse(responseCode = "201", description = "Policy created")
+    public ResponseEntity<ReturnPolicyResponse> createPolicy(
+            @Valid @RequestBody ReturnPolicyRequest request,
             Authentication authentication) {
+
         Long sellerId = extractSellerId(authentication);
-        return ResponseEntity.ok(
-                sellerService.getProductQualityAnalytics(sellerId));
+        ReturnPolicyResponse savedPolicy = returnPolicyService.createPolicy(sellerId, request);
+
+        // Strict adherence to HTTP semantics: 201 Created for resource generation
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedPolicy);
     }
 
+    @GetMapping("/return-policy")
+    @PreAuthorize("hasRole('SELLER')")
+    @Operation(summary = "List my return policies", description = "Returns all return policies configured for your products.")
+    @ApiResponse(responseCode = "200", description = "Policies retrieved")
+    public ResponseEntity<List<ReturnPolicyResponse>> getMyPolicies(Authentication authentication) {
+        Long sellerId = extractSellerId(authentication);
+        return ResponseEntity.ok(returnPolicyService.getMyPolicies(sellerId));
+    }
+
+    /**
+     * Mutates an existing policy.
+     * <p>
+     * SECURITY BOUNDARY:
+     * The UUID (policyPublicId) prevents enumeration attacks. Furthermore, the Service layer
+     * MUST validate that the resolved policy actually belongs to the caller's sellerId to
+     * prevent Insecure Direct Object Reference (IDOR).
+     */
+    @PutMapping("/return-policy/{policyPublicId}")
+    @PreAuthorize("hasRole('SELLER')")
+    @Operation(summary = "Update return policy", description = "Update an existing policy. Only works on your own product policies.")
+    public ResponseEntity<ReturnPolicyResponse> updatePolicy(
+            @PathVariable UUID policyPublicId,
+            @Valid @RequestBody ReturnPolicyRequest request,
+            Authentication authentication) {
+
+        Long sellerId = extractSellerId(authentication);
+        return ResponseEntity.ok(returnPolicyService.updatePolicy(sellerId, policyPublicId, request));
+    }
+
+    @DeleteMapping("/return-policy/{policyPublicId}")
+    @PreAuthorize("hasRole('SELLER')")
+    @Operation(summary = "Delete return policy")
+    public ResponseEntity<?> deletePolicy(
+            @PathVariable UUID policyPublicId,
+            Authentication authentication) {
+
+        Long sellerId = extractSellerId(authentication);
+        returnPolicyService.deletePolicy(sellerId, policyPublicId);
+
+        return ResponseEntity.ok(Map.of("message", "Policy deleted. Product now falls back to category or NON_RETURNABLE default."));
+    }
+
+    // ---------------- ANALYTICS -----------------------------
+
+    /**
+     * Intelligent Product Analytics Feed.
+     * <p>
+     * DOMAIN CONTEXT:
+     * Computes real-time return velocity. Used to proactively identify defective
+     * SKUs before they degrade the platform's overall customer trust score.
+     */
+    @GetMapping("/analytics/products")
+    @PreAuthorize("hasRole('SELLER')")
+    @Operation(summary = "Product Quality Score Dashboard")
+    public ResponseEntity<SellerProductAnalyticsResponse> getProductQualityAnalytics(
+            Authentication authentication) {
+
+        Long sellerId = extractSellerId(authentication);
+        return ResponseEntity.ok(sellerService.getProductQualityAnalytics(sellerId));
+    }
+
+    // ---------------- INTERNAL HELPERS -----------------------------
     private Long extractSellerId(Authentication authentication) {
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        if (authentication == null || !(authentication.getPrincipal() instanceof CustomUserDetails userDetails)) {
+            throw new BusinessLogicException("Authentication context is missing or invalid. Please log in again.");
+        }
         return userDetails.getUser().getId();
     }
 }

@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpecificationExecutor<Product> {
@@ -54,7 +55,7 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
                      "AND v IS NOT NULL " +        // Guard: skip orphaned items whose variant was hard-deleted
                      "GROUP BY i.variant.product " +
                      "ORDER BY totalSold DESC")
-       List<Object[]> findToSellingProducts(Pageable pageable);
+       List<Object[]> findTopSellingProducts(Pageable pageable);
 
        // ── Seller Dashboard Queries ─────────────────────────────────────────
 
@@ -153,4 +154,12 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
         */
        @Query("SELECT DISTINCT p FROM Product p LEFT JOIN FETCH p.reviews")
        List<Product> findAllWithReviews();
+
+       // PUBLIC ID LOOKUP: Used by all external product endpoints instead of exposing the internal Long id.
+       // Prevents IDOR attacks — sequential IDs let attackers enumerate the entire catalog.
+       Optional<Product> findByPublicId(UUID publicId);
+
+       // HUMAN ID LOOKUP: Used by catalog deep links and seller dashboard
+       Optional<Product> findByProductCode(String productCode);
 }
+

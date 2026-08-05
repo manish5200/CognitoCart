@@ -85,12 +85,12 @@ public class CouponService {
     }
 
     @Transactional
-    public void toggleActive(Long couponId) {
-        Coupon coupon = couponRepository.findById(couponId)
-                .orElseThrow(() -> new ResourceNotFoundException("Coupon not found with ID: " + couponId));
+    public void toggleActive(java.util.UUID couponPublicId) {
+        Coupon coupon = couponRepository.findByPublicId(couponPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Coupon not found with ID: " + couponPublicId));
         coupon.setIsActive(!coupon.getIsActive());
         couponRepository.save(coupon);
-        log.info("Coupon ID {} activation status toggled to {}", couponId, coupon.getIsActive());
+        log.info("Coupon ID {} activation status toggled to {}", couponPublicId, coupon.getIsActive());
     }
 
     // ─────────────────────────────────────────────────────────────────────────────

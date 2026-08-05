@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
@@ -19,5 +21,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
 
     int countByUserIdAndIsReadFalse(Long userId);
+
+    // PUBLIC ID LOOKUP
+    Optional<Notification> findByPublicId(UUID publicId);
 }
 

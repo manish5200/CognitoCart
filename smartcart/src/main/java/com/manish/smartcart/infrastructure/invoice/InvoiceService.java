@@ -76,7 +76,7 @@ public class InvoiceService {
          * @return Raw PDF bytes — ready to attach to an email via EmailService
          */
         public byte[] generateInvoice(OrderResponse order) {
-                log.info("Generating premium PDF invoice for Order #{}", order.getOrderId());
+                log.info("Generating premium PDF invoice for Order #{}", order.getOrderPublicId());
 
                 try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 
@@ -146,7 +146,7 @@ public class InvoiceService {
                         // Right column: Invoice metadata
                         // Generate a professional invoice number: INV-20260317-0013
                         String invoiceNumber = "INV-" + LocalDateTime.now().format(INVOICE_NUM) + "-"
-                                        + String.format("%04d", order.getOrderId());
+                                        + String.format("%04d", order.getOrderPublicId());
 
                         String orderDate = order.getOrderDate() != null
                                         ? order.getOrderDate().format(INVOICE_DATE)
@@ -158,7 +158,7 @@ public class InvoiceService {
 
                         Cell metaCell = new Cell()
                                         .add(labelValue("Invoice No:", invoiceNumber, bold, regular))
-                                        .add(labelValue("Order ID:", "#" + order.getOrderId(), bold, regular))
+                                        .add(labelValue("Order ID:", "#" + order.getOrderPublicId(), bold, regular))
                                         .add(labelValue("Date:", orderDate, bold, regular))
                                         .add(labelValue("Payment:", paymentBadge, bold, regular))
                                         .setBorder(Border.NO_BORDER)
@@ -330,11 +330,11 @@ public class InvoiceService {
                                         .setTextAlignment(TextAlignment.CENTER));
 
                         document.close();
-                        log.info("Premium PDF invoice generated for Order #{}", order.getOrderId());
+                        log.info("Premium PDF invoice generated for Order #{}", order.getOrderPublicId());
                         return baos.toByteArray();
 
                 } catch (Exception e) {
-                        log.error("Failed to generate invoice for Order #{}: {}", order.getOrderId(), e.getMessage());
+                        log.error("Failed to generate invoice for Order #{}: {}", order.getOrderPublicId(), e.getMessage());
                         throw new RuntimeException("Invoice generation failed.");
                 }
         }

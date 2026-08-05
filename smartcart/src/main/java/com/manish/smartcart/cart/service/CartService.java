@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -38,20 +39,19 @@ public class CartService {
     private final PromotionEngineService promotionEngine;
     private final FlashSaleItemRepository flashSaleItemRepository;
 
-    // The threshold for Free Delivery
     private static final BigDecimal FREE_DELIVERY_THRESHOLD = new BigDecimal("599.00");
-    // The cost of Delivery if they don't meet the threshold
     private static final BigDecimal STANDARD_DELIVERY_FEE = new BigDecimal("50.00");
 
 
     @Transactional
-    public Cart addItemToCart(Long userId, Long variantId, Integer quantity) {
+    public Cart addItemToCart(Long userId, java.util.UUID variantPublicId, Integer quantity) {
         // 1. Get or Create Cart for User
         Cart cart = cartRepository.findByUserId(userId).orElseGet(() -> creatNewCart(userId));
 
         // 2. Find the specific variant the customer selected
-        ProductVariant variant = productVariantRepository.findById(variantId)
-                .orElseThrow(() -> new ResourceNotFoundException("Product variant not found: " + variantId));
+        ProductVariant variant = productVariantRepository.findByPublicId(variantPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product variant not found: " + variantPublicId));
+        Long variantId = variant.getId();
 
         // Guard: Cannot add inactive/delisted variants to cart
         if (!variant.isActive()) {
@@ -183,6 +183,29 @@ public class CartService {
         return cartRepository.save(cart);
     }
 
+    // Remove a specific item from the cart
+    @Transactional
+    public Cart removeItemFromCart(Long userId, UUID variantPublicId) {
+
+        Long variantId = cartItemRepository.findByPublicId(variantPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Cart Item no found for: #"+ variantPublicId))
+                .getId();
+        Cart cart = cartRepository.findByUserId(userId).orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
+
+        CartItem itemToRemove = cart.getItems().stream()
+                .filter(item -> item.getVariant() != null  && item.getVariant().getId().equals(variantId))
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Variant (ID: " + variantId + ") not found in your cart."));
+
+        cart.removeCartItem(itemToRemove);
+
+        // Vital: Recalculate! If removing this item drops the subtotal below 599,
+        // the Delivery Fee will automatically jump back to 50!
+        updateCartTotal(cart);
+        return cartRepository.save(cart);
+    }
+
     /**
      * THE MATH ENGINE: This runs every time an item is added, removed, or a coupon is applied.
      * It recalculates the 5-step algebraic pipeline securely and logs its decisions using SLF4J.
@@ -201,7 +224,7 @@ public class CartService {
         boolean forceFreeShipping = false;
         // Step 2: Complex Promotions evaluation
         if(cart.getCouponCode() != null ){
-             Coupon coupon = couponService.findActiveCouponByCode(cart.getCouponCode());
+            Coupon coupon = couponService.findActiveCouponByCode(cart.getCouponCode());
 
             // Validate not just existence, but also specific user exclusivity constraints
             if(coupon != null && coupon.isValidForUser(cart.getUser().getId())) {
@@ -252,25 +275,6 @@ public class CartService {
         cart.setDiscountAmount(discountAmount);
         cart.setDeliveryFee(deliveryFee);
         cart.setTotalAmount(finalTotal);
-    }
-
-    // Remove a specific item from the cart
-    @Transactional
-    public Cart removeItemFromCart(Long userId, Long variantId) {
-        Cart cart = cartRepository.findByUserId(userId).orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
-
-        CartItem itemToRemove = cart.getItems().stream()
-                .filter(item -> item.getVariant() != null  && item.getVariant().getId().equals(variantId))
-                .findFirst()
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Variant (ID: " + variantId + ") not found in your cart."));
-
-        cart.removeCartItem(itemToRemove);
-
-        // Vital: Recalculate! If removing this item drops the subtotal below 599,
-        // the Delivery Fee will automatically jump back to 50!
-        updateCartTotal(cart);
-        return cartRepository.save(cart);
     }
 
 }

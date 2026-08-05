@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("api/v1/guest-cart")
 @RequiredArgsConstructor
@@ -40,18 +42,17 @@ public class GuestCartController {
             @PathVariable String sessionId,
             @RequestBody @Valid CartRequest cartRequest) {
 
-        GuestCart cart = guestCartService.addItem(sessionId, cartRequest.getVariantId(), cartRequest.getQuantity());
+        GuestCart cart = guestCartService.addItem(sessionId, cartRequest.getVariantPublicId(), cartRequest.getQuantity());
         return ResponseEntity.ok(cart);
     }
 
     @Operation(summary = "Remove item from guest cart")
     @ApiResponse(responseCode = "200", description = "Item removed successfully")
-    @DeleteMapping("/{sessionId}/item/{productId}")
+    @DeleteMapping("/{sessionId}/item/{variantPublicId}")
     public ResponseEntity<GuestCart> removeItem(
             @PathVariable String sessionId,
-            @PathVariable Long productId) {
-
-        GuestCart cart = guestCartService.removeItem(sessionId, productId);
+            @PathVariable UUID variantPublicId) {
+        GuestCart cart = guestCartService.removeItem(sessionId, variantPublicId);
         return ResponseEntity.ok(cart);
     }
 

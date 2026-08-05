@@ -9,6 +9,8 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface PlatformSaleEventRepository extends JpaRepository<PlatformSaleEvent, Long> {
@@ -27,4 +29,10 @@ public interface PlatformSaleEventRepository extends JpaRepository<PlatformSaleE
 
     // Simple fetch for Admin dashboards
     List<PlatformSaleEvent> findByStatus(EventStatus status);
+
+    // PUBLIC ID LOOKUP
+    Optional<PlatformSaleEvent> findByPublicId(UUID publicId);
+
+    // HUMAN ID LOOKUP
+    Optional<PlatformSaleEvent> findByEventCode(String eventCode);
 }

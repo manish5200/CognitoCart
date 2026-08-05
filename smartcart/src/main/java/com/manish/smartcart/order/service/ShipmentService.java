@@ -44,23 +44,23 @@ public class ShipmentService {
      */
 
     @Transactional
-    public OrderResponse attachShipmentAndShip(Long orderId, ShipmentRequest request) {
+    public OrderResponse attachShipmentAndShip(java.util.UUID orderPublicId, ShipmentRequest request) {
         // 1. Fetch the order — throw a clear error if it doesn't exist
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(()->new RuntimeException("Order not found with ID: " + orderId));
+        Order order = orderRepository.findByPublicId(orderPublicId)
+                .orElseThrow(()->new RuntimeException("Order not found with ID: " + orderPublicId));
 
         // 2. Guard: only CONFIRMED or PACKED orders can be shipped.
         //    Prevents double-shipping or shipping an unpaid order.
         if(order.getOrderStatus() != OrderStatus.CONFIRMED
                 && order.getOrderStatus() != OrderStatus.PACKED){
             throw new RuntimeException(
-                    "Order #" + orderId + " cannot be shipped. Current status: " + order.getOrderStatus()
+                    "Order #" + orderPublicId + " cannot be shipped. Current status: " + order.getOrderStatus()
                             + ". Order must be CONFIRMED or PACKED first.");
         }
 
         // 3. Guard: prevent duplicate shipment creation for the same order
-        if(shipmentRepository.findByOrder_Id(orderId).isPresent()){
-            throw new RuntimeException("A shipment already exists for Order #" + orderId);
+        if(shipmentRepository.findByOrder_Id(order.getId()).isPresent()){
+            throw new RuntimeException("A shipment already exists for Order #" + orderPublicId);
         }
 
         // 4. Build and save the Shipment entity
@@ -83,7 +83,7 @@ public class ShipmentService {
         }
 
         shipmentRepository.save(shipment);
-        log.info("Shipment created for Order #{} — AWB: {}", orderId, request.getTrackingNumber());
+        log.info("Shipment created for Order #{} — AWB: {}", orderPublicId, request.getTrackingNumber());
 
         // 5. Promote Order to SHIPPED status
         order.setOrderStatus(OrderStatus.SHIPPED);

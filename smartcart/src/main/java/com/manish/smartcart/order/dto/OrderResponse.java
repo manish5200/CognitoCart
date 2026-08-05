@@ -15,10 +15,10 @@ import java.util.List;
 @AllArgsConstructor
 @RequiredArgsConstructor
 public class OrderResponse {
-    private Long orderId;
+    private java.util.UUID orderPublicId;
     private String email;
     private String customerName;
-    private Long customerId;
+    private java.util.UUID customerPublicId;
     private String shippingPhone;
     private LocalDateTime orderDate;
     private BigDecimal totalAmount;

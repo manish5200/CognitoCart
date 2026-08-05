@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 @RestController
@@ -38,9 +39,9 @@ public class ReviewController {
                     "No authentication required."
     )
     @ApiResponse(responseCode = "200", description = "Reviews retrieved successfully")
-    @GetMapping("/{productId}")
-    public ResponseEntity<List<ReviewResponseDTO>> getReviewsForProduct(@PathVariable Long productId) {
-        return ResponseEntity.ok(reviewService.getReviewsForProduct(productId));
+    @GetMapping("/{productPublicId}")
+    public ResponseEntity<List<ReviewResponseDTO>> getReviewsForProduct(@PathVariable UUID productPublicId) {
+        return ResponseEntity.ok(reviewService.getReviewsForProduct(productPublicId));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -52,9 +53,9 @@ public class ReviewController {
                     "Suitable for rendering a rating histogram widget. No authentication required."
     )
     @ApiResponse(responseCode = "200", description = "Rating distribution retrieved successfully")
-    @GetMapping("/{productId}/distribution")
-    public ResponseEntity<?> getRatingDistribution(@PathVariable Long productId) {
-        return ResponseEntity.ok(reviewService.getRatingDistribution(productId));
+    @GetMapping("/{productPublicId}/distribution")
+    public ResponseEntity<?> getRatingDistribution(@PathVariable UUID productPublicId) {
+        return ResponseEntity.ok(reviewService.getRatingDistribution(productPublicId));
     }
 
 
@@ -76,10 +77,10 @@ public class ReviewController {
             @ApiResponse(responseCode = "404", description = "Product not found")
     })
     @SecurityRequirement(name = "bearerAuth")
-    @PostMapping("/{productId}")
+    @PostMapping("/{productPublicId}")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<?> postReview(
-            @PathVariable Long productId,
+            @PathVariable UUID productPublicId,
             @RequestBody ReviewRequestDTO reviewRequestDTO,
             Authentication authentication) {
 
@@ -87,7 +88,7 @@ public class ReviewController {
         return ResponseEntity
                 .ok(reviewService.addOrUpdateReview(
                         userId,
-                        productId,
+                        productPublicId,
                         reviewRequestDTO));
     }
 
@@ -103,13 +104,13 @@ public class ReviewController {
             @ApiResponse(responseCode = "404", description = "Review not found or does not belong to you")
     })
     @SecurityRequirement(name = "bearerAuth")
-    @DeleteMapping("/{reviewId}")
+    @DeleteMapping("/{reviewPublicId}")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<?> deleteMyReview(
-            @PathVariable Long reviewId,
+            @PathVariable UUID reviewPublicId,
             Authentication authentication) {
         Long userId = extractUserId(authentication);
-        reviewService.deleteMyReview(reviewId, userId);
+        reviewService.deleteMyReview(reviewPublicId, userId);
         return ResponseEntity.ok(Map.of("message", "Your review has been removed successfully."));
     }
 
@@ -125,10 +126,10 @@ public class ReviewController {
             @ApiResponse(responseCode = "404", description = "Review not found")
     })
     @SecurityRequirement(name = "bearerAuth")
-    @DeleteMapping("/admin/{reviewId}")
+    @DeleteMapping("/admin/{reviewPublicId}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> adminDeleteReview(@PathVariable Long reviewId) {
-        reviewService.adminDeleteReview(reviewId);
+    public ResponseEntity<?> adminDeleteReview(@PathVariable UUID reviewPublicId) {
+        reviewService.adminDeleteReview(reviewPublicId);
         return ResponseEntity.ok(Map.of("message", "Review has been removed by admin."));
     }
 

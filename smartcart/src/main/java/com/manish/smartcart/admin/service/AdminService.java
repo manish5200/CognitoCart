@@ -24,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,10 +40,8 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class AdminService {
 
-    // CONCEPT: "Terminal States" — once an order reaches these, it is IMMUTABLE.
-    // Just like you cannot un-deliver a package or un-cancel a ticket.
-    // We use a Set for O(1) lookup instead of chaining multiple if-else conditions.
-    private static final java.util.Set<OrderStatus> IMMUTABLE_STATES = java.util.Set.of(
+    // TERMINAL STATES: O(1) lookup to prevent illegal state transitions.
+    private static final Set<OrderStatus> IMMUTABLE_STATES = Set.of(
             OrderStatus.DELIVERED,
             OrderStatus.CANCELLED,
             OrderStatus.RETURNED,
@@ -51,6 +50,15 @@ public class AdminService {
             OrderStatus.REPLACEMENT_REQUESTED,
             OrderStatus.EXCHANGE_REQUESTED,
             OrderStatus.REPLACEMENT_SHIPPED
+    );
+
+    // KYC State Machine constraints
+    private static final Map<KycStatus, Set<KycStatus>> ALLOWED_KYC_TRANSITIONS = Map.of(
+            KycStatus.PENDING,   Set.of(KycStatus.IN_REVIEW),
+            KycStatus.IN_REVIEW, Set.of(KycStatus.VERIFIED, KycStatus.REJECTED),
+            KycStatus.VERIFIED,  Set.of(KycStatus.SUSPENDED),
+            KycStatus.REJECTED,  Set.of(KycStatus.IN_REVIEW),
+            KycStatus.SUSPENDED, Set.of(KycStatus.VERIFIED)
     );
 
     private final ProductRepository productRepository;
@@ -65,14 +73,17 @@ public class AdminService {
 
     @Transactional(readOnly = true)
     public DashboardResponse getAdminStats(int pageNumber,int pageSize) {
-        // 1. Calculate Metrics
-        BigDecimal revenue = orderRepository.calculateRevenue();// Using your JPQL query
+        // 1. Calculate Core Financials
+        BigDecimal revenue = orderRepository.calculateRevenue();
         Long successful = orderRepository.countByOrderStatus(OrderStatus.DELIVERED);
         Long canceled = orderRepository.countByOrderStatus(OrderStatus.CANCELLED);
 
-        // 2. Fetch Low Stock Products (threshold < 5) and  Map to LowStockResponse DTO
-        List<ProductVariant> lowStockVariants  = productVariantRepository.findLowStockVariants();
-        List<LowStockResponse>lowStockResponse = lowStockVariants.stream()
+
+        // 2. OOM-Protected Low Stock Preview (Dashboard Widget limits to top 10)
+        // Requires the upgraded ProductVariantRepository using Slice
+        Pageable lowStockLimit = PageRequest.of(0, 10);
+        Slice<ProductVariant> lowStockSlice = productVariantRepository.findLowStockVariants(lowStockLimit);
+        List<LowStockResponse>lowStockResponse = lowStockSlice.getContent().stream()
                 .map(variant -> new LowStockResponse(
                         variant.getId(),                           // variantId (the purchasable SKU)
                         variant.getProduct().getProductName(),     // master product name
@@ -81,11 +92,11 @@ public class AdminService {
                         variant.getSku()                           // the actual warehouse SKU
                 )).toList();
 
-        //3. Identify Top Sellers (Requesting top 5) using Pageable
-        // Spring Data Pageable handles the LIMIT and OFFSET in the background
+        // 3. Top Sellers Pagination
         Pageable pageable = PageRequest.of(pageNumber, pageSize);
         //Object[] array of Product Class and Total Quant -> from repo
-        List<Object[]>topSellersRaw = productRepository.findToSellingProducts(pageable);
+        List<Object[]>topSellersRaw = productRepository.findTopSellingProducts(pageable);
+
         List<TopProductDTO>topSellingProducts = topSellersRaw.stream()
                 .map(result ->{
                        Product p = (Product) result[0];
@@ -98,10 +109,10 @@ public class AdminService {
                         );
                 }).toList();
 
-        // ADD THIS: Calculate the trend for the last 7 days
+        // 4. Trend Analysis
         LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
         List<DailyRevenueDTO> dailyTrend = orderRepository.getDailyRevenueTrend(sevenDaysAgo);
-        // 4. Return the combined Dashboard
+
         return new DashboardResponse(
                 revenue != null ? revenue : BigDecimal.ZERO,
                 successful,
@@ -115,103 +126,77 @@ public class AdminService {
     // Play with the order
     @Transactional
     public OrderResponse changeTheStatusOfOrders(StatusChangeRequest statusChangeRequest) {
-        Order order = orderRepository.findById(statusChangeRequest.getOrderId())
+        Order order = orderRepository.findByPublicId(statusChangeRequest.getOrderPublicId())
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Order not found with ID: " + statusChangeRequest.getOrderId()));
+                        "Order not found with ID: " + statusChangeRequest.getOrderPublicId()));
 
         // GUARD: Reject any modification attempt on terminal-state orders.
         // This prevents accidental data corruption from admin panel mistakes.
-
-        if(IMMUTABLE_STATES.contains(order.getOrderStatus())) {
+        if (IMMUTABLE_STATES.contains(order.getOrderStatus())) {
             throw new BusinessLogicException(
                     "Order #" + order.getId() + " is in a terminal state ("
                             + order.getOrderStatus() + ") and cannot be modified.");
         }
-
         try {
-            // Convert String to Enum safely
-            OrderStatus newStatus = OrderStatus.valueOf(
-                    statusChangeRequest.getOrderStatus().toUpperCase());
-
+            OrderStatus newStatus = OrderStatus.valueOf(statusChangeRequest.getOrderStatus().toUpperCase());
             order.setOrderStatus(newStatus);
         } catch (IllegalArgumentException e) {
             throw new BusinessLogicException(
                     "Invalid order status: '" + statusChangeRequest.getOrderStatus()
-                    + "'. Valid values: " + java.util.Arrays.toString(OrderStatus.values()));
+                            + "'. Valid values: " + java.util.Arrays.toString(OrderStatus.values()));
         }
         Order savedOrder = orderRepository.save(order);
         return orderMapper.toOrderResponse(savedOrder);
     }
 
-    private static final Map<KycStatus, Set<KycStatus>> ALLOWED_KYC_TRANSITIONS = Map.of(
-            KycStatus.PENDING,   Set.of(KycStatus.IN_REVIEW),
-            KycStatus.IN_REVIEW, Set.of(KycStatus.VERIFIED, KycStatus.REJECTED),
-            KycStatus.VERIFIED,  Set.of(KycStatus.SUSPENDED),
-            KycStatus.REJECTED,  Set.of(KycStatus.IN_REVIEW),
-            KycStatus.SUSPENDED, Set.of(KycStatus.VERIFIED)
-    );
-
     @Transactional
-    public SellerProfile updateSellerKyc(Long sellerId, KycUpdateRequest request) {
-        SellerProfile seller = sellerProfileRepository.findById(sellerId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Seller profile not found for ID: " + sellerId));
+    public SellerProfile updateSellerKyc(java.util.UUID sellerPublicId, KycUpdateRequest request) {
+        SellerProfile seller = sellerProfileRepository.findByPublicId(sellerPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Seller profile not found for ID: " + sellerPublicId));
 
         KycStatus current = seller.getKycStatus();
         KycStatus next = request.getStatus();
 
-        Set<KycStatus>allowed = ALLOWED_KYC_TRANSITIONS.get(current);
-        if(!allowed.contains(next)){
+        Set<KycStatus> allowed = ALLOWED_KYC_TRANSITIONS.getOrDefault(current, Set.of());
+        if (!allowed.contains(next)) {
             throw new BusinessLogicException(
-                    "Invalid KYC transition: " + current + " → " + next
-                            + ". Allowed from " + current + ": " + allowed);
+                    "Invalid KYC transition: " + current + " → " + next + ". Allowed from " + current + ": " + allowed);
         }
-
-        if((next == KycStatus.REJECTED || next == KycStatus.SUSPENDED)
-        && (request.getAdminComment() == null || request.getAdminComment().isBlank())){
-            throw new BusinessLogicException(
-                    "adminComment is required when rejecting or suspending a seller.");
+        if ((next == KycStatus.REJECTED || next == KycStatus.SUSPENDED)
+                && (request.getAdminComment() == null || request.getAdminComment().isBlank())) {
+            throw new BusinessLogicException("adminComment is required when rejecting or suspending a seller.");
         }
 
         seller.setKycStatus(next);
         SellerProfile saved = sellerProfileRepository.save(seller);
 
-        // Email fires
+        // Dispatches email securely outside the DB failure scope
         sendKycDecisionEmail(saved, next, request.getAdminComment());
+
         return saved;
     }
 
-
-    private void sendKycDecisionEmail(
-            SellerProfile profile,
-            KycStatus newStatus,
-            String adminComment) {
-
-        if(newStatus != KycStatus.VERIFIED
-        && newStatus != KycStatus.SUSPENDED
-        && newStatus != KycStatus.REJECTED){
-            return;  // IN_REVIEW is intermediate — no email needed
+    private void sendKycDecisionEmail(SellerProfile profile, KycStatus newStatus, String adminComment) {
+        if (newStatus != KycStatus.VERIFIED && newStatus != KycStatus.SUSPENDED && newStatus != KycStatus.REJECTED) {
+            return;
         }
 
-        try{
-            String subject = switch(newStatus){
+        try {
+            String subject = switch (newStatus) {
                 case VERIFIED -> "🎉 KYC Approved — Welcome to CognitoCart Sellers!";
-                case REJECTED ->  "❌ KYC Update — Action Required";
-                case SUSPENDED ->  "⚠️ Your seller account has been suspended";
-                default        -> "KYC Status Update";
+                case REJECTED -> "❌ KYC Update — Action Required";
+                case SUSPENDED -> "⚠️ Your seller account has been suspended";
+                default -> "KYC Status Update";
             };
 
             String body = emailTemplateBuilder.buildSellerKycDecisionEmail(
-                    profile.getUser().getFullName(),
-                    newStatus.name(),
-                    adminComment);
-            emailService.sendMail(profile.getUser().getEmail(), subject, body, "CognitoCart KYC");
-        }catch (Exception e){
-            // Email failure must NOT rollback the DB transaction
-            // The KYC status change already committed — just log
-            log.warn("KYC decision email failed for sellerId={}: {}", profile.getId(), e.getMessage());
-        }
+                    profile.getUser().getFullName(), newStatus.name(), adminComment);
 
+            emailService.sendMail(profile.getUser().getEmail(), subject, body, "CognitoCart KYC");
+
+        } catch (Exception e) {
+            log.warn("KYC decision email failed for sellerId={}. DB state committed successfully. Error: {}", profile.getId(), e.getMessage());
+        }
     }
 
     @Transactional(readOnly = true)
@@ -331,13 +316,14 @@ public class AdminService {
      * We MUST validate it belongs to a seller before querying analytics,
      * otherwise a customer's ID will silently return an empty dashboard.
      */
-    public SellerProductAnalyticsResponse getSellerAnalyticsForAdmin(Long sellerId) {
+    public SellerProductAnalyticsResponse getSellerAnalyticsForAdmin(java.util.UUID sellerPublicId) {
 
         // 1. Boundary Validation: Is this actually a seller?
-        sellerProfileRepository.findById(sellerId)
+        Long sellerId = sellerProfileRepository.findByPublicId(sellerPublicId)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "No seller found with ID: " + sellerId +
-                                ". Ensure the ID belongs to a registered seller."));
+                        "No seller found with ID: " + sellerPublicId +
+                                ". Ensure the ID belongs to a registered seller."))
+                .getId();
 
         // 2. Trust established -> Delegate to the fast shared service
         return sellerService.getProductQualityAnalytics(sellerId);

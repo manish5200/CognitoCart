@@ -26,20 +26,20 @@ public class OrderNotificationService {
     public void sendOrderConfirmationEmail(OrderResponse orderResponse) {
         try {
             String body = emailTemplateBuilder.buildOrderConfirmation(orderResponse);
-            String subject = "✅ Order Confirmed! Order #" + orderResponse.getOrderId();
+            String subject = "✅ Order Confirmed! Order #" + orderResponse.getOrderPublicId();
             emailService.sendMail(orderResponse.getEmail(), subject, body, "CognitoCart");
 
             // In-App & SMS
-            String msg = "Order #" + orderResponse.getOrderId() + " confirmed successfully. Total: ₹" + orderResponse.getTotalAmount();
+            String msg = "Order #" + orderResponse.getOrderPublicId() + " confirmed successfully. Total: ₹" + orderResponse.getTotalAmount();
             inAppNotificationService.createNotification(
-                    orderResponse.getCustomerId(),
+                    orderResponse.getCustomerPublicId(),
                     NotificationType.ORDER_STATUS_UPDATE,
                     "Order Confirmed",
                     msg);
             smsNotificationService.sendSms(orderResponse.getShippingPhone(), msg);
 
         } catch (Exception e) {
-            log.warn("Failed to send confirmation notification for Order #{}: {}", orderResponse.getOrderId(), e.getMessage());
+            log.warn("Failed to send confirmation notification for Order #{}: {}", orderResponse.getOrderPublicId(), e.getMessage());
         }
     }
 
@@ -47,16 +47,16 @@ public class OrderNotificationService {
     public void sendStatusUpdateEmail(OrderResponse orderResponse) {
         try {
             String body = emailTemplateBuilder.buildOrderStatusUpdate(orderResponse);
-            String subject = "📦 Order Update: #" + orderResponse.getOrderId() + " is now " + orderResponse.getStatus();
+            String subject = "📦 Order Update: #" + orderResponse.getOrderPublicId() + " is now " + orderResponse.getStatus();
             emailService.sendMail(orderResponse.getEmail(), subject, body, "CognitoCart");
 
             // In-App & SMS
-            String msg = "Your order #" + orderResponse.getOrderId() + " status changed to " + orderResponse.getStatus();
-            inAppNotificationService.createNotification(orderResponse.getCustomerId(), NotificationType.ORDER_STATUS_UPDATE,"Order Update", msg);
+            String msg = "Your order #" + orderResponse.getOrderPublicId() + " status changed to " + orderResponse.getStatus();
+            inAppNotificationService.createNotification(orderResponse.getCustomerPublicId(), NotificationType.ORDER_STATUS_UPDATE,"Order Update", msg);
             smsNotificationService.sendSms(orderResponse.getShippingPhone(), msg);
 
         } catch (Exception e) {
-            log.warn("Failed to send status update notification for Order #{}: {}", orderResponse.getOrderId(), e.getMessage());
+            log.warn("Failed to send status update notification for Order #{}: {}", orderResponse.getOrderPublicId(), e.getMessage());
         }
     }
 
@@ -64,20 +64,20 @@ public class OrderNotificationService {
     public void sendRefundEmail(OrderResponse orderResponse, String refundId) {
         try {
             String body = emailTemplateBuilder.buildRefundEmail(orderResponse, refundId);
-            String subject = "💰 Refund Processed: Order #" + orderResponse.getOrderId();
+            String subject = "💰 Refund Processed: Order #" + orderResponse.getOrderPublicId();
             emailService.sendMail(orderResponse.getEmail(), subject, body, "CognitoCart");
 
             // In-App & SMS
-            String msg = "Refund of ₹" + orderResponse.getTotalAmount() + " initiated for Order #" + orderResponse.getOrderId() + ". Ref ID: " + refundId;
+            String msg = "Refund of ₹" + orderResponse.getTotalAmount() + " initiated for Order #" + orderResponse.getOrderPublicId() + ". Ref ID: " + refundId;
             inAppNotificationService.createNotification(
-                    orderResponse.getCustomerId(),
+                    orderResponse.getCustomerPublicId(),
                     NotificationType.REFUND_ISSUED,
                     "Refund Initiated",
                     msg);
             smsNotificationService.sendSms(orderResponse.getShippingPhone(), msg);
 
         } catch (Exception e) {
-            log.warn("Failed to send refund notification for Order #{}: {}", orderResponse.getOrderId(), e.getMessage());
+            log.warn("Failed to send refund notification for Order #{}: {}", orderResponse.getOrderPublicId(), e.getMessage());
         }
     }
 
@@ -88,22 +88,22 @@ public class OrderNotificationService {
         try{
             // Reuse the existing order-confirmation Thymeleaf template as the email body
             String body     = emailTemplateBuilder.buildOrderConfirmation(order);
-            String subject  = "🧾 Your Invoice — Order #" + order.getOrderId() + " | CognitoCart";
-            String filename = "CognitoCart-Invoice-" + order.getOrderId() + ".pdf";
+            String subject  = "🧾 Your Invoice — Order #" + order.getOrderPublicId() + " | CognitoCart";
+            String filename = "CognitoCart-Invoice-" + order.getOrderPublicId() + ".pdf";
 
             // Uses the new sendMailWithAttachment method we just added to EmailService
             emailService.sendMailWithAttachment(
                     order.getEmail(), subject, body, "CognitoCart Billing", invoicePdf, filename);
 
-            log.info("Invoice email dispatched for Order #{}", order.getOrderId());
+            log.info("Invoice email dispatched for Order #{}", order.getOrderPublicId());
 
             // In-App (No SMS for invoices)
             inAppNotificationService.createNotification(
-                    order.getCustomerId(),
+                    order.getCustomerPublicId(),
                     NotificationType.SYSTEM_ALERT,
-                    "Invoice Generated", "Your invoice for Order #" + order.getOrderId() + " is ready.");
+                    "Invoice Generated", "Your invoice for Order #" + order.getOrderPublicId() + " is ready.");
         } catch (Exception e) {
-            log.warn("Failed to send invoice email for Order #{}: {}", order.getOrderId(), e.getMessage());
+            log.warn("Failed to send invoice email for Order #{}: {}", order.getOrderPublicId(), e.getMessage());
         }
     }
 
@@ -121,19 +121,19 @@ public class OrderNotificationService {
     public void sendDeliveryConfirmationEmail(OrderResponse orderResponse) {
         try {
             String body = emailTemplateBuilder.buildDeliveryConfirmationEmail(orderResponse);
-            String subject = "🎉 Delivered! Order #" + orderResponse.getOrderId()
+            String subject = "🎉 Delivered! Order #" + orderResponse.getOrderPublicId()
                     + " has arrived — how was it?";
             emailService.sendMail(orderResponse.getEmail(), subject, body, "CognitoCart");
 
             // In-App & SMS
-            String msg = "Order #" + orderResponse.getOrderId() + " has been delivered! Please rate your purchase.";
-            inAppNotificationService.createNotification(orderResponse.getCustomerId(), NotificationType.ORDER_STATUS_UPDATE, "Order Delivered", msg);
+            String msg = "Order #" + orderResponse.getOrderPublicId() + " has been delivered! Please rate your purchase.";
+            inAppNotificationService.createNotification(orderResponse.getCustomerPublicId(), NotificationType.ORDER_STATUS_UPDATE, "Order Delivered", msg);
             smsNotificationService.sendSms(orderResponse.getShippingPhone(), msg);
 
-            log.info("Delivery confirmation email sent for Order #{}", orderResponse.getOrderId());
+            log.info("Delivery confirmation email sent for Order #{}", orderResponse.getOrderPublicId());
 
         } catch (Exception e) {
-            log.warn("Failed to send delivery confirmation email for Order #{}: {}", orderResponse.getOrderId(), e.getMessage());
+            log.warn("Failed to send delivery confirmation email for Order #{}: {}", orderResponse.getOrderPublicId(), e.getMessage());
         }
     }
 
@@ -141,17 +141,17 @@ public class OrderNotificationService {
     public void sendReturnRejectedEmail(OrderResponse orderResponse, String adminComment){
         try{
             String body = emailTemplateBuilder.buildReturnRejectedEmail(orderResponse, adminComment);
-            String subject = "❌ Return Request Declined: Order #" + orderResponse.getOrderId();
+            String subject = "❌ Return Request Declined: Order #" + orderResponse.getOrderPublicId();
             emailService.sendMail(orderResponse.getEmail(), subject, body, "CognitoCart");
 
             // In-App & SMS
-            String msg = "Your return request for Order #" + orderResponse.getOrderId() + " was declined. Reason: " + adminComment;
-            inAppNotificationService.createNotification(orderResponse.getCustomerId(), NotificationType.RETURN_REJECTED, "Return Declined", msg);
+            String msg = "Your return request for Order #" + orderResponse.getOrderPublicId() + " was declined. Reason: " + adminComment;
+            inAppNotificationService.createNotification(orderResponse.getCustomerPublicId(), NotificationType.RETURN_REJECTED, "Return Declined", msg);
             smsNotificationService.sendSms(orderResponse.getShippingPhone(), msg);
 
-            log.info("Return rejection email sent to customer for Order #{}", orderResponse.getOrderId());
+            log.info("Return rejection email sent to customer for Order #{}", orderResponse.getOrderPublicId());
         } catch (Exception e) {
-            log.warn("Failed to send return rejection email for Order #{}: {}", orderResponse.getOrderId(), e.getMessage());
+            log.warn("Failed to send return rejection email for Order #{}: {}", orderResponse.getOrderPublicId(), e.getMessage());
         }
     }
 }

@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 /**
@@ -261,4 +262,19 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT count(o) FROM Order o WHERE o.user.id = :userId AND o.orderStatus IN :statuses")
     long countByUserIdAndOrderStatusIn(@Param("userId") Long userId,
                                        @Param("statuses") Collection<OrderStatus> successStatuses);
+
+    // ─── PUBLIC & HUMAN ID LOOKUPS ─────────────────────────────────────────────
+
+    /**
+     * UUID lookup — used by all external REST endpoints.
+     * Frontend always sends publicId, never the internal Long id.
+     */
+    Optional<Order> findByPublicId(UUID publicId);
+
+    /**
+     * Human ID lookup — used by the smart resolver, customer support search,
+     * and order confirmation emails.
+     * Example: ORD-20260710-K7P2MQ
+     */
+    Optional<Order> findByOrderNumber(String orderNumber);
 }

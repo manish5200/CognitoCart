@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface FlashSaleItemRepository extends JpaRepository<FlashSaleItem, Long> {
@@ -41,5 +42,8 @@ public interface FlashSaleItemRepository extends JpaRepository<FlashSaleItem, Lo
     int atomicallyIncrementUsedUnits(@Param("itemId") Long itemId, @Param("quantity") int quantity);
 
     // Allows sellers to view their submitted items
-    List<FlashSaleItem>findBySellerId(Long sellerId);
+    List<FlashSaleItem> findBySellerId(Long sellerId);
+
+    // PUBLIC ID LOOKUP
+    Optional<FlashSaleItem> findByPublicId(UUID publicId);
 }

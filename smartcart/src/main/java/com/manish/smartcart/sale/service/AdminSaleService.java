@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -82,13 +83,16 @@ public class AdminSaleService {
      * Executes quality control validation on seller-submitted flash sale inventory.
      * Prevents unauthorized pricing manipulations and enforces marketplace compliance.
      *
-     * @param flashSaleItemId The unique identifier of the seller's submitted inventory item.
+     * @param itemPublicId The unique identifier of the seller's submitted inventory item.
      * @param status The final approval decision (APPROVED or REJECTED).
      * @throws BusinessLogicException if attempting to revert a finalized decision to PENDING.
      * @throws ResourceNotFoundException if the specified submission ID does not exist.
      */
     @Transactional
-    public void reviewSellerSubmission(Long flashSaleItemId, ApprovalStatus status){
+    public void reviewSellerSubmission(UUID itemPublicId, ApprovalStatus status){
+        Long flashSaleItemId = itemRepository.findByPublicId(itemPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Flash sale item not found: " + itemPublicId))
+                .getId();
         if (status == ApprovalStatus.PENDING) {
             log.warn("Attempted illegal state transition: Reverting reviewed item [{}] to PENDING.", flashSaleItemId);
             throw new BusinessLogicException("Cannot revert a reviewed item back to PENDING status.");

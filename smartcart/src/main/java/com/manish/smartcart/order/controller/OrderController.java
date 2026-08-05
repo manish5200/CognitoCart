@@ -1,6 +1,7 @@
 package com.manish.smartcart.order.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.manish.smartcart.order.model.Order;
 import com.manish.smartcart.security.CustomUserDetails;
 import com.manish.smartcart.order.dto.OrderRequest;
 import com.manish.smartcart.order.dto.OrderResponse;
@@ -76,41 +77,44 @@ public class OrderController {
 
 
         @Operation(summary = "Cancel order",
-                description = "Cancels an order if it has not been shipped. "
-                        + "Restores stock. Issues Razorpay refund if already paid.")
+                description = "Cancels an order if it has not been shipped. Accepts UUID or Human Order Number.")
         @ApiResponses({
                 @ApiResponse(responseCode = "200", description = "Order cancelled"),
                 @ApiResponse(responseCode = "400", description = "Order cannot be cancelled in its current state"),
                 @ApiResponse(responseCode = "404", description = "Order not found")
         })
-        @PutMapping("/{orderId}/cancel")
-        public ResponseEntity<?> cancelOrder(@PathVariable Long orderId,
+        @PutMapping("/{orderIdentifier}/cancel")
+        public ResponseEntity<?> cancelOrder(@PathVariable String orderIdentifier,
                                              Authentication authentication){
                 Long userId = extractUserId(authentication);
-                OrderResponse orderResponse = orderService.cancelOrder(userId, orderId);
+
+                // 1. Resolve the external identifier to our internal database Entity
+                Order order = orderQueryService.resolveOrder(orderIdentifier);
+
+                // 2. Pass the internal Long ID to the core service (Keeping DB logic isolated)
+                OrderResponse orderResponse = orderService.cancelOrder(userId, order.getId());
                 return ResponseEntity.ok(orderResponse);
         }
 
 
         @Operation(summary = "Request return / replacement / exchange",
-                description = "Submit a post-delivery request. "
-                        + "DEFECTIVE, WRONG_ITEM, DAMAGED_IN_TRANSIT require image proof. "
-                        + "Send as multipart/form-data with 'request' (JSON) and optional 'images' parts.")
+                description = "Submit a post-delivery request. Accepts UUID or Human Order Number.")
         @ApiResponses({
                 @ApiResponse(responseCode = "200", description = "Request submitted — order status updated"),
                 @ApiResponse(responseCode = "400", description = "Window expired / type not allowed / duplicate request"),
                 @ApiResponse(responseCode = "403", description = "Order does not belong to you"),
                 @ApiResponse(responseCode = "404", description = "Order not found")
         })
-        @PostMapping(value = "/{orderId}/request-return", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+        @PostMapping(value = "/{orderIdentifier}/request-return", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
         public ResponseEntity<OrderResponse>requestReturn(
-                @PathVariable Long orderId,
+                @PathVariable String orderIdentifier    ,
                 @RequestPart("request") String requestJson,
                 @RequestPart(value = "images", required = false) MultipartFile[] images,
                 Authentication authentication) throws Exception {
 
                 ReturnRequestDTO request = objectMapper.readValue(requestJson, ReturnRequestDTO.class);
 
+                // Validation logic remains the same...
                 if (request.getReturnType() == null) {
                         throw new BusinessLogicException("returnType is required: RETURN, REPLACEMENT, or EXCHANGE");
                 }
@@ -121,14 +125,19 @@ public class OrderController {
                 }
 
                 Long userId = extractUserId(authentication);
+
+                // 1. Resolve the external identifier to our internal database Entity
+                Order order = orderQueryService.resolveOrder(orderIdentifier);
+
+                // 2. Pass the internal Long ID to the core service
                 OrderResponse orderResponse = orderReturnService.requestReturn(
-                        userId, orderId,
+                        userId,
+                        order.getId(),
                         request.getReturnType(),
                         request.getReturnReason(),
                         request.getReturnDescription(),
                         images
                 );
-
                 return ResponseEntity.ok(orderResponse);
         }
 

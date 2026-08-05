@@ -142,21 +142,21 @@ public class AdminController {
     )
     @ApiResponse(responseCode = "200", description = "Seller product analytics retrieved")
     @ApiResponse(responseCode = "404", description = "Seller not found")
-    @GetMapping("/sellers/{sellerId}/analytics")
+    @GetMapping("/sellers/{sellerPublicId}/analytics")
     public ResponseEntity<SellerProductAnalyticsResponse> getSellerProductAnalytics(
-            @PathVariable Long sellerId) {
+            @PathVariable java.util.UUID sellerPublicId) {
         return ResponseEntity.ok(
-                adminService.getSellerAnalyticsForAdmin(sellerId)
+                adminService.getSellerAnalyticsForAdmin(sellerPublicId)
         );
     }
 
     @Operation(summary = "Update Order Status", description = "Change the lifecycle state of an order (e.g., PENDING to SHIPPED). Access restricted to Admin.")
     @ApiResponse(responseCode = "200", description = "Order status updated successfully")
     @ApiResponse(responseCode = "404", description = "Order ID not found", content = @Content)
-    @PatchMapping("/{orderId}/status")
-    public ResponseEntity<?> changeOrderStatus(@PathVariable Long orderId,
+    @PatchMapping("/{orderPublicId}/status")
+    public ResponseEntity<?> changeOrderStatus(@PathVariable java.util.UUID orderPublicId,
                                                @RequestBody StatusChangeRequest request) {
-        request.setOrderId(orderId);
+        request.setOrderPublicId(orderPublicId);
         var response = adminService.changeTheStatusOfOrders(request);
         orderNotificationService.sendStatusUpdateEmail(response);
         return ResponseEntity.ok(response);
@@ -181,27 +181,27 @@ public class AdminController {
     }
 
 
-    @PatchMapping("/coupons/{couponId}/toggle")
+    @PatchMapping("/coupons/{couponPublicId}/toggle")
     @Operation(summary = "Activate or deactivate a coupon quickly")
     @ApiResponse(responseCode = "200", description = "Coupon status toggled successfully")
-    public ResponseEntity<String> toggleCouponStatus(@PathVariable Long couponId) {
-        couponService.toggleActive(couponId);
+    public ResponseEntity<String> toggleCouponStatus(@PathVariable java.util.UUID couponPublicId) {
+        couponService.toggleActive(couponPublicId);
         return ResponseEntity.ok("Coupon status toggled successfully.");
     }
 
 
-    // POST /api/v1/admin/{orderId}/shipment
+    // POST /api/v1/admin/{orderPublicId}/shipment
     // Called once the admin has physically packed and handed the order to the courier
-    @PostMapping("/{orderId}/shipment")
+    @PostMapping("/{orderPublicId}/shipment")
     @Operation(summary = "Attach shipment tracking to an order and mark it as SHIPPED")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Shipment attached and Order marked SHIPPED"),
         @ApiResponse(responseCode = "404", description = "Order not found")
     })
     public ResponseEntity<?> attachShipment(
-            @PathVariable Long orderId,
+            @PathVariable java.util.UUID orderPublicId,
             @Valid @RequestBody ShipmentRequest request) {
-        return ResponseEntity.ok(shipmentService.attachShipmentAndShip(orderId, request));
+        return ResponseEntity.ok(shipmentService.attachShipmentAndShip(orderPublicId, request));
     }
 
 
@@ -214,11 +214,11 @@ public class AdminController {
     }
 
 
-    @PostMapping("/webhooks/dlq/{eventId}/replay")
+    @PostMapping("/webhooks/dlq/{eventPublicId}/replay")
     @Operation(summary = "Re-Play a failed webhook", description = "Simulates Razorpay re-sending the exact JSON payload to your server to fix a dropped payment.")
     @ApiResponse(responseCode = "200", description = "Webhook replayed successfully")
-    public ResponseEntity<String> replayFailedWebhook(@PathVariable Long eventId) {
-        String result = webhookDlqService.replayFailedWebhook(eventId);
+    public ResponseEntity<String> replayFailedWebhook(@PathVariable java.util.UUID eventPublicId) {
+        String result = webhookDlqService.replayFailedWebhook(eventPublicId);
         return ResponseEntity.ok(result);
     }
 
@@ -237,7 +237,7 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getPendingKycSellers());
     }
 
-    @PatchMapping("/sellers/{sellerId}/kyc")
+    @PatchMapping("/sellers/{sellerPublicId}/kyc")
     @Operation(summary = "Update seller KYC status")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "KYC updated, email sent"),
@@ -245,13 +245,13 @@ public class AdminController {
             @ApiResponse(responseCode = "404", description = "Seller not found")
     })
     public ResponseEntity<Map<String,String>> updateSellerKyc(
-            @PathVariable Long sellerId,
+            @PathVariable java.util.UUID sellerPublicId,
             @Valid @RequestBody KycUpdateRequest request){
-        SellerProfile updated = adminService.updateSellerKyc(sellerId, request);
+        SellerProfile updated = adminService.updateSellerKyc(sellerPublicId, request);
 
         return ResponseEntity.ok(Map.of(
                 "message",   "KYC status updated to " + updated.getKycStatus(),
-                "sellerId",  String.valueOf(sellerId),
+                "sellerId",  String.valueOf(sellerPublicId),
                 "newStatus", updated.getKycStatus().name()));
     }
 
@@ -266,9 +266,9 @@ public class AdminController {
             @ApiResponse(responseCode = "400", description = "Order is not in RETURN_REQUESTED state"),
             @ApiResponse(responseCode = "404", description = "Order not found")
     })
-    @PutMapping("/{orderId}/approve-return")
-    public ResponseEntity<OrderResponse>approveReturn(@PathVariable Long orderId){
-        OrderResponse orderResponse = returnAdminService.approveReturn(orderId);
+    @PutMapping("/{orderPublicId}/approve-return")
+    public ResponseEntity<OrderResponse>approveReturn(@PathVariable java.util.UUID orderPublicId){
+        OrderResponse orderResponse = returnAdminService.approveReturn(orderPublicId);
         return ResponseEntity.ok(orderResponse);
     }
 
@@ -284,9 +284,9 @@ public class AdminController {
             @ApiResponse(responseCode = "400", description = "Order not in correct state or insufficient stock"),
             @ApiResponse(responseCode = "404", description = "Order not found")
     })
-    @PutMapping("/{orderId}/approve-replacement")
-    public ResponseEntity<?> approveReplacement(@PathVariable Long orderId) {
-        OrderResponse response = returnAdminService.approveReplacement(orderId);
+    @PutMapping("/{orderPublicId}/approve-replacement")
+    public ResponseEntity<?> approveReplacement(@PathVariable java.util.UUID orderPublicId) {
+        OrderResponse response = returnAdminService.approveReplacement(orderPublicId);
         return ResponseEntity.ok(response);
     }
 
@@ -300,11 +300,11 @@ public class AdminController {
             @ApiResponse(responseCode = "400", description = "Order is not in a return-requested state"),
             @ApiResponse(responseCode = "404", description = "Order not found")
     })
-    @PutMapping("/{orderId}/reject-return")
+    @PutMapping("/{orderPublicId}/reject-return")
     public ResponseEntity<OrderResponse>rejectReturn(
-            @PathVariable Long orderId,
+            @PathVariable java.util.UUID orderPublicId,
             @RequestParam(required = false) String adminComment){
-        OrderResponse response = returnAdminService.rejectReturn(orderId, adminComment);
+        OrderResponse response = returnAdminService.rejectReturn(orderPublicId, adminComment);
         return ResponseEntity.ok(response);
     }
 

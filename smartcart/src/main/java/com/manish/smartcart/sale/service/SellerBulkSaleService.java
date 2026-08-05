@@ -69,7 +69,12 @@ public class SellerBulkSaleService {
     private static final int COL_MAX_PER_USER = 3;
 
     @Transactional
-    public  String processBulkCsv(MultipartFile file, Long eventId, Long sellerId){
+    public  String processBulkCsv(MultipartFile file,UUID eventPublicId, Long sellerId){
+
+        Long eventId = eventRepository.findByPublicId(eventPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sale event not found: " + eventPublicId))
+                .getId();
+
         // ─── FILE GUARDS ──────────────────────────────────────────────────────
         validateFile(file);
 

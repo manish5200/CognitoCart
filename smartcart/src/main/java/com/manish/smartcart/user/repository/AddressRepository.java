@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface AddressRepository extends JpaRepository<Address, Long> {
@@ -17,4 +18,10 @@ public interface AddressRepository extends JpaRepository<Address, Long> {
 
     @Query("SELECT a FROM Address a WHERE a.user.id = :userId AND a.isDefault = true")
     Optional<Address> findByUserIdAndIsDefaultTrue(@Param("userId") Long userId);
+
+    Optional<Address> findByPublicId(UUID publicId);
+
+   Optional<Address> findByPublicIdAndUserId(UUID addressPublicId, Long userId);
+
+    int countByUserId(Long userId);
 }

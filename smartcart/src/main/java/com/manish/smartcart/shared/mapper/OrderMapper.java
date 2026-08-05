@@ -14,10 +14,10 @@ public class OrderMapper {
 
     public OrderResponse toOrderResponse(Order order) {
         OrderResponse orderResponse = new OrderResponse();
-        orderResponse.setOrderId(order.getId());
+        orderResponse.setOrderPublicId(order.getPublicId());
         orderResponse.setEmail(order.getUser().getEmail());
         orderResponse.setCustomerName(order.getUser().getFullName()); // Uses hoisted name
-        orderResponse.setCustomerId(order.getUser().getId());
+        orderResponse.setCustomerPublicId(order.getUser().getPublicId());
         orderResponse.setShippingPhone(order.getShippingPhone());
         orderResponse.setOrderDate(order.getOrderDate());
         orderResponse.setTotalAmount(order.getTotalAmount());

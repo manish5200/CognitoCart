@@ -8,6 +8,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface SellerProfileRepository extends JpaRepository<SellerProfile, Long> {
@@ -19,4 +21,9 @@ public interface SellerProfileRepository extends JpaRepository<SellerProfile, Lo
 
     @Query("SELECT sp FROM SellerProfile sp JOIN FETCH sp.user u ORDER BY sp.createdAt DESC")
     List<SellerProfile> findAllWithUser();
+
+    Optional<SellerProfile> findByPublicId(UUID publicId);
+
+    // HUMAN ID LOOKUP: Used by seller portal and disputes
+    Optional<SellerProfile> findBySellerCode(String sellerCode);
 }

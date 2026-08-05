@@ -23,10 +23,7 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -82,7 +79,11 @@ public class ReviewService {
             maxAttempts = 3,
             backoff = @Backoff(delay =  500)// Wait 500ms before trying again
     )
-    public Map<String,Object> addOrUpdateReview(Long userId, Long productId, ReviewRequestDTO reviewRequestDTO) {
+    public Map<String,Object> addOrUpdateReview(Long userId, UUID productPublicId, ReviewRequestDTO reviewRequestDTO) {
+
+        Long productId = productRepository.findByPublicId(productPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + productPublicId))
+                .getId();
 
         // 1. Confirm the product is real before doing anything else
         Product product = productRepository
@@ -154,7 +155,11 @@ public class ReviewService {
      * Don't fetch first and check ownership in Java. Make the DB do it atomically.
      */
     @Transactional
-    public void deleteMyReview(Long reviewId, Long userId) {
+    public void deleteMyReview(UUID reviewPublicId, Long userId) {
+
+        Long reviewId = reviewRepository.findByPublicId(reviewPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Review not found: " + reviewPublicId))
+                .getId();
 
         Review review = reviewRepository.findByIdAndUserId(reviewId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -189,7 +194,12 @@ public class ReviewService {
      * The product's average is still corrected to maintain data integrity.
      */
     @Transactional
-    public void adminDeleteReview(Long reviewId){
+    public void adminDeleteReview(UUID reviewPublicId){
+
+        Long reviewId = reviewRepository.findByPublicId(reviewPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Review not found: " + reviewPublicId))
+                .getId();
+
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new ResourceNotFoundException("Review not found with ID: " + reviewId));
 
@@ -220,7 +230,11 @@ public class ReviewService {
      * PostgreSQL's GROUP BY is hundreds of times faster than Java stream counting.
      */
     @Transactional(readOnly = true)
-    public RatingDistributionDTO getRatingDistribution(Long productId){
+    public RatingDistributionDTO getRatingDistribution(UUID productPublicId){
+        Long productId = productRepository.findByPublicId(productPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + productPublicId))
+                .getId();
+
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID: " + productId));
 
@@ -256,7 +270,10 @@ public class ReviewService {
      * readOnly = true → tells the DB "no write locks needed" → faster query.
      */
     @Transactional(readOnly = true)
-    public List<ReviewResponseDTO>getReviewsForProduct(Long productId){
+    public List<ReviewResponseDTO>getReviewsForProduct(UUID productPublicId){
+        Long productId = productRepository.findByPublicId(productPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + productPublicId))
+                .getId();
         return reviewRepository.findByProductIdOrderByCreatedAtDesc(productId)
                 .stream()
                 .map(reviewMapper::toReviewResponseDTO)

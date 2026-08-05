@@ -58,8 +58,8 @@ public class WebhookDlqService {
      * shooting the exact same JSON payload back at our server.
      */
     @Transactional
-    public String replayFailedWebhook(Long eventId){
-        FailedWebhookEvent event = dlqRepository.findById(eventId)
+    public String replayFailedWebhook(java.util.UUID eventPublicId){
+        FailedWebhookEvent event = dlqRepository.findByPublicId(eventPublicId)
                 .orElseThrow(() -> new RuntimeException("DLQ Event Not Found"));
 
         if(event.getStatus() == DlqStatus.RESOLVED){
@@ -85,14 +85,14 @@ public class WebhookDlqService {
             if(response.statusCode() == 200){
                 event.setStatus(DlqStatus.RESOLVED);
                 dlqRepository.save(event);
-                log.info("✅ DLQ Event {} successfully replayed and resolved!", eventId);
+                log.info("✅ DLQ Event {} successfully replayed and resolved!", eventPublicId);
                 return "Successfully replayed and resolved the webhook!";
             }else{
                 return "Replay failed again. Status Code: "
                         + response.statusCode() + ". Body: " + response.body();
             }
         } catch (Exception e) {
-            log.error("Failed to execute HTTP replay for DLQ Event {}", eventId, e);
+            log.error("Failed to execute HTTP replay for DLQ Event {}", eventPublicId, e);
             throw new RuntimeException("Critical failure while replaying webhook: " + e.getMessage());
         }
     }
