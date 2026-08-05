@@ -139,7 +139,7 @@ public class OrderService {
         OrderResponse orderResponse = orderMapper.toOrderResponse(finalOrder);
         orderResponse.setRazorpayOrderId(razorpayOrderId);
 
-        log.info("Order processed as PENDING for local orderId {} and razorpayId {}", orderResponse.getOrderId(), razorpayOrderId);
+        log.info("Order processed as PENDING for local orderId {} and razorpayId {}", orderResponse.getOrderPublicId(), razorpayOrderId);
         return orderResponse;
     }
 

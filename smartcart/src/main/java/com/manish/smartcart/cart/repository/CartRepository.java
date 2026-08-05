@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface CartRepository extends JpaRepository<Cart, Long> {
@@ -19,4 +20,6 @@ public interface CartRepository extends JpaRepository<Cart, Long> {
     @Query("SELECT c FROM Cart c JOIN FETCH c.user WHERE c.updatedAt < :thresholdDate AND SIZE(c.items) > 0")
     List<Cart> findAbandonedCarts(@Param("thresholdDate") java.time.LocalDateTime thresholdDate);
 
+    // PUBLIC ID LOOKUP
+    Optional<Cart> findByPublicId(UUID publicId);
 }

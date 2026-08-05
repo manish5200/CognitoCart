@@ -6,15 +6,23 @@ import com.manish.smartcart.user.model.Address;
 import com.manish.smartcart.user.model.Users;
 import com.manish.smartcart.user.repository.AddressRepository;
 import com.manish.smartcart.user.repository.UsersRepository;
-import com.manish.smartcart.shared.exception.BusinessLogicException;
 import com.manish.smartcart.shared.exception.ResourceNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * Core Domain Service for Address Book Management.
+ * <p>
+ * ARCHITECTURAL DESIGN:
+ * 1. Edge Translation: Converts external UUIDs to internal Long IDs securely.
+ * 2. SQL-Level Security: Ownership is verified directly in the WHERE clause, preventing IDOR leaks.
+ * 3. Dirty Checking: Relies on Hibernate's managed state for updates, avoiding redundant save() calls.
+ */
 @Service
 @RequiredArgsConstructor
 public class AddressService {
@@ -22,13 +30,14 @@ public class AddressService {
     private final AddressRepository addressRepository;
     private final UsersRepository usersRepository;
 
-    // ─── CREATE ─────────────────────────────────────────────────────────────
     @Transactional
     public AddressResponse addAddress(Long userId, AddressRequest request) {
+
+        // We fetch the full User entity here because we need to potentially
+        // mutate the user.setPrimaryAddress() shortcut.
         Users user = usersRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 
-        // Map DTO to Entity
         Address address = Address.builder()
                 .user(user)
                 .fullName(request.getFullName())
@@ -41,38 +50,36 @@ public class AddressService {
                 .country(request.getCountry())
                 .isDefault(request.getIsDefault() != null ? request.getIsDefault() : false)
                 .build();
-        // If this is the user's first address, naturally force it as default
-        if(request.getIsDefault() || user.getPrimaryAddress() == null) {
-            handleDefaultToggle(userId); // Unset old default
-            request.setIsDefault(true);
-            user.setPrimaryAddress(address);// Sync Users shortcut
+
+        // Business Rule: First address is always default, or explicit user request
+        boolean isFirstAddress = addressRepository.countByUserId(userId) == 0;
+
+        if (Boolean.TRUE.equals(request.getIsDefault()) || isFirstAddress) {
+            handleDefaultToggle(userId);
+            address.setIsDefault(true);
+            user.setPrimaryAddress(address); // Keep the bidirectional sync intact
+        } else {
+            address.setIsDefault(false);
         }
+
         Address savedAddress = addressRepository.save(address);
         return mapToResponse(savedAddress);
     }
 
-    // ─── READ ───────────────────────────────────────────────────────────────
     @Transactional(readOnly = true)
-    public List<AddressResponse>getUserAddresses(Long userId) {
-        // Fetch all addresses for this user, map them to DTOs
-        List<Address>addresses = addressRepository.findByUserId(userId);
-
-        return addresses.stream()
+    public List<AddressResponse> getUserAddresses(Long userId) {
+        return addressRepository.findByUserId(userId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
-    // ─── UPDATE ─────────────────────────────────────────────────────────────
     @Transactional
-    public AddressResponse updateAddress(Long userId, Long addressId, AddressRequest request) {
-         Address address = addressRepository.findById(addressId)
-                 .orElseThrow(() -> new ResourceNotFoundException("Address not found with ID: " + addressId));
+    public AddressResponse updateAddress(Long userId, UUID addressPublicId, AddressRequest request) {
 
-        // Security check: Never let User A edit User B's address!
-        if(!address.getUser().getId().equals(userId)) {
-            throw new BusinessLogicException("Access Denied: You do not own this address.");
-        }
-        // Update fields
+        // SECURITY OPTIMIZATION: Database-level ownership check.
+        // If it belongs to another user, this returns empty. No IDOR leak.
+        Address address = getAddressSecured(addressPublicId, userId);
+
         address.setFullName(request.getFullName());
         address.setPhoneNumber(request.getPhoneNumber());
         address.setStreetAddress(request.getStreetAddress());
@@ -82,63 +89,60 @@ public class AddressService {
         address.setZipCode(request.getZipCode());
         address.setCountry(request.getCountry());
 
-        // Handle default toggle logic if user ticked the box
-        if(Boolean.TRUE.equals(request.getIsDefault()) && !address.getIsDefault()) {
+        if (Boolean.TRUE.equals(request.getIsDefault()) && !address.getIsDefault()) {
             handleDefaultToggle(userId);
             address.setIsDefault(true);
             address.getUser().setPrimaryAddress(address);
         }
-        Address updatedAddress = addressRepository.save(address);
-        return mapToResponse(updatedAddress);
+
+        // NOTE: No .save() needed! Hibernate dirty checking automatically issues
+        // the UPDATE statement when this @Transactional method completes.
+        return mapToResponse(address);
     }
 
-    // ─── DELETE ─────────────────────────────────────────────────────────────
     @Transactional
-    public void deleteAddress(Long userId, Long addressId) {
-        Address address = addressRepository.findById(addressId)
-                .orElseThrow(() -> new ResourceNotFoundException("Address not found with ID: " + addressId));
+    public void deleteAddress(Long userId, UUID addressPublicId) {
+        Address address = getAddressSecured(addressPublicId, userId);
 
-        if(!address.getUser().getId().equals(userId)) {
-            throw new BusinessLogicException("Access Denied: You do not own this address.");
-        }
-        // What if they delete their primary address?
         if (address.getIsDefault()) {
-            address.getUser().setPrimaryAddress(null); // Clear the shortcut
+            address.getUser().setPrimaryAddress(null);
         }
 
-        // We call delete(). Because your Entity has @SoftDelete, Hibernate
-        // will safely set is_deleted = true in the DB. Order history won't break!
         addressRepository.delete(address);
     }
 
-    // ─── SET PRIMARY ────────────────────────────────────────────────────────
     @Transactional
-    public void setAsDefault(Long userId, Long addressId) {
-        Address targetAddress = addressRepository.findById(addressId)
-                .orElseThrow(() -> new ResourceNotFoundException("Address not found with ID: " + addressId));
+    public void setAsDefault(Long userId, UUID addressPublicId) {
+        Address targetAddress = getAddressSecured(addressPublicId, userId);
 
-        // Security check: ensure address belongs to the user
-        if (!targetAddress.getUser().getId().equals(userId)) {
-            throw new BusinessLogicException("Access Denied: You do not own this address.");
+        if (!targetAddress.getIsDefault()) {
+            handleDefaultToggle(userId);
+            targetAddress.setIsDefault(true);
+            targetAddress.getUser().setPrimaryAddress(targetAddress);
         }
-
-        handleDefaultToggle(userId); // Unset the previous default
-        targetAddress.setIsDefault(true);
-        targetAddress.getUser().setPrimaryAddress(targetAddress); // Sync shortcut
-        addressRepository.save(targetAddress);
     }
-    // ─── HELPERS ────────────────────────────────────────────────────────────
+
+    // ─── INTERNAL HELPERS ───────────────────────────────────────────────────
+
+    /**
+     * Reusable Edge Translation & Security Check.
+     */
+    private Address getAddressSecured(UUID addressPublicId, Long userId) {
+        return addressRepository.findByPublicIdAndUserId(addressPublicId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Address not found, or you do not have permission to modify it."));
+    }
+
     private void handleDefaultToggle(Long userId) {
         addressRepository.findByUserIdAndIsDefaultTrue(userId)
-                .ifPresent(oldDefault -> {
-                    oldDefault.setIsDefault(false);
-                    addressRepository.save(oldDefault);
-                });
+                .ifPresent(oldDefault -> oldDefault.setIsDefault(false));
+        // No .save() needed! Hibernate dirty checks the entity.
     }
 
     private AddressResponse mapToResponse(Address address) {
         return AddressResponse.builder()
-                .id(address.getId())
+                // CRITICAL: We return the UUID to the frontend, NEVER the Long ID.
+                .publicAddressId(address.getPublicId())
                 .fullName(address.getFullName())
                 .phoneNumber(address.getPhoneNumber())
                 .streetAddress(address.getStreetAddress())

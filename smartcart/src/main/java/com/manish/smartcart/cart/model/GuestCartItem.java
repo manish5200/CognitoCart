@@ -12,7 +12,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class GuestCartItem implements Serializable {
 
-    private Long variantId;
+    private java.util.UUID variantPublicId;
     private Integer quantity;
     private BigDecimal priceAtAdding;
 }

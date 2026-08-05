@@ -17,10 +17,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/products/{productId}/variants")
+@RequestMapping("/api/v1/products/{productPublicId}/variants")
 @Tag(name = "Product Variants", description = "Seller management for multi-SKU product sizes, colors, and stock")
 public class ProductVariantController {
 
@@ -28,8 +29,8 @@ public class ProductVariantController {
 
     @Operation(summary = "Get all variants for a product", description = "Public endpoint used by the catalog/product details page.")
     @GetMapping
-    public ResponseEntity<?> getPublicVariants(@PathVariable Long productId) {
-        return ResponseEntity.ok(productVariantService.getPublicVariants(productId));
+    public ResponseEntity<?> getPublicVariants(@PathVariable UUID productPublicId) {
+        return ResponseEntity.ok(productVariantService.getPublicVariants(productPublicId));
     }
 
     @Operation(summary = "Add a new variant", description = "Seller creates a new SKU (e.g., Size M) for an existing product.")
@@ -37,40 +38,41 @@ public class ProductVariantController {
     @PostMapping
     @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<?> addVariant(
-            @PathVariable Long productId,
+            @PathVariable UUID productPublicId,
             @Valid @RequestBody ProductVariantRequest request,
             Authentication authentication){
         Long sellerId = extractUserId(authentication);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(productVariantService.addProductVariant(productId, request, sellerId));
+                .body(productVariantService.addProductVariant(productPublicId, request, sellerId));
     }
 
     @Operation(summary = "Update a variant", description = "Seller updates stock, price modifier, or attributes.")
     @SecurityRequirement(name = "bearerAuth")
-    @PutMapping("/{variantId}")
+    @PutMapping("/{variantPublicId}")
     @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<?> updateVariant(
-            @PathVariable Long productId,
-            @PathVariable Long variantId,
+            @PathVariable UUID productPublicId,
+            @PathVariable UUID variantPublicId,
             @Valid @RequestBody ProductVariantRequest request,
             Authentication authentication) {
 
         Long sellerId = extractUserId(authentication);
-        return ResponseEntity.ok(productVariantService.updateProductVariant(productId, variantId, request, sellerId));
+        return ResponseEntity.ok(productVariantService
+                .updateProductVariant(productPublicId, variantPublicId, request, sellerId));
     }
 
     @Operation(summary = "Upload Variant Image", description = "Upload a specific swatch image to Cloudinary for this SKU.")
     @SecurityRequirement(name = "bearerAuth")
-    @PostMapping(value = "{variantId}/upload-image", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    @PostMapping(value = "{variantPublicId}/upload-image", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<?> uploadVariantImage(
-            @PathVariable Long productId,
-            @PathVariable Long variantId,
+            @PathVariable UUID productPublicId,
+            @PathVariable UUID variantPublicId,
             @RequestParam("file")MultipartFile file,
             Authentication authentication) {
 
         Long sellerId = extractUserId(authentication);
-        String imageUrl = productVariantService.uploadVariantImage(productId, variantId, file, sellerId);
+        String imageUrl = productVariantService.uploadVariantImage(productPublicId, variantPublicId, file, sellerId);
 
         return ResponseEntity.ok(Map.of(
                 "message", "Variant image uploaded successfully",
@@ -80,15 +82,15 @@ public class ProductVariantController {
 
     @Operation(summary = "Toggle Variant Status", description = "Soft delete / deactivate a SKU.")
     @SecurityRequirement(name = "bearerAuth")
-    @PatchMapping("/{variantId}/status")
+    @PatchMapping("/{variantPublicId}/status")
     @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<?> toggleVariantStatus(
-            @PathVariable Long productId,
-            @PathVariable Long variantId,
+            @PathVariable UUID productPublicId,
+            @PathVariable UUID variantPublicId,
             Authentication authentication) {
 
         Long sellerId = extractUserId(authentication);
-        productVariantService.toggleVariantStatus(productId, variantId, sellerId);
+        productVariantService.toggleVariantStatus(productPublicId, variantPublicId, sellerId);
 
         return ResponseEntity.ok(Map.of("message", "Variant status toggled successfully."));
     }

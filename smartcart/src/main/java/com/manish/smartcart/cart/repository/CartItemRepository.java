@@ -7,10 +7,14 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface CartItemRepository extends JpaRepository<CartItem, Long> {
 
     @Query("SELECT ci FROM CartItem ci WHERE ci.cart.id = :cartId AND ci.variant.id = :variantId")
-    Optional<CartItem> findByCartIdAndVariantId(@Param("cartId") Long cartId, @Param("variantId")Long variantId);
+    Optional<CartItem> findByCartIdAndVariantId(@Param("cartId") Long cartId, @Param("variantId") Long variantId);
+
+    // PUBLIC ID LOOKUP
+    Optional<CartItem> findByPublicId(UUID publicId);
 }

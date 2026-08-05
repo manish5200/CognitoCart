@@ -3,10 +3,12 @@ package com.manish.smartcart.user.dto;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.UUID;
+
 @Data
 @Builder
 public class AddressResponse {
-    private Long id;
+    private UUID publicAddressId;
     private String fullName;
     private String phoneNumber;
     private String streetAddress;

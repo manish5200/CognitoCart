@@ -13,7 +13,7 @@ public class CartRequest {
     // The specific purchasable SKU the customer selected (e.g., Red / Size L).
     // ProductVariant ID — required. The variant knows its parent product.
     @NotNull(message = "variantId is required")
-    private Long variantId;
+    private java.util.UUID variantPublicId;
 
     @Min(value = 1, message = "Quantity must be at least 1")
     private Integer quantity;

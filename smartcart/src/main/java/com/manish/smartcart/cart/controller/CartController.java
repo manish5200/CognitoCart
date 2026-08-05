@@ -18,6 +18,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 @RestController
@@ -27,14 +28,6 @@ import java.util.Map;
 public class CartController {
 
         private final CartService cartService;
-
-        private long extractUserId(Authentication authentication) {
-                CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
-                if(customUserDetails == null){
-                        throw new BusinessLogicException("Authentication context is missing. Please log in again.");
-                }
-                return customUserDetails.getUser().getId();
-        }
 
         // POST: Add item to cart
         // Request Body: { "variantId": 5, "quantity": 2 }
@@ -50,7 +43,7 @@ public class CartController {
                 Long userId = extractUserId(authentication);
                 Cart updatedCart = cartService.addItemToCart(
                                 userId,
-                                cartRequest.getVariantId(),
+                                cartRequest.getVariantPublicId(),
                                 cartRequest.getQuantity());
                 CartResponse cartResponse = new CartResponse().getCartResponse(updatedCart);
                 return ResponseEntity.ok().body(Map.of("Cart updated :", cartResponse));
@@ -108,12 +101,24 @@ public class CartController {
             @ApiResponse(responseCode = "200", description = "Item removed successfully"),
             @ApiResponse(responseCode = "404", description = "Item not found in cart")
         })
-        @DeleteMapping("/item/{variantId}")
-        public ResponseEntity<?> deleteItemFromCart(@PathVariable Long variantId,
+        @DeleteMapping("/item/{variantPublicId}")
+        public ResponseEntity<?> deleteItemFromCart(@PathVariable UUID variantPublicId,
                         Authentication auth) {
                 Long userId = extractUserId(auth);
-                Cart cart = cartService.removeItemFromCart(userId, variantId);
+                Cart cart = cartService.removeItemFromCart(userId, variantPublicId);
                 CartResponse cartResponse = new CartResponse().getCartResponse(cart);
                 return ResponseEntity.ok().body(cartResponse);
         }
+
+        /**
+         * Hardened Security Extractor.
+         * Prevents ClassCastException if the user is unauthenticated or passing a malformed token.
+         */
+        private long extractUserId(Authentication authentication) {
+                if (authentication == null || !(authentication.getPrincipal() instanceof CustomUserDetails userDetails)) {
+                        throw new BusinessLogicException("Authentication context is missing or invalid. Please log in again.");
+                }
+                return userDetails.getUser().getId();
+        }
+
 }

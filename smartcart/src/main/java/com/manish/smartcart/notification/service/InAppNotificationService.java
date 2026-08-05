@@ -16,6 +16,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -25,9 +27,9 @@ public class InAppNotificationService {
     private final UsersRepository usersRepository;
 
     @Transactional
-    public void createNotification(Long userId, NotificationType type, String title, String message){
-        Users user = usersRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found" + userId));
+    public void createNotification(java.util.UUID userPublicId, NotificationType type, String title, String message){
+        Users user = usersRepository.findByPublicId(userPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found" + userPublicId));
 
         Notification notification = Notification.builder()
                 .user(user)
@@ -38,7 +40,7 @@ public class InAppNotificationService {
                 .build();
 
         notificationRepository.save(notification);
-        log.info("In-App Notification created for User ID {}: {}", userId, title);
+        log.info("In-App Notification created for User ID {}: {}", userPublicId, title);
     }
 
     @Transactional(readOnly = true)
@@ -56,7 +58,10 @@ public class InAppNotificationService {
     }
 
     @Transactional
-    public void markAsRead(Long userId, Long notificationId){
+    public void markAsRead(Long userId,  UUID notificationPublicId){
+        Long notificationId = notificationRepository.findByPublicId(notificationPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Notification Public ID not found" + notificationPublicId))
+                .getId();
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Notification not found" + notificationId));
 

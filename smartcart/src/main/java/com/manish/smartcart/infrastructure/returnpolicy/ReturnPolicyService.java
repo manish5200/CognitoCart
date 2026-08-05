@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -28,6 +29,7 @@ public class ReturnPolicyService {
     private final ProductReturnPolicyRepository policyRepository;
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
+    private final ProductReturnPolicyRepository productReturnPolicyRepository;
 
     // ─── CHAIN OF RESPONSIBILITY ─────────────────────────────────────────────
     /**
@@ -169,7 +171,10 @@ public class ReturnPolicyService {
      * Seller can only update policies for their own products.
      */
     @Transactional
-    public ReturnPolicyResponse updatePolicy(Long sellerId, Long policyId, ReturnPolicyRequest request){
+    public ReturnPolicyResponse updatePolicy(Long sellerId, UUID policyPublicId, ReturnPolicyRequest request){
+        Long policyId = productReturnPolicyRepository.findByPublicId(policyPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Policy not found: " + policyPublicId))
+                .getId();
         // One DB call — fetches policy AND validates seller ownership simultaneously
         ProductReturnPolicy policy = policyRepository.findByIdAndProductSellerId(policyId,sellerId)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -188,7 +193,10 @@ public class ReturnPolicyService {
      * Deletes a policy. Product falls back to category or NON_RETURNABLE default.
      */
     @Transactional
-    public void deletePolicy(Long sellerId, Long policyId){
+    public void deletePolicy(Long sellerId, UUID policyPublicId){
+        Long policyId = productReturnPolicyRepository.findByPublicId(policyPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Policy not found: " + policyPublicId))
+                .getId();
         ProductReturnPolicy policy = policyRepository.findByIdAndProductSellerId(policyId, sellerId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Policy not found or it does not belong to your products."));
@@ -210,10 +218,10 @@ public class ReturnPolicyService {
     /**
      * Returns the live applicable policy for a product (public — for product page display).
      */
-    public ReturnPolicyResponse getLivePolicyResponse(Long productId){
-        Product product = productRepository.findById(productId)
+    public ReturnPolicyResponse getLivePolicyResponse(java.util.UUID productPublicId){
+        Product product = productRepository.findByPublicId(productPublicId)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Product not found with ID: " + productId));
+                        "Product not found with ID: " + productPublicId));
         return toResponse(getApplicablePolicy(product));
     }
 

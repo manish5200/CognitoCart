@@ -100,4 +100,11 @@ public class CategoryService {
         }
         return allIds;
     }
+
+    @Transactional(readOnly = true)
+    public Long getCategoryIdByPublicId(java.util.UUID categoryPublicId) {
+        return categoryRepository.findByPublicId(categoryPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found with public ID: " + categoryPublicId))
+                .getId();
+    }
 }

@@ -15,99 +15,136 @@ import com.manish.smartcart.shared.exception.ResourceNotFoundException;
 import com.manish.smartcart.cart.service.CartService;
 import com.manish.smartcart.wishlist.repository.WishlistRepository;
 import org.springframework.transaction.annotation.Transactional;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
+/**
+ * Core Domain Service for Wishlist Orchestration.
+ * <p>
+ * ARCHITECTURAL DESIGN:
+ * 1. Transaction Boundary: This layer exclusively owns the @Transactional context.
+ * 2. Edge Translation: It safely translates external API tokens (UUIDs) into internal surrogate keys (Long).
+ * 3. Cross-Domain Orchestration: Manages atomic state transfers between the Wishlist and Cart domains.
+ */
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class WishlistService {
 
     private final WishlistRepository wishlistRepository;
     private final ProductRepository productRepository;
     private final ProductVariantRepository productVariantRepository;
     private final UsersRepository usersRepository;
-    private final ProductMapper  productMapper;
+    private final ProductMapper productMapper;
     private final CartService cartService;
 
+    /**
+     * Idempotent Wishlist Toggle.
+     * <p>
+     * PERFORMANCE SAFEGUARDS:
+     * - Single Query Translation: Fetches the Product entity via UUID in one DB hit.
+     * - Proxy Hydration: Uses usersRepository.getReferenceById() to create a Hibernate proxy
+     *   for the User entity. This allows us to set the Foreign Key on the Wishlist object
+     *   WITHOUT executing an expensive SELECT query against the Users table.
+     */
     @Transactional
-    public String toggleWishlist(Long userId, Long productId) {
+    public String toggleWishlist(Long userId, UUID productPublicId) {
 
-        // 1. Actually verify the product exists first
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID: " + productId));
+        // 1. Edge Translation & Entity Retrieval
+        Product product = productRepository.findByPublicId(productPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found for UUID: " + productPublicId));
 
-        Optional<Wishlist> existing = wishlistRepository.findByUserIdAndProductId(userId, productId);
-        if(existing.isPresent()) {
+        // 2. Idempotent Toggle Logic
+        Optional<Wishlist> existing = wishlistRepository.findByUserIdAndProductId(userId, product.getId());
+
+        if (existing.isPresent()) {
             wishlistRepository.delete(existing.get());
             return "Product Removed from Wishlist";
-        }else{
+        } else {
             Wishlist wishlist = new Wishlist();
+
+            // Assigning FK via Proxy (Bypasses a DB SELECT)
             wishlist.setUser(usersRepository.getReferenceById(userId));
             wishlist.setProduct(product);
+
             wishlistRepository.save(wishlist);
             return "Product Added to Wishlist";
         }
     }
 
-
+    /**
+     * Read-Only State Retrieval.
+     * <p>
+     * DB OPTIMIZATION: @Transactional(readOnly = true) is strictly enforced to disable
+     * Hibernate's dirty-checking mechanism and avoid unnecessary flush cycles, saving memory.
+     */
     @Transactional(readOnly = true)
-    public List<ProductResponse>getWishlistForUser(Long userId) {
-        List<Wishlist> wishlists = wishlistRepository.findByUserId(userId);
-        return wishlists.stream()
-                .map(item -> productMapper.toProductResponse(item.getProduct()))// Convert to DTO
+    public List<ProductResponse> getWishlistForUser(Long userId) {
+        return wishlistRepository.findByUserId(userId).stream()
+                .map(item -> productMapper.toProductResponse(item.getProduct()))
                 .toList();
     }
 
-
-    //wishlist -> cart
+    /**
+     * Atomic Domain Transfer: Wishlist -> Cart.
+     * <p>
+     * This acts as a synchronous Micro-Saga. If the CartService fails (e.g., Out of Stock,
+     * Math Engine exception), the entire transaction rolls back. The item will NOT be
+     * accidentally deleted from the wishlist.
+     */
     @Transactional
-    public CartResponse wishlistToCart(Long userId, Long productId, Integer quantity) {
-        // 1. Verify item exists in Wishlist
-       Wishlist existedProductInWishlist = wishlistRepository.findByUserIdAndProductId(userId, productId)
-               .orElseThrow(() -> new ResourceNotFoundException("Item not found in your wishlist"));
+    public CartResponse wishlistToCart(Long userId, UUID productPublicId, Integer quantity) {
 
-        //2. Find the default/first active variant for this product.
-        // Wishlist stores the master Product. Cart requires a specific variant (SKU).
-        //    We pick the lowest sortOrder active variant — this is the default SKU
-        //    created automatically at product creation time.
+        // 1. Edge Translation (Only fetching the internal Long ID)
+        Long productId = productRepository.findByPublicId(productPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found for UUID: " + productPublicId))
+                .getId();
 
+        // 2. Verify existence in Wishlist
+        Wishlist existedProductInWishlist = wishlistRepository.findByUserIdAndProductId(userId, productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Item not found in your wishlist"));
+
+        // 3. Database-Level Variant Resolution
+        // CRITICAL: We push the sorting logic to the database (ORDER BY sort_order LIMIT 1).
+        // Pulling all variants into application memory to do stream().min() causes heap exhaustion on large catalogs.
         ProductVariant defaultVariant = productVariantRepository
-                .findByProductIdAndIsActiveTrue(productId)
-                .stream()
-                .min(Comparator.comparingInt(ProductVariant::getSortOrder))
+                .findFirstByProductIdAndIsActiveTrueOrderBySortOrderAsc(productId)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "No active variant available for product ID: " + productId +
-                                ". The product may be out of stock or delisted."));
+                        "No active variant available for product ID: " + productId + ". The product may be out of stock."));
 
-        // 3. Add to cart via CartService (handles stock check + math engine)
-        Cart cart = cartService.addItemToCart(userId, defaultVariant.getId(), quantity);
+        // 4. Cross-Domain Orchestration: Add to Cart (Handles inventory checks + pricing)
+        Cart cart = cartService.addItemToCart(userId, defaultVariant.getPublicId(), quantity);
 
-        // 3. Remove from Wishlist
+        // 5. Complete Domain Transfer
         wishlistRepository.delete(existedProductInWishlist);
 
         return new CartResponse().getCartResponse(cart);
-
     }
 
+    /**
+     * Financial Aggregation of Wishlist State.
+     * <p>
+     * NOTE: Computations are handled in-memory within the JVM via Streams. Since standard e-commerce
+     * wishlists rarely exceed 50-100 items per user, this is CPU-efficient. If metrics show users hoarding
+     * 1000+ items, shift this calculation to a database aggregate query (SUM).
+     */
     @Transactional(readOnly = true)
     public WishlistSummaryDTO getWishlistSummary(Long userId) {
-        List<Wishlist>wishlistItems = wishlistRepository.findByUserId(userId);
-        // 1. Convert to ProductResponse
-        List<ProductResponse>productResponses = wishlistItems.stream()
+        List<Wishlist> wishlistItems = wishlistRepository.findByUserId(userId);
+
+        List<ProductResponse> productResponses = wishlistItems.stream()
                 .map(item -> productMapper.toProductResponse(item.getProduct()))
                 .toList();
-        // 2. Calculate Total Value of all wishlisted items
+
+        // In-Memory Big-Decimal Aggregation
         BigDecimal totalValue = wishlistItems.stream()
                 .map(item -> item.getProduct().getPrice())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        return new WishlistSummaryDTO(
-                productResponses, productResponses.size(),  totalValue
-        );
-    }
 
+        return new WishlistSummaryDTO(productResponses, productResponses.size(), totalValue);
+    }
 }

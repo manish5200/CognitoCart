@@ -5,12 +5,14 @@ import com.manish.smartcart.cart.model.GuestCartItem;
 import com.manish.smartcart.product.model.ProductVariant;
 import com.manish.smartcart.cart.repository.GuestCartRepository;
 import com.manish.smartcart.product.repository.ProductVariantRepository;
+import com.manish.smartcart.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -37,18 +39,18 @@ public class GuestCartService {
     /**
      * Adds an item to the Redis Cart.
      */
-    public GuestCart addItem(String sessionId, Long variantId, Integer quantity){
+    public GuestCart addItem(String sessionId, java.util.UUID variantPublicId, Integer quantity){
         GuestCart cart = getCart(sessionId);
 
         // 1. Validate variant exists in Postgres and has available stock
-        ProductVariant variant = productVariantRepository.findById(variantId)
-                .orElseThrow(() -> new RuntimeException("Product variant not found: " + variantId));
+        ProductVariant variant = productVariantRepository.findByPublicId(variantPublicId)
+                .orElseThrow(() -> new RuntimeException("Product variant not found: " + variantPublicId));
 
         int available = variant.getAvailableStock();
 
         // 2. See if this variant is already in the Redis cart
         Optional<GuestCartItem>existingItemOpt = cart.getItems().stream()
-                .filter(item -> item.getVariantId().equals(variantId))
+                .filter(item -> item.getVariantPublicId().equals(variantPublicId))
                 .findFirst();
 
         if(existingItemOpt.isPresent()){
@@ -78,7 +80,7 @@ public class GuestCartService {
                             ? variant.getPriceModifier()
                             : BigDecimal.ZERO);
             GuestCartItem newItem = new GuestCartItem(
-                    variantId, quantity, effectivePrice);
+                    variantPublicId, quantity, effectivePrice);
             cart.getItems().add(newItem);
         }
 
@@ -89,11 +91,15 @@ public class GuestCartService {
     /**
      * Removes a specific item from the Redis cart.
      */
-    public GuestCart removeItem(String sessionId, Long variantId){
+    public GuestCart removeItem(String sessionId, UUID variantPublicId){
+        // Ensure variant exists
+        ProductVariant variant = productVariantRepository.findByPublicId(variantPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Variant not found: " + variantPublicId));
+        
         GuestCart cart = getCart(sessionId);
         boolean removed = cart.getItems()
                 .removeIf(item ->
-                        item.getVariantId().equals(variantId));
+                        item.getVariantPublicId().equals(variantPublicId));
 
         if (!removed) {
             throw new RuntimeException("Item not found in guest cart");
@@ -118,10 +124,10 @@ public class GuestCartService {
             for(GuestCartItem item : guestCart.getItems()) {
                 try {
                     // Call the secure Postgres service to handle stock validation and Math Engine recalcs
-                    cartService.addItemToCart(userId, item.getVariantId(), item.getQuantity());
+                    cartService.addItemToCart(userId, item.getVariantPublicId(), item.getQuantity());
                 } catch (Exception e) {
                     log.error("Failed to merge product {} for user {}: {}",
-                            item.getVariantId(), userId, e.getMessage());
+                            item.getVariantPublicId(), userId, e.getMessage());
                 }
             }
             // Obliterate the temporary Redis cart so it isn't orphaned!

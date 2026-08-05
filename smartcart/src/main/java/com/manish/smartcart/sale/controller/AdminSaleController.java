@@ -12,6 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Enterprise Admin endpoints for managing global sale events and performing Quality Control.
@@ -38,11 +39,11 @@ public class AdminSaleController {
         return ResponseEntity.ok(adminSaleService.getAllEvents());
     }
 
-    @PatchMapping("/items/{itemId}/review")
+    @PatchMapping("/items/{itemPublicId}/review")
     public ResponseEntity<String> reviewSellerSubmission(
-            @PathVariable Long itemId,
+            @PathVariable UUID itemPublicId,
             @RequestParam ApprovalStatus status) {
-        adminSaleService.reviewSellerSubmission (itemId, status);
+        adminSaleService.reviewSellerSubmission (itemPublicId, status);
         return ResponseEntity.ok("Successfully marked submission as " + status.name());
     }
 }

@@ -20,7 +20,17 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
+/**
+ * Edge API Gateway for Wishlist Operations.
+ * <p>
+ * ARCHITECTURE NOTE (The Translator Pattern):
+ * Injecting Repositories into Controllers is typically an anti-pattern. However, we employ it here
+ * strictly for "Edge Translation". External clients only know the public UUID (preventing IDOR).
+ * The Controller translates this UUID into the internal Long PK before passing it to the core
+ * domain Service. This keeps the Service layer completely decoupled from external presentation logic.
+ */
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v1/wishlist")
@@ -30,20 +40,28 @@ public class WishlistController {
 
         private final WishlistService wishlistService;
 
-
+        /**
+         * Idempotent state toggle for wishlist items.
+         * Safe for frontend clients to blindly call on rapid successive clicks without causing
+         * duplicate database entries or throwing constraint violations.
+         */
         @Operation(summary = "Toggle Wishlist Item",
-                description = "Idempotent toggle — adds the product if not in wishlist, removes it if already saved. " +
-                        "Returns a message indicating the action taken.")
+                description = "Idempotent toggle — adds the product if not in wishlist, removes it if already saved.")
         @ApiResponse(responseCode = "200", description = "Wishlist updated successfully")
-        @PostMapping("/toggle/{productId}")
+        @PostMapping("/toggle/{productPublicId}")
         @PreAuthorize("hasRole('CUSTOMER')")
-        public ResponseEntity<?> toggleWishlist(@PathVariable Long productId,
+        public ResponseEntity<?> toggleWishlist(@PathVariable UUID productPublicId,
                                                 Authentication authentication) {
                 Long userId = extractUserId(authentication);
-                String message = wishlistService.toggleWishlist(userId, productId);
+                String message = wishlistService.toggleWishlist(userId, productPublicId);
                 return ResponseEntity.ok().body(Map.of("Status", message));
         }
 
+        /**
+         * Retrieves the user's active wishlist.
+         * NOTE: As the platform scales, consider paginating this endpoint if telemetry shows
+         * users hoarding 100+ items, which would cause heavy JSON serialization overhead.
+         */
         @Operation(summary = "Get My Wishlist",
                 description = "Returns all products currently saved in the user's wishlist as full product cards.")
         @ApiResponse(responseCode = "200", description = "Successfully retrieved wishlist items")
@@ -54,22 +72,32 @@ public class WishlistController {
                 return ResponseEntity.ok(wishlist);
         }
 
+        /**
+         * State Transition Pipeline: Wishlist -> Cart.
+         * Requires atomicity in the service layer to ensure the item is not stranded in both
+         * domains if a database constraint fails during the cart insertion phase.
+         */
         @Operation(summary = "Move Item to Cart",
                 description = "Adds a wishlisted product to the cart and removes it from the wishlist.")
         @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Item moved to cart successfully"),
-            @ApiResponse(responseCode = "404", description = "Product not found in wishlist")
+                @ApiResponse(responseCode = "200", description = "Item moved to cart successfully"),
+                @ApiResponse(responseCode = "404", description = "Product not found in wishlist")
         })
-        @PostMapping("/move-to-cart/{productId}")
+        @PostMapping("/move-to-cart/{productPublicId}")
         public ResponseEntity<?> moveToCart(
-                @PathVariable Long productId,
-                        @RequestParam(name = "quantity", defaultValue = AppConstants.PRODUCT_QUANTITY) Integer quantity,
-                        Authentication authentication) {
+                @PathVariable UUID productPublicId,
+                @RequestParam(name = "quantity", defaultValue = AppConstants.PRODUCT_QUANTITY) Integer quantity,
+                Authentication authentication) {
                 Long userId = extractUserId(authentication);
-                CartResponse cartResponse = wishlistService.wishlistToCart(userId, productId, quantity);
+                CartResponse cartResponse = wishlistService.wishlistToCart(userId, productPublicId, quantity);
                 return ResponseEntity.ok(Map.of("Item moved to cart successfully", cartResponse));
         }
 
+        /**
+         * Dynamic aggregation of wishlist financial metrics.
+         * WARNING: This executes on-the-fly calculations. If wishlist sizes grow, this should
+         * be offloaded to a materialized view or cached via Redis.
+         */
         @Operation(
                 summary = "Get Wishlist Summary",
                 description = "Returns all wishlisted items with a calculated total value."
@@ -83,6 +111,10 @@ public class WishlistController {
         }
 
 
+        /**
+         * Context Extractor.
+         * Fails fast if the SecurityContext is compromised or improperly hydrated by the JWT Filter.
+         */
         private Long extractUserId(Authentication authentication) {
                 CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
                 if (userDetails == null) {

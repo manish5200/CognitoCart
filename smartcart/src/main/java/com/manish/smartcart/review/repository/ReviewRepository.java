@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, Long> {
@@ -37,9 +38,10 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
      * If the review doesn't exist OR doesn't belong to the user, Optional.empty() is returned.
      */
     @Query("select r from Review r where r.id = :reviewId and r.user.id = :userId")
-    Optional<Review>findByIdAndUserId(
+    Optional<Review> findByIdAndUserId(
             @Param("reviewId") Long reviewId,
             @Param("userId") Long userId);
 
-
+    // PUBLIC ID LOOKUP
+    Optional<Review> findByPublicId(UUID publicId);
 }

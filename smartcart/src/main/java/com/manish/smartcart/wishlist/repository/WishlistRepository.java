@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface WishlistRepository extends JpaRepository<Wishlist, Long> {
@@ -34,4 +35,6 @@ public interface WishlistRepository extends JpaRepository<Wishlist, Long> {
                "AND (w.lastPriceDropNotifiedAt IS NULL OR w.lastPriceDropNotifiedAt < :cooldownCutoff)")
        List<Wishlist> findEligibleSalesForNotification(@Param("cooldownCutoff") LocalDateTime cooldownCutoff);
 
+       // PUBLIC ID LOOKUP
+       Optional<Wishlist> findByPublicId(UUID publicId);
 }

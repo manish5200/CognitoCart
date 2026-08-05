@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Enterprise Seller endpoints for opting-in variants to Admin-created events.
@@ -53,13 +54,13 @@ public class SellerSaleController {
      * CSV must have header: variant_id, discount_percentage, max_units, max_units_per_user
      * Returns a plain-text summary: "✅ 498 submitted. ❌ 2 skipped"
      */
-    @PostMapping("/{eventId}/bulk-upload")
+    @PostMapping("/{eventPublicId}/bulk-upload")
     public ResponseEntity<String>uploadBulkCsv(
-        @PathVariable Long eventId,
+        @PathVariable UUID eventPublicId,
         @RequestParam("file") MultipartFile file,
         Authentication authentication){
         Long sellerId = extractUserId(authentication);
-        String result = sellerBulkSaleService.processBulkCsv(file, eventId, sellerId);
+        String result = sellerBulkSaleService.processBulkCsv(file, eventPublicId, sellerId);
         return ResponseEntity.ok(result);
     }
 

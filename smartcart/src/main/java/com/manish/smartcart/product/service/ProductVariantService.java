@@ -33,7 +33,10 @@ public class ProductVariantService {
      * PUBLIC GET: Retrieve all active variants for a product
      */
     @Transactional(readOnly = true)
-    public List<ProductVariantResponse>getPublicVariants(Long productId){
+    public List<ProductVariantResponse>getPublicVariants(UUID productPublicId){
+        Long productId = productRepository.findByPublicId(productPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + productPublicId))
+                .getId();
         return productVariantRepository.findByProductIdAndIsActiveTrue(productId)
                 .stream()
                 .map(this::toResponse)
@@ -45,8 +48,13 @@ public class ProductVariantService {
      * SELLER POST: Add a new variant (e.g., "Size XL")
      */
     @Transactional
-    public ProductVariantResponse addProductVariant(Long productId, ProductVariantRequest request,
+    public ProductVariantResponse addProductVariant(UUID productPublicId, ProductVariantRequest request,
                                                     Long currentSellerId){
+
+        Long productId = productRepository.findByPublicId(productPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + productPublicId))
+                .getId();
+
         Product product = validateSellerOwnership(productId, currentSellerId);
 
         String resolvedSku = (request.getSku() == null || request.getSku().isBlank())
@@ -79,10 +87,16 @@ public class ProductVariantService {
      * SELLER PUT: Update price, stock, or attributes
      */
     @Transactional
-    public ProductVariantResponse updateProductVariant(Long productId,
-                                                       Long variantId,
+    public ProductVariantResponse updateProductVariant(UUID productPublicId,
+                                                       UUID variantPublicId,
                                                        ProductVariantRequest request,
                                                        Long currentSellerId){
+        Long productId = productRepository.findByPublicId(productPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + productPublicId))
+                .getId();
+        Long variantId = productVariantRepository.findByPublicId(variantPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Variant not found: " + variantPublicId))
+                .getId();
         validateSellerOwnership(productId, currentSellerId);
 
         ProductVariant variant = productVariantRepository.findById(variantId)
@@ -111,8 +125,15 @@ public class ProductVariantService {
      * SELLER POST: Upload SKU-specific image
      */
     @Transactional
-    public String uploadVariantImage(Long productId, Long variantId,
+    public String uploadVariantImage(UUID productPublicId, UUID variantPublicId,
                                      MultipartFile file, Long currentSellerId){
+
+        Long productId = productRepository.findByPublicId(productPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + productPublicId))
+                .getId();
+        Long variantId = productVariantRepository.findByPublicId(variantPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Variant not found: " + variantPublicId))
+                .getId();
         validateSellerOwnership(productId, currentSellerId);
         FileValidator.validateImage(file);
 
@@ -134,7 +155,16 @@ public class ProductVariantService {
     /**
      * SELLER PATCH: Toggle Active Status (Soft Delete)
      */
-    public void toggleVariantStatus(Long productId, Long variantId, Long currentSellerId){
+    public void toggleVariantStatus(UUID productPublicId, UUID variantPublicId, Long currentSellerId){
+
+        Long productId = productRepository.findByPublicId(productPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + productPublicId))
+                .getId();
+
+        Long variantId = productVariantRepository.findByPublicId(variantPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Variant not found: " + variantPublicId))
+                .getId();
+
         validateSellerOwnership(productId, currentSellerId);
 
         ProductVariant variant = productVariantRepository.findById(variantId)

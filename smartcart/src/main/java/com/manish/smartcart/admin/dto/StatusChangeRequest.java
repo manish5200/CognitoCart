@@ -10,9 +10,8 @@ import lombok.*;
 @AllArgsConstructor
 public class StatusChangeRequest {
 
-    @NotNull
-    @NotBlank(message = "Order ID is required")
-    private Long orderId;
+    @NotNull(message = "Order ID is required")
+    private java.util.UUID orderPublicId;
 
     @NotNull
     private String orderStatus;

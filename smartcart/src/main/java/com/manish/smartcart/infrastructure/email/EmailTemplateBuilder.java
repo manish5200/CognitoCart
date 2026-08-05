@@ -41,7 +41,7 @@ public class EmailTemplateBuilder {
     public String buildOrderConfirmation(OrderResponse order) {
         Context context = new Context();
         context.setVariable("customerName", order.getCustomerName());
-        context.setVariable("orderId", order.getOrderId());
+        context.setVariable("orderId", order.getOrderPublicId());
         context.setVariable("orderDate", order.getOrderDate().format(DATE_FORMATTER));
         context.setVariable("status", order.getStatus().name());
         context.setVariable("shippingAddress", order.getShippingAddress());
@@ -56,7 +56,7 @@ public class EmailTemplateBuilder {
     public String buildOrderStatusUpdate(OrderResponse order) {
         Context context = new Context();
         context.setVariable("customerName", order.getCustomerName());
-        context.setVariable("orderId", order.getOrderId());
+        context.setVariable("orderId", order.getOrderPublicId());
         context.setVariable("status", order.getStatus().name());
 
         String statusMessage = switch (order.getStatus()) {
@@ -139,7 +139,7 @@ public class EmailTemplateBuilder {
     public String buildRefundEmail(OrderResponse order, String refundId) {
         Context context = new Context();
         context.setVariable("customerName", order.getCustomerName());
-        context.setVariable("orderId", order.getOrderId());
+        context.setVariable("orderId", order.getOrderPublicId());
         context.setVariable("refundAmount", order.getTotalAmount()); // Full refund amount
         context.setVariable("refundId", refundId); // Inject the refund transaction ID
         return templateEngine.process("emails/refund-processed", context);
@@ -175,7 +175,7 @@ public class EmailTemplateBuilder {
     public String buildDeliveryConfirmationEmail(OrderResponse order) {
         Context context = new Context();
         context.setVariable("customerName", order.getCustomerName());
-        context.setVariable("orderId", order.getOrderId());
+        context.setVariable("orderId", order.getOrderPublicId());
         context.setVariable("status", order.getStatus().name()); // "DELIVERED" → green banner ✅
         context.setVariable("statusMessage",
                 "Your order has been delivered! We hope you love your purchase. 🎉 " +
@@ -192,7 +192,7 @@ public class EmailTemplateBuilder {
 
         Context context = new Context();
         context.setVariable("customerName", order.getCustomerName());
-        context.setVariable("orderId", order.getOrderId());
+        context.setVariable("orderId", order.getOrderPublicId());
         context.setVariable("status", "RETURN_REJECTED");
 
         String rejectionReason = (adminComment != null  && !adminComment.trim().isEmpty())
@@ -200,7 +200,7 @@ public class EmailTemplateBuilder {
                 : "The request does not meet our standard return policy criteria.";
 
         context.setVariable("statusMessage",
-                "Your post-purchase request for Order #" + order.getOrderId() +
+                "Your post-purchase request for Order #" + order.getOrderPublicId() +
                         " has been declined.\n\nReason: " + rejectionReason);
 
         return templateEngine.process("emails/order-status", context);

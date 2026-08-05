@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface ProductReturnPolicyRepository extends JpaRepository<ProductReturnPolicy, Long> {
@@ -38,4 +39,7 @@ public interface ProductReturnPolicyRepository extends JpaRepository<ProductRetu
     @Query("select p from ProductReturnPolicy p where p.id = :policyId AND p.product.sellerId= :sellerId")
     Optional<ProductReturnPolicy> findByIdAndProductSellerId(@Param("policyId") Long policyId,
                                                              @Param("sellerId") Long sellerId);
+
+    // PUBLIC ID LOOKUP
+    Optional<ProductReturnPolicy> findByPublicId(UUID publicId);
 }

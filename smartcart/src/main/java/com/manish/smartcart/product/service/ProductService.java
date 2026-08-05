@@ -156,9 +156,9 @@ public class ProductService {
             @CacheEvict(value = "products", allEntries = true),
             @CacheEvict(value = "product-slug", allEntries = true)
     })
-    public void toggleAvailability(Long productId, Long currentSellerId, boolean isAdmin) {
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID: " + productId));
+    public void toggleAvailability(java.util.UUID productPublicId, Long currentSellerId, boolean isAdmin) {
+        Product product = productRepository.findByPublicId(productPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID: " + productPublicId));
 
         // Security Check: Unauthorized if not Admin and not the Owner
         if (!isAdmin && !product.getSellerId().equals(currentSellerId)) {
@@ -249,15 +249,15 @@ public class ProductService {
             @CacheEvict(value = "products", allEntries = true),
             @CacheEvict(value = "product-slug", allEntries = true)
     })
-    public void deleteProduct(Long id, Long authenticatedUserId, boolean isAdmin) {
+    public void deleteProduct(java.util.UUID productPublicId, Long authenticatedUserId, boolean isAdmin) {
         // Combined exists and find into one call for efficiency
-        Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID: " + id));
+        Product product = productRepository.findByPublicId(productPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID: " + productPublicId));
 
         if (!isAdmin && !product.getSellerId().equals(authenticatedUserId)) {
             throw new BusinessLogicException("Access Denied: Only owners or admins can delete products.");
         }
-        productRepository.deleteById(id);
+        productRepository.deleteById(product.getId());
     }
 
     // Filter the product using specification

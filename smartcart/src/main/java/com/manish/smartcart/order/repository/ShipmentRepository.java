@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface ShipmentRepository extends JpaRepository<Shipment, Long> {
@@ -33,6 +34,16 @@ public interface ShipmentRepository extends JpaRepository<Shipment, Long> {
             "join fetch s.order o " +
             "join fetch o.user " +
             "where s.trackingNumber = :trackingNumber")
-    Optional<Shipment>findByTrackingNumberWithOrderAndUser(
+    Optional<Shipment> findByTrackingNumberWithOrderAndUser(
             @Param("trackingNumber") String trackingNumber);
+
+    // PUBLIC ID LOOKUP: UUID-based secure lookup for internal API endpoints.
+    Optional<Shipment> findByPublicId(UUID publicId);
+
+    /**
+     * Human ID lookup — used by the PUBLIC tracking page (no login required).
+     * GET /api/track/SHP-20260710-T9R4NB
+     * The customer gets this code in their dispatch email and uses it to track delivery.
+     */
+    Optional<Shipment> findByTrackingCode(String trackingCode);
 }

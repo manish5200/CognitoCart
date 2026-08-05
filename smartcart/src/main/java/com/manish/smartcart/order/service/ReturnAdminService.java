@@ -40,10 +40,10 @@ public class ReturnAdminService {
 
     // ─── APPROVE RETURN → restore stock + issue refund ───────────────────────
     @Transactional
-    public OrderResponse approveReturn(Long orderId){
+    public OrderResponse approveReturn(java.util.UUID orderPublicId){
 
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
+        Order order = orderRepository.findByPublicId(orderPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderPublicId));
 
         if (order.getOrderStatus() != OrderStatus.RETURN_REQUESTED) {
             throw new BusinessLogicException(
@@ -55,7 +55,7 @@ public class ReturnAdminService {
             // Guard: variant may be null if it was hard-deleted after the order was placed.
             // Physical stock is already gone — nothing to restore, skip safely.
             if (item.getVariant() == null) {
-                log.warn("Skipping stock restore for order item on approved return {}: variant was deleted.", orderId);
+                log.warn("Skipping stock restore for order item on approved return {}: variant was deleted.", orderPublicId);
                 continue;
             }
             ProductVariant variant = item.getVariant();
@@ -74,7 +74,7 @@ public class ReturnAdminService {
                 order.setOrderStatus(OrderStatus.REFUNDED);
                 Order saved = orderRepository.save(order);
                 orderNotificationService.sendRefundEmail(orderMapper.toOrderResponse(saved), refundId);
-                log.info("Return approved and refund issued — orderId={} refundId={}", orderId, refundId);
+                log.info("Return approved and refund issued — orderId={} refundId={}", orderPublicId, refundId);
                 return orderMapper.toOrderResponse(saved);
 
             }catch (Exception e){
@@ -92,9 +92,9 @@ public class ReturnAdminService {
     // ADMIN: Approve REPLACEMENT or EXCHANGE → re-check stock → re-ship
     // ─────────────────────────────────────────────────────────────────────────
     @Transactional
-    public OrderResponse approveReplacement(Long orderId){
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
+    public OrderResponse approveReplacement(java.util.UUID orderPublicId){
+        Order order = orderRepository.findByPublicId(orderPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderPublicId));
 
         if(order.getOrderStatus() != OrderStatus.REPLACEMENT_REQUESTED &&
                 order.getOrderStatus() != OrderStatus.EXCHANGE_REQUESTED) {
@@ -135,9 +135,9 @@ public class ReturnAdminService {
         Order saved = orderRepository.save(order);
 
         // Admin then attaches the new shipment tracking via
-        // existing POST /api/v1/admin/{orderId}/shipment endpoint
+        // existing POST /api/v1/admin/{orderPublicId}/shipment endpoint
         orderNotificationService.sendStatusUpdateEmail(orderMapper.toOrderResponse(saved));
-        log.info("Replacement approved and stock decremented for Order ID: {}", orderId);
+        log.info("Replacement approved and stock decremented for Order ID: {}", orderPublicId);
         return orderMapper.toOrderResponse(saved);
     }
 
@@ -145,9 +145,9 @@ public class ReturnAdminService {
     // ADMIN: Reject RETURN/REPLACEMENT/EXCHANGE
     // ─────────────────────────────────────────────────────────────────────────
     @Transactional
-    public OrderResponse rejectReturn(Long orderId, String adminComment){
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
+    public OrderResponse rejectReturn(java.util.UUID orderPublicId, String adminComment){
+        Order order = orderRepository.findByPublicId(orderPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderPublicId));
 
         if(order.getOrderStatus() != OrderStatus.RETURN_REQUESTED &&
                 order.getOrderStatus() != OrderStatus.EXCHANGE_REQUESTED &&
@@ -169,7 +169,7 @@ public class ReturnAdminService {
         order.setReturnRequestedAt(null);
 
         Order saved = orderRepository.save(order);
-        log.info("Return request for Order ID: {} has been rejected by admin. Reason: {}", orderId, adminComment);
+        log.info("Return request for Order ID: {} has been rejected by admin. Reason: {}", orderPublicId, adminComment);
         return orderMapper.toOrderResponse(saved);
     }
 
