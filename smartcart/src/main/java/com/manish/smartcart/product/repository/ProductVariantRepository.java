@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -88,4 +89,38 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
      * Executes natively as: ORDER BY sort_order ASC LIMIT 1.
      */
     Optional<ProductVariant> findFirstByProductIdAndIsActiveTrueOrderBySortOrderAsc(Long productId);
+
+    /*
+     * ATOMIC STOCK DELTA — The Race-Condition-Safe Inventory Update.
+     *
+     * ─── WHY @Modifying + NATIVE JPQL? ─────────────────────────────────────────
+     * A standard Hibernate entity load-modify-save sequence is NOT safe here:
+     *   1. findById() → loads entity into L1 cache
+     *   2. setStock(entity.getStock() + delta) → read-modify-write in JVM memory
+     *   3. save() → writes to DB
+     * Steps 1-3 have a race window: two concurrent threads both read stock=50,
+     * both add 100, both write 150 instead of 250.
+     *
+     * @Modifying pushes the arithmetic into a SINGLE atomic SQL statement:
+     *   UPDATE product_variants
+     *   SET stock_quantity = stock_quantity + :delta
+     *   WHERE id = :id AND (stock_quantity + :delta) >= 0
+     * <p>
+     * The WHERE guard (stock + delta >= 0) prevents stock from going negative.
+     * If the guard fails, the UPDATE affects 0 rows — we check the return value
+     * and throw InsufficientStockException in the service layer.
+     * <p>
+     * ─── clearAutomatically = true ──────────────────────────────────────────────
+     * Required when @Modifying bypasses Hibernate's L1 cache. Without it,
+     * subsequent findById() calls in the same transaction would return the
+     * STALE cached value before the SQL UPDATE took effect.
+     *
+     * @return number of rows affected (0 = guard failed / stock would go negative)
+     */
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE ProductVariant v " +
+            "SET v.stockQuantity = v.stockQuantity + :delta " +
+            "WHERE v.id = :id " +
+            "AND (v.stockQuantity + :delta) >= 0")
+    int atomicAdjustStock(@Param("id") Long id, @Param("delta") int delta);
 }

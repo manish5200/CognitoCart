@@ -13,6 +13,7 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -39,7 +40,7 @@ public class SecurityConfig {
         @Bean
         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
                 http
-                        .csrf(csrf -> csrf.disable())
+                        .csrf(AbstractHttpConfigurer::disable)
                         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
                         // ── STATELESS SESSION ─────────────────────────────────────────────────────
@@ -72,7 +73,7 @@ public class SecurityConfig {
                                 )
                         )
 
-                        .formLogin(form -> form.disable())
+                        .formLogin(AbstractHttpConfigurer::disable)
 
                         .authorizeHttpRequests(request -> request
                                 // ── Fully Public Endpoints (no token or login required) ──────────────
@@ -81,7 +82,8 @@ public class SecurityConfig {
                                         "/api/v1/guest-cart/**",     // Shopping before login
                                         "/api/v1/payments/verify",   // Razorpay frontend callback
                                         "/api/v1/payments/webhook",  // Razorpay backend webhook
-                                        "/api/v1/webhooks/logistics", // Logistics carrier status pushes — no JWT needed
+                                        "/api/v1/webhooks/logistics",// Logistics carrier status pushes — no JWT needed
+                                        "/api/v1/track/**",          // Public shipment tracking (no login)
                                         "/oauth2/**",                // OAuth2 authorization flow initiation
                                         "/login/oauth2/**",          // OAuth2 callback from Google
                                         "/swagger-ui/**",            // API documentation UI
@@ -102,8 +104,14 @@ public class SecurityConfig {
                                         "/api/v1/reviews/**", // View reviews and rating distribution
                                         "/api/v1/products/*/variants",
                                         "/api/v1/public/sales/**" // Live Flash Sale banners — no auth required
-                                )
-                                .permitAll()
+                                ).permitAll()
+                                // ── Actuator: Two-Path Strategy ───────────────────────────────────────
+                                // /health → public (required by Kubernetes liveness/readiness probes
+                                //           and Docker health checks — they can't send auth tokens)
+                                // /prometheus → ADMIN only (contains DB connection counts, JVM heap
+                                //               usage, active sessions — sensitive infrastructure data)
+                                // Everything else (/beans, /env, /mappings, /loggers) → ADMIN only
+                                .requestMatchers("/actuator/health").permitAll()
                                 .requestMatchers("/actuator/**").hasRole("ADMIN") // Health, metrics, Prometheus scrape
                                 .anyRequest().authenticated())
 

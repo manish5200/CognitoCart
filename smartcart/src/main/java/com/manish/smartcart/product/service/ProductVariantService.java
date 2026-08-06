@@ -1,9 +1,11 @@
 package com.manish.smartcart.product.service;
 
+import com.manish.smartcart.product.dto.InventoryAdjustmentRequest;
 import com.manish.smartcart.product.dto.ProductVariantRequest;
 import com.manish.smartcart.product.dto.ProductVariantResponse;
 import com.manish.smartcart.infrastructure.storage.CloudinaryService;
 import com.manish.smartcart.shared.exception.BusinessLogicException;
+import com.manish.smartcart.shared.exception.InsufficientStockException;
 import com.manish.smartcart.shared.exception.ResourceNotFoundException;
 import com.manish.smartcart.product.model.Product;
 import com.manish.smartcart.product.model.ProductVariant;
@@ -205,5 +207,58 @@ public class ProductVariantService {
                 .isActive(variant.isActive())
                 .displayLabel(variant.getDisplayLabel())
                 .build();
+    }
+
+    /*
+     * SELLER: Atomically adjust inventory using a signed delta.
+     *
+     * Uses a single UPDATE statement to prevent the Lost Update race condition.
+     * @see ProductVariantRepository#atomicAdjustStock
+     *
+     * @param variantPublicId  UUID of the variant (external identifier)
+     * @param request          Contains signed delta (±) and audit reason
+     * @param sellerId         Internal ID of the authenticated seller (for IDOR check)
+     * @throws BusinessLogicException    if seller does not own this variant
+     * @throws InsufficientStockException if adjustment would result in negative stock
+     */
+    public ProductVariantResponse adjustStock(UUID variantPublicId,
+                                              InventoryAdjustmentRequest request,
+                                              Long sellerId){
+
+        // 1. Resolve external UUID → internal Long PK (3-ID system pattern)
+        ProductVariant variant = productVariantRepository.findByPublicId(variantPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Variant not found: " + variantPublicId));
+
+        // 2. IDOR Check: verify the authenticated seller owns this product.
+        //    Returns 404-style ResourceNotFoundException to avoid confirming
+        //    the existence of variants the caller doesn't own (security best practice).
+        if(!variant.getProduct().getSellerId().equals(sellerId)){
+            throw new BusinessLogicException(
+                    "Access Denied: You do not own variant " + variantPublicId);
+        }
+
+        // 3. Execute atomic SQL delta.
+        //    Returns 0 if the WHERE guard (stock + delta >= 0) rejected the update.
+        int rowsAffected = productVariantRepository
+                .atomicAdjustStock(variant.getId(), request.getAdjustment());
+
+        if(rowsAffected == 0){
+            throw new InsufficientStockException(
+                    "Stock adjustment of " + request.getAdjustment()
+                            + " would result in negative stock for variant " + variantPublicId
+                            + ". Current stock: " + variant.getStockQuantity());
+        }
+
+        // 4. Audit log — structured for log aggregation (Loki/ELK)
+        log.info("[INVENTORY_DELTA] variantId={} sellerId={} delta={} reason={} note={}",
+                variant.getId(),
+                sellerId,
+                request.getAdjustment(),
+                request.getReason(),
+                request.getNote());
+        // 5. Re-fetch for accurate response (L1 cache was cleared by clearAutomatically=true)
+        return toResponse(productVariantRepository.findById(variant.getId())
+                .orElseThrow());
     }
 }

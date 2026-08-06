@@ -1,5 +1,7 @@
 package com.manish.smartcart.product.controller;
 
+import com.manish.smartcart.product.dto.InventoryAdjustmentRequest;
+import com.manish.smartcart.product.dto.ProductVariantResponse;
 import com.manish.smartcart.security.CustomUserDetails;
 import com.manish.smartcart.product.dto.ProductVariantRequest;
 import com.manish.smartcart.product.service.ProductVariantService;
@@ -93,6 +95,49 @@ public class ProductVariantController {
         productVariantService.toggleVariantStatus(productPublicId, variantPublicId, sellerId);
 
         return ResponseEntity.ok(Map.of("message", "Variant status toggled successfully."));
+    }
+
+    /**
+     * Atomic inventory adjustment using a signed delta value.
+     * <p>
+     * ─── WHY PATCH? ──────────────────────────────────────────────────────────────
+     * PATCH = partial update. We are not replacing the entire variant resource
+     * (that's PUT), just adjusting one field (stock) by a delta amount.
+     * Semantically correct by HTTP spec (RFC 5789).
+     * <p>
+     * ─── EXAMPLE REQUESTS ────────────────────────────────────────────────────────
+     * Restock 100 units after supplier delivery:
+     *   PATCH /api/v1/products/{pId}/variants/{vId}/stock
+     *   { "adjustment": 100, "reason": "RESTOCK", "note": "Supplier XYZ delivery" }
+     * <p>
+     * Write off 3 damaged units:
+     *   PATCH /api/v1/products/{pId}/variants/{vId}/stock
+     *   { "adjustment": -3, "reason": "DAMAGE_WRITE_OFF", "note": "Water damage" }
+     */
+    @Operation(
+            summary = "Adjust variant stock (delta)",
+            description = "Atomically adjust stock by a signed integer. " +
+                    "Positive = add stock. Negative = remove stock. " +
+                    "Safe under concurrent checkout. Cannot go below zero."
+    )
+    @SecurityRequirement(name = "bearerAuth")
+    @PatchMapping("/{variantPublicId}/stock")
+    @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
+    public ResponseEntity<?> adjustStock(
+            @PathVariable UUID productPublicId,
+            @PathVariable UUID variantPublicId,
+            @Valid @RequestBody InventoryAdjustmentRequest request,
+            Authentication authentication){
+
+        Long sellerId = extractUserId(authentication);
+        ProductVariantResponse updated = productVariantService.adjustStock(variantPublicId, request, sellerId);
+
+        return ResponseEntity.ok(Map.of(
+                "message",  "Stock adjusted successfully",
+                "delta",     request.getAdjustment(),
+                "reason",    request.getReason(),
+                "variant",   updated
+        ));
     }
 
     //Helper
