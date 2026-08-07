@@ -40,6 +40,7 @@ public class Product extends BaseEntity {
     // ─── CATALOG IDENTITY ─────────────────────────────────────────────────────
     @Column(name = "product_code", unique = true, nullable = false)
     private String productCode;
+
     @NotBlank
     private String productName;
 

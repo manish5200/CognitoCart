@@ -13,8 +13,8 @@ import java.util.UUID;
 @Repository
 public interface CartRepository extends JpaRepository<Cart, Long> {
 
-    // JOIN FETCH items so Cart.items is always initialized in the same query
-    @Query("SELECT c FROM Cart c LEFT JOIN FETCH c.items ci LEFT JOIN FETCH ci.variant WHERE c.user.id = :userId")
+    // JOIN FETCH items, variants, and products so Cart.items is fully initialized
+    @Query("SELECT c FROM Cart c LEFT JOIN FETCH c.items ci LEFT JOIN FETCH ci.variant v LEFT JOIN FETCH v.product WHERE c.user.id = :userId")
     Optional<Cart> findByUserId(@Param("userId") Long userId);
 
     @Query("SELECT c FROM Cart c JOIN FETCH c.user WHERE c.updatedAt < :thresholdDate AND SIZE(c.items) > 0")

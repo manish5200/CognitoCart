@@ -25,6 +25,7 @@ public class OrderMapper {
         orderResponse.setDiscountAmount(order.getDiscountAmount());
         orderResponse.setStatus(order.getOrderStatus());
         orderResponse.setPaymentStatus(order.getPaymentStatus());
+        orderResponse.setRazorpayOrderId(order.getRazorpayOrderId());
         orderResponse.setDeliveryFee(order.getDeliveryFee()); // ← was missing — fixes "null" in PDF invoice
         orderResponse.setReturnRequestType(order.getReturnRequestType());
         orderResponse.setReturnReason(order.getReturnReason());

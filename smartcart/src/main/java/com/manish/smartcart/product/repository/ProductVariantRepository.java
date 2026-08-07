@@ -29,11 +29,27 @@ import java.util.UUID;
 @Repository
 public interface ProductVariantRepository extends JpaRepository<ProductVariant, Long> {
 
-    // Bounded natively by the number of variants a single product has (safe for List)
-    List<ProductVariant> findByProductIdAndIsActiveTrue(Long productId);
+    /**
+     * Fetches active variants for a product, JOIN FETCH-ing the parent Product in one SQL query.
+     * Without JOIN FETCH, variant.getProduct() is a LAZY proxy that throws
+     * LazyInitializationException when accessed after the Hibernate session closes.
+     */
+    @Query("SELECT v FROM ProductVariant v JOIN FETCH v.product WHERE v.product.id = :productId AND v.isActive = true")
+    List<ProductVariant> findByProductIdAndIsActiveTrue(@Param("productId") Long productId);
 
-    // Bounded natively by product. Used for seller management.
-    List<ProductVariant> findByProductId(Long productId);
+    /**
+     * All variants (active + inactive) for seller management — also needs JOIN FETCH
+     * so the product context is available for ownership checks and response mapping.
+     */
+    @Query("SELECT v FROM ProductVariant v JOIN FETCH v.product WHERE v.product.id = :productId")
+    List<ProductVariant> findByProductId(@Param("productId") Long productId);
+
+    /**
+     * Full catalog scan for admin/inventory dashboards.
+     * JOIN FETCH prevents N+1: one SQL JOIN instead of one SELECT per variant.
+     */
+    @Query("SELECT v FROM ProductVariant v JOIN FETCH v.product")
+    List<ProductVariant> findAllWithProduct();
 
     // Strict uniqueness guards for catalog integrity
     Optional<ProductVariant> findBySku(String sku);

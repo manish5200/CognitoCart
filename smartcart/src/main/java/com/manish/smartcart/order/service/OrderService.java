@@ -98,6 +98,11 @@ public class OrderService {
         // Connection is acquired, locks are held, data is flushed, and the connection is RELEASED.
         Order savedOrder = transactionTemplate.execute(status -> buildAndPersistOrder(userId, orderRequest));
         Objects.requireNonNull(savedOrder, "TX1 failed silently — order not persisted. Check DB logs.");
+        
+        // AUDIT TRAIL: Log initial creation now that the Order is firmly committed to the DB.
+        // If we did this inside TX1, the REQUIRES_NEW transaction would fail the FK constraint.
+        orderEventService.record(savedOrder.getId(), OrderStatus.PAYMENT_PENDING, "SYSTEM",  "Checkout initialized — awaiting Razorpay payment");
+
         String razorpayOrderId;
 
         // PHASE 2: Network Execution (3000ms - 5000ms)
@@ -124,7 +129,7 @@ public class OrderService {
         // PHASE 3: Fast Database Transaction (~20ms)
         // Re-fetch the order to ensure we operate on a fresh L1 cache entity.
         Order finalOrder = transactionTemplate.execute(status -> {
-            Order freshOrder = orderRepository.findById(savedOrder.getId())
+            Order freshOrder = orderRepository.findByIdWithItems(savedOrder.getId())
                     .orElseThrow(() -> new ResourceNotFoundException("Order desync after save: " + savedOrder.getId()));
             freshOrder.setRazorpayOrderId(razorpayOrderId);
             Order result = orderRepository.save(freshOrder);
@@ -270,7 +275,6 @@ public class OrderService {
         // FLOOR LIMIT: Prevent negative totals (edge case with massive flat-rate coupons).
         order.setTotalAmount(computedTotal.max(BigDecimal.ZERO));
         Order persisted = orderRepository.save(order);
-        orderEventService.record(persisted.getId(), OrderStatus.PAYMENT_PENDING, "SYSTEM",  "Checkout initialized — awaiting Razorpay payment");
 
         return persisted;
     }
@@ -285,7 +289,7 @@ public class OrderService {
 
         // PHASE 1: Validation & Status Check
         Order cancelledOrder = transactionTemplate.execute(status -> {
-            Order order = orderRepository.findById(orderId)
+            Order order = orderRepository.findByIdWithItems(orderId)
                     .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
 
             // SECURITY: Prevent IDOR (Insecure Direct Object Reference).

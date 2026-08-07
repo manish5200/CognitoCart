@@ -115,6 +115,7 @@ public class Order extends BaseEntity {
      * honors the policy the customer saw when they paid.
      * Same concept as priceAtPurchase in OrderItem.
      */
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private String returnPolicySnapshot;
 

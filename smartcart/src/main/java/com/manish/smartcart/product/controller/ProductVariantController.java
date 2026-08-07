@@ -29,10 +29,26 @@ public class ProductVariantController {
 
     private final ProductVariantService productVariantService;
 
-    @Operation(summary = "Get all variants for a product", description = "Public endpoint used by the catalog/product details page.")
+    @Operation(
+            summary = "Get all variants for a product",
+            description = "Public endpoint used by the catalog/product details page. " +
+                    "Returns variantPublicId + productPublicId + productCode for each SKU."
+    )
     @GetMapping
     public ResponseEntity<?> getPublicVariants(@PathVariable UUID productPublicId) {
         return ResponseEntity.ok(productVariantService.getPublicVariants(productPublicId));
+    }
+
+    @Operation(
+            summary = "Get ALL variants across all products (Admin/Seller)",
+            description = "Returns every variant in the catalog with product context (productCode, productPublicId). " +
+                    "Use productPublicId from the response to navigate to that product's variants."
+    )
+    @SecurityRequirement(name = "bearerAuth")
+    @GetMapping("/all")
+    @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
+    public ResponseEntity<?> getAllVariants(Authentication authentication) {
+        return ResponseEntity.ok(productVariantService.getAllVariants());
     }
 
     @Operation(summary = "Add a new variant", description = "Seller creates a new SKU (e.g., Size M) for an existing product.")

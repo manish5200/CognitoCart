@@ -146,7 +146,7 @@ public class InvoiceService {
                         // Right column: Invoice metadata
                         // Generate a professional invoice number: INV-20260317-0013
                         String invoiceNumber = "INV-" + LocalDateTime.now().format(INVOICE_NUM) + "-"
-                                        + String.format("%04d", order.getOrderPublicId());
+                                        + order.getOrderPublicId().toString().substring(0, 8).toUpperCase();
 
                         String orderDate = order.getOrderDate() != null
                                         ? order.getOrderDate().format(INVOICE_DATE)

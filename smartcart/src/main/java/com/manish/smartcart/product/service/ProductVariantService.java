@@ -187,10 +187,29 @@ public class ProductVariantService {
         return product;
     }
 
+    /**
+     * ADMIN: Fetch every variant across all products (paginated at service level if needed).
+     * Used for inventory dashboards or bulk stock audits.
+     */
+    @Transactional(readOnly = true)
+    public List<ProductVariantResponse> getAllVariants() {
+        return productVariantRepository.findAllWithProduct()
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Maps a ProductVariant entity to the public-facing DTO.
+     * Exposes UUIDs + productCode/productName — internal Long PKs are NEVER included.
+     */
     private ProductVariantResponse toResponse(ProductVariant variant) {
+        Product product = variant.getProduct();
         return ProductVariantResponse.builder()
-                .id(variant.getId())
-                .productId(variant.getProduct().getId())
+                .variantPublicId(variant.getPublicId())           // UUID of this variant
+                .productPublicId(product.getPublicId())           // UUID of the parent product
+                .productCode(product.getProductCode())            // e.g. PRD-20260808-XXXXX
+                .productName(product.getProductName())            // e.g. "Nike Air Max 90"
                 .sku(variant.getSku())
                 .priceModifier(variant.getPriceModifier())
                 .stockQuantity(variant.getStockQuantity())

@@ -18,7 +18,8 @@ public class ProductMapper {
             return null;
 
         ProductResponse productResponse = new ProductResponse();
-        productResponse.setId(product.getId());
+        productResponse.setProductPublicId(product.getPublicId());  // UUID — the only public identifier
+        productResponse.setProductCode(product.getProductCode());    // Human-readable code e.g. PRD-YYYYMMDD-XXXXX
         productResponse.setProductName(product.getProductName());
         productResponse.setDescription(product.getDescription());
         productResponse.setPrice(product.getPrice());
