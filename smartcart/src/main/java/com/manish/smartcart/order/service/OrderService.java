@@ -75,6 +75,7 @@ public class OrderService {
     private final ObjectMapper objectMapper;
     private final FlashSaleItemRepository flashSaleItemRepository;
     private final TransactionTemplate transactionTemplate;
+    private final OrderEventService orderEventService;
 
     // ─────────────────────────────────────────────────────────────────────────────
     // CORE CHECKOUT FLOW (Saga Pattern)
@@ -268,7 +269,10 @@ public class OrderService {
 
         // FLOOR LIMIT: Prevent negative totals (edge case with massive flat-rate coupons).
         order.setTotalAmount(computedTotal.max(BigDecimal.ZERO));
-        return orderRepository.save(order);
+        Order persisted = orderRepository.save(order);
+        orderEventService.record(persisted.getId(), OrderStatus.PAYMENT_PENDING, "SYSTEM",  "Checkout initialized — awaiting Razorpay payment");
+
+        return persisted;
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
@@ -309,7 +313,11 @@ public class OrderService {
             reverseCouponUsage(order);
 
             order.setOrderStatus(OrderStatus.CANCELLED);
-            return orderRepository.save(order);
+            Order savedOrder =  orderRepository.save(order);
+
+            orderEventService.record(savedOrder.getId(), OrderStatus.CANCELLED,
+                    "CUSTOMER:" + userId, "Customer requested cancellation");
+            return savedOrder;
         });
 
         // PHASE 2: Gateway Integration (Zero DB Locks)
@@ -379,6 +387,8 @@ public class OrderService {
 
             order.setOrderStatus(OrderStatus.CANCELLED);
             orderRepository.save(order);
+            orderEventService.record(order.getId(), OrderStatus.CANCELLED,
+                    "SYSTEM", "Auto-cancelled: Razorpay order creation failed — stock restored");
         });
     }
 

@@ -3,6 +3,7 @@ package com.manish.smartcart.payment.service;
 
 import com.manish.smartcart.config.RabbitMQConfig;
 import com.manish.smartcart.infrastructure.messaging.OrderPaidEvent;
+import com.manish.smartcart.order.service.OrderEventService;
 import com.manish.smartcart.shared.enums.OrderStatus;
 import com.manish.smartcart.shared.enums.PaymentStatus;
 import com.manish.smartcart.shared.exception.BusinessLogicException;
@@ -35,6 +36,7 @@ public class WebhookProcessingService {
     private final OrderRepository orderRepository;
     private final RabbitTemplate rabbitTemplate;
     private final PaymentService paymentService;
+    private final OrderEventService orderEventService;
 
     /**
      * Called by the frontend after user completes payment on Razorpay UI.
@@ -73,6 +75,9 @@ public class WebhookProcessingService {
         order.setRazorpaySignature(razorpaySignature);
         orderRepository.save(order);
 
+        orderEventService.record(order.getId(), OrderStatus.PAID,
+                "SYSTEM", "Payment verified via frontend callback | Razorpay: " + razorpayPaymentId);
+
         // 5. Fire async event → RabbitMQ → InvoiceConsumer builds PDF + sends email
         publishOrderPaidEvent(order.getId(), "frontend-callback");
 
@@ -104,6 +109,8 @@ public class WebhookProcessingService {
                     order.setPaymentStatus(PaymentStatus.PAID);
                     order.setRazorpayPaymentId(razorpayPaymentId);
                     orderRepository.save(order);
+                    orderEventService.record(order.getId(), OrderStatus.PAID,
+                            "SYSTEM", "Payment confirmed via Razorpay webhook | Razorpay: " + razorpayPaymentId);
                     publishOrderPaidEvent(order.getId(), "razorpay-webhook");
                 }else{
                     log.info("Webhook idempotency: Order {} already PAID.", razorpayOrderId);
