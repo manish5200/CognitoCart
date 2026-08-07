@@ -30,6 +30,7 @@ public class ShipmentService {
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
     private final OrderNotificationService orderNotificationService;
+    private final OrderEventService orderEventService;
 
     /*
      * CONCEPT: This is the core "fulfillment" operation.
@@ -88,6 +89,8 @@ public class ShipmentService {
         // 5. Promote Order to SHIPPED status
         order.setOrderStatus(OrderStatus.SHIPPED);
         orderRepository.save(order);
+        orderEventService.record(order.getId(), OrderStatus.SHIPPED,
+                "SYSTEM", "AWB: " + request.getTrackingNumber() + " | Courier: " + request.getCourierName());
 
         // 6. Build the response — manually inject shipment tracking into OrderResponse
         //    because OrderMapper doesn't know about Shipment (it's not on the Order entity)
@@ -168,6 +171,10 @@ public class ShipmentService {
             order.setDeliveredAt(LocalDateTime.now());
         }
         orderRepository.save(order);
+
+        orderEventService.record(order.getId(), newOrderStatus,
+                "CARRIER:" + request.getCarrierName(),
+                request.getRemarks() != null ? request.getRemarks() : null);
 
         log.info("Order #{} updated: {} → {} | Carrier: {} | AWB: {} | Remarks: {}",
                 order.getId(), previousStatus, newOrderStatus,

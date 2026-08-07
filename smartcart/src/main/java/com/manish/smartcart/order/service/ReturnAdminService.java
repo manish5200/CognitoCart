@@ -36,6 +36,7 @@ public class ReturnAdminService {
     private final OrderMapper orderMapper;
     private final OrderNotificationService orderNotificationService;
     private final RazorpayRefundService razorpayRefundService;
+    private final OrderEventService orderEventService;
 
 
     // ─── APPROVE RETURN → restore stock + issue refund ───────────────────────
@@ -73,19 +74,28 @@ public class ReturnAdminService {
                 order.setPaymentStatus(PaymentStatus.REFUNDED);
                 order.setOrderStatus(OrderStatus.REFUNDED);
                 Order saved = orderRepository.save(order);
+
+                orderEventService.record(saved.getId(), OrderStatus.REFUNDED,
+                        "ADMIN:SYSTEM", "Return approved — refund issued | Razorpay: " + refundId);
+
                 orderNotificationService.sendRefundEmail(orderMapper.toOrderResponse(saved), refundId);
                 log.info("Return approved and refund issued — orderId={} refundId={}", orderPublicId, refundId);
                 return orderMapper.toOrderResponse(saved);
 
             }catch (Exception e){
                 // Stock already restored — save RETURNED status then surface the error
-                orderRepository.save(order);
+                Order savedOnFail = orderRepository.save(order);
+                orderEventService.record(savedOnFail.getId(), OrderStatus.RETURNED,
+                        "ADMIN:SYSTEM", "Return approved — Razorpay refund failed, marked RETURNED for manual processing");
                 throw new BusinessLogicException(
                         "Stock restored and order marked RETURNED. Razorpay refund failed: " +
                                 e.getMessage() + " — process manually via Razorpay dashboard.");
             }
         }
-        return orderMapper.toOrderResponse(orderRepository.save(order));
+        Order saved = orderRepository.save(order);
+        orderEventService.record(saved.getId(), OrderStatus.RETURNED,
+                "ADMIN:SYSTEM", "Return approved — marked RETURNED (no payment to refund)");
+        return orderMapper.toOrderResponse(saved);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -134,6 +144,9 @@ public class ReturnAdminService {
         order.setOrderStatus(OrderStatus.REPLACEMENT_SHIPPED);
         Order saved = orderRepository.save(order);
 
+        orderEventService.record(saved.getId(), OrderStatus.REPLACEMENT_SHIPPED,
+                "ADMIN:SYSTEM", "Replacement approved — stock decremented, re-shipping initiated");
+
         // Admin then attaches the new shipment tracking via
         // existing POST /api/v1/admin/{orderPublicId}/shipment endpoint
         orderNotificationService.sendStatusUpdateEmail(orderMapper.toOrderResponse(saved));
@@ -169,6 +182,9 @@ public class ReturnAdminService {
         order.setReturnRequestedAt(null);
 
         Order saved = orderRepository.save(order);
+        orderEventService.record(saved.getId(), OrderStatus.DELIVERED,
+                "ADMIN:SYSTEM", "Return/replacement request rejected | Admin note: " + adminComment);
+
         log.info("Return request for Order ID: {} has been rejected by admin. Reason: {}", orderPublicId, adminComment);
         return orderMapper.toOrderResponse(saved);
     }

@@ -1,7 +1,9 @@
 package com.manish.smartcart.order.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.manish.smartcart.order.dto.OrderEventResponse;
 import com.manish.smartcart.order.model.Order;
+import com.manish.smartcart.order.service.OrderEventService;
 import com.manish.smartcart.security.CustomUserDetails;
 import com.manish.smartcart.order.dto.OrderRequest;
 import com.manish.smartcart.order.dto.OrderResponse;
@@ -10,6 +12,7 @@ import com.manish.smartcart.shared.exception.BusinessLogicException;
 import com.manish.smartcart.order.service.OrderQueryService;
 import com.manish.smartcart.order.service.OrderReturnService;
 import com.manish.smartcart.order.service.OrderService;
+import com.manish.smartcart.shared.exception.ResourceNotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -29,6 +32,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 @Tag(name = "Orders", description = "Checkout, order history, cancellation, and post-delivery requests")
@@ -38,6 +43,7 @@ public class OrderController {
 
         private final OrderService orderService;
         private final ObjectMapper objectMapper;
+        private final OrderEventService orderEventService;
         private final OrderQueryService orderQueryService;
         private final OrderReturnService orderReturnService;
 
@@ -139,6 +145,31 @@ public class OrderController {
                         images
                 );
                 return ResponseEntity.ok(orderResponse);
+        }
+
+        @Operation(
+                summary = "Get order status timeline",
+                description = "Returns the complete chronological audit trail of every status " +
+                        "transition for an order. Accepts UUID or Human Order Number (ORD-...)."
+        )
+        @ApiResponses({
+                @ApiResponse(responseCode = "200", description = "Timeline returned successfully"),
+                @ApiResponse(responseCode = "404", description = "Order not found or not yours")
+        })
+        @GetMapping("/{orderIdentifier}/timeline")
+        public ResponseEntity<List<OrderEventResponse>> getOrderTimeline(
+                @PathVariable String orderIdentifier,
+                Authentication authentication){
+                Long userId = extractUserId(authentication);
+                // Smart resolver: handles both UUID and ORD-YYYYMMDD-XXXXXX human ID
+                Order order = orderQueryService.resolveOrder(orderIdentifier);
+
+                // IDOR Guard: return 404 (not 403) to prevent order ID enumeration
+                if(!order.getUser().getId().equals(userId)){
+                        throw new ResourceNotFoundException("Order not found: " + orderIdentifier);
+                }
+
+                return ResponseEntity.ok(orderEventService.getTimeline(order.getId()));
         }
 
         //HELPER FUNCTION TO EXTRACT UserId

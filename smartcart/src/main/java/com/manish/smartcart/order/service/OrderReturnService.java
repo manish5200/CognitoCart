@@ -61,6 +61,7 @@ public class OrderReturnService {
     private final ReturnPolicyService returnPolicyService;
     private final CloudinaryService cloudinaryService;
     private final ObjectMapper objectMapper;
+    private final OrderEventService orderEventService;
 
     // ─────────────────────────────────────────────────────────────────────────
     // CUSTOMER: Request return / replacement / exchange
@@ -142,6 +143,11 @@ public class OrderReturnService {
         order.setReturnRequestedAt(LocalDateTime.now());
 
         Order savedOrder = orderRepository.save(order);
+
+        orderEventService.record(savedOrder.getId(), newStatus,
+                "CUSTOMER:" + userId,
+                requestType.name() + " | Reason: " + returnReason.name());
+
         orderNotificationService.sendStatusUpdateEmail(orderMapper.toOrderResponse(savedOrder));
 
         log.info("Post-purchase [{}] request submitted — orderId={} userId={}", requestType, orderId, userId);
