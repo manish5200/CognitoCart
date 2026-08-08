@@ -6,6 +6,7 @@ import com.manish.smartcart.order.dto.ShipmentTrackingDTO;
 import com.manish.smartcart.payment.dto.LogisticsWebhookRequest;
 import com.manish.smartcart.shared.enums.OrderStatus;
 import com.manish.smartcart.shared.enums.ShipmentStatus;
+import com.manish.smartcart.shared.exception.BusinessLogicException;
 import com.manish.smartcart.shared.exception.ResourceNotFoundException;
 import com.manish.smartcart.shared.mapper.OrderMapper;
 import com.manish.smartcart.order.model.Order;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -45,18 +47,17 @@ public class ShipmentService {
      */
 
     @Transactional
-    public OrderResponse attachShipmentAndShip(java.util.UUID orderPublicId, ShipmentRequest request) {
+    public OrderResponse attachShipmentAndShip(UUID orderPublicId, ShipmentRequest request) {
         // 1. Fetch the order — throw a clear error if it doesn't exist
         Order order = orderRepository.findByPublicId(orderPublicId)
-                .orElseThrow(()->new RuntimeException("Order not found with ID: " + orderPublicId));
+                .orElseThrow(()->new ResourceNotFoundException("Order not found with ID: " + orderPublicId));
 
         // 2. Guard: only CONFIRMED or PACKED orders can be shipped.
         //    Prevents double-shipping or shipping an unpaid order.
         if(order.getOrderStatus() != OrderStatus.CONFIRMED
                 && order.getOrderStatus() != OrderStatus.PACKED){
-            throw new RuntimeException(
-                    "Order #" + orderPublicId + " cannot be shipped. Current status: " + order.getOrderStatus()
-                            + ". Order must be CONFIRMED or PACKED first.");
+            throw new BusinessLogicException("Order #" + orderPublicId + " cannot be shipped. " +
+                    "Current status: " + order.getOrderStatus() + ". Must be CONFIRMED or PACKED.");
         }
 
         // 3. Guard: prevent duplicate shipment creation for the same order

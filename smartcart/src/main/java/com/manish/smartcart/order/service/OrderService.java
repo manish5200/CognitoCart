@@ -274,9 +274,8 @@ public class OrderService {
 
         // FLOOR LIMIT: Prevent negative totals (edge case with massive flat-rate coupons).
         order.setTotalAmount(computedTotal.max(BigDecimal.ZERO));
-        Order persisted = orderRepository.save(order);
 
-        return persisted;
+        return orderRepository.save(order);
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
@@ -333,7 +332,7 @@ public class OrderService {
 
                 // PHASE 3: Acknowledge Success
                 transactionTemplate.execute(status -> {
-                    Order fresh = orderRepository.findById(orderId).orElseThrow();
+                    Order fresh = orderRepository.findByIdWithItems(orderId).orElseThrow();
                     fresh.setPaymentStatus(PaymentStatus.REFUNDED);
                     Order saved = orderRepository.save(fresh);
                     orderNotificationService.sendRefundEmail(orderMapper.toOrderResponse(saved), refundId);
@@ -347,7 +346,7 @@ public class OrderService {
                 log.error("Razorpay refund FAILED for Order ID: {}. Flagging MANUAL_REFUND_REQUIRED. Error: {}", orderId, e.getMessage(), e);
 
                 transactionTemplate.execute(status -> {
-                    Order fresh = orderRepository.findById(orderId).orElseThrow();
+                    Order fresh = orderRepository.findByIdWithItems(orderId).orElseThrow();
                     fresh.setOrderStatus(OrderStatus.MANUAL_REFUND_REQUIRED);
                     return orderRepository.save(fresh);
                 });
