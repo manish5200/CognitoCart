@@ -16,6 +16,7 @@ public class ReviewMapper {
                    .rating(review.getRating())
                    .comment(review.getComment())
                    .reviewedAt(review.getCreatedAt())
+                   .imageUrls(review.getImageUrls())
                    .verifiedPurchase(true)
                    .build();
     }

@@ -1,5 +1,6 @@
 package com.manish.smartcart.review.service;
 
+import com.manish.smartcart.infrastructure.storage.CloudinaryService;
 import com.manish.smartcart.review.dto.RatingDistributionDTO;
 import com.manish.smartcart.review.dto.ReviewRequestDTO;
 import com.manish.smartcart.review.dto.ReviewResponseDTO;
@@ -9,6 +10,7 @@ import com.manish.smartcart.shared.exception.ResourceNotFoundException;
 import com.manish.smartcart.shared.mapper.ReviewMapper;
 import com.manish.smartcart.review.model.Review;
 import com.manish.smartcart.product.model.Product;
+import com.manish.smartcart.shared.util.FileValidator;
 import com.manish.smartcart.user.model.Users;
 import com.manish.smartcart.order.repository.OrderRepository;
 import com.manish.smartcart.product.repository.ProductRepository;
@@ -22,6 +24,7 @@ import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
 
@@ -35,6 +38,7 @@ public class ReviewService {
     private final OrderRepository orderRepository;
     private final UsersRepository usersRepository;
     private final ReviewMapper reviewMapper;
+    private final CloudinaryService cloudinaryService;
 
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -79,7 +83,7 @@ public class ReviewService {
             maxAttempts = 3,
             backoff = @Backoff(delay =  500)// Wait 500ms before trying again
     )
-    public Map<String,Object> addOrUpdateReview(Long userId, UUID productPublicId, ReviewRequestDTO reviewRequestDTO) {
+    public Map<String,Object> addOrUpdateReview(Long userId, UUID productPublicId, ReviewRequestDTO reviewRequestDTO, MultipartFile[] images) {
 
         Long productId = productRepository.findByPublicId(productPublicId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + productPublicId))
@@ -104,6 +108,20 @@ public class ReviewService {
             );
         }
 
+        //[New : feat/review-images]
+        // Image Upload Logic
+        if(images != null && images.length > 3){
+            throw new BusinessLogicException("Maximum 3 review images allowed.");
+        }
+
+        List<String> uploadedImageUrls = new ArrayList<>();
+        if(images != null){
+            for(MultipartFile file : images){
+                FileValidator.validateImage(file);
+                uploadedImageUrls.add(cloudinaryService.upload(file, "reviews/" + productId));
+            }
+        }
+
         // 3. THE SMART CHECK: Find existing review or create new
         //Upsert Logic
         Optional<Review>existingReview = reviewRepository.findByProductIdAndUserId(productId, userId);
@@ -117,6 +135,7 @@ public class ReviewService {
             updateProductRatingOnEdit(product, review.getRating(), reviewRequestDTO.getRating());
             review.setRating(reviewRequestDTO.getRating());
             review.setComment(reviewRequestDTO.getComment());
+            review.setImageUrls(uploadedImageUrls.isEmpty() ? review.getImageUrls() : uploadedImageUrls); // Keep old images if no new ones are provided
             finalReview = reviewRepository.save(review);
             statusMessage = "Your review has been updated successfully";
             log.info("Review updated for productId={} by userId={}", productId, userId);
@@ -131,6 +150,7 @@ public class ReviewService {
 
             review.setRating(reviewRequestDTO.getRating());
             review.setComment(reviewRequestDTO.getComment());
+            review.setImageUrls(uploadedImageUrls);
             finalReview = reviewRepository.save(review);
             updateProductRatingOnNew(product, reviewRequestDTO.getRating());
             statusMessage = "Your review has been submitted. Thank you!";

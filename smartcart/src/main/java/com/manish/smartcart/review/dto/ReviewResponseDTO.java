@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * The public-facing shape of a single review.
@@ -30,6 +31,9 @@ public class ReviewResponseDTO {
 
     // The star rating this specific user gave (1-5)
     private Integer rating;
+
+    // URLs to Cloudinary images uploaded by the customer
+    private List<String> imageUrls;
 
     // The text body of the review
     private String comment;

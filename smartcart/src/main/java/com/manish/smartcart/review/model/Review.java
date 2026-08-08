@@ -10,6 +10,9 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -30,6 +33,15 @@ public class Review extends BaseEntity {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id", nullable = false)
     private Users user;
+
+    // Updated on branch : feat/review-images
+    // Customer-uploaded proof photos (max 3). Stored as CDN URLs after Cloudinary upload.
+    // Helps buyers make informed decisions — same pattern as Amazon's "Customer photos" section.
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "review_images", joinColumns = @JoinColumn(name = "review_id"))
+    @Column(name = "image_url")
+    @Builder.Default
+    private List<String> imageUrls = new ArrayList<>();
 
     @Min(value = 1, message = "Rating must be at least 1")
     @Max(value = 5, message = "Rating cannot exceed 5")

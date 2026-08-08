@@ -1,5 +1,6 @@
 package com.manish.smartcart.review.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.manish.smartcart.security.CustomUserDetails;
 import com.manish.smartcart.review.dto.ReviewRequestDTO;
 import com.manish.smartcart.review.dto.ReviewResponseDTO;
@@ -11,10 +12,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -27,6 +30,7 @@ import java.util.UUID;
 public class ReviewController {
 
     private final ReviewService reviewService;
+    private final ObjectMapper objectMapper;
 
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -77,19 +81,24 @@ public class ReviewController {
             @ApiResponse(responseCode = "404", description = "Product not found")
     })
     @SecurityRequirement(name = "bearerAuth")
-    @PostMapping("/{productPublicId}")
+    @PostMapping(value = "/{productPublicId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<?> postReview(
             @PathVariable UUID productPublicId,
-            @RequestBody ReviewRequestDTO reviewRequestDTO,
-            Authentication authentication) {
+            @RequestPart("review") String reviewJson,
+            @RequestPart(value = "images", required = false) MultipartFile[] images,
+            Authentication authentication) throws Exception {
 
         Long userId = extractUserId(authentication);
+
+        // Parse the JSON part manually since we are using multipart
+        ReviewRequestDTO reviewRequestDTO = objectMapper.readValue(reviewJson, ReviewRequestDTO.class);
         return ResponseEntity
                 .ok(reviewService.addOrUpdateReview(
                         userId,
                         productPublicId,
-                        reviewRequestDTO));
+                        reviewRequestDTO,
+                        images)); // We pass images to the service now
     }
 
     //Deletion Endpoint
