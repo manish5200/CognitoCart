@@ -24,6 +24,7 @@ import com.manish.smartcart.order.model.UserCouponUsage;
 import com.manish.smartcart.sale.model.FlashSaleItem;
 import com.manish.smartcart.product.model.Product;
 import com.manish.smartcart.product.model.ProductVariant;
+import com.manish.smartcart.user.model.CustomerProfile;
 import com.manish.smartcart.user.model.Users;
 import com.manish.smartcart.shared.exception.BusinessLogicException;
 import com.manish.smartcart.shared.exception.InsufficientStockException;
@@ -35,6 +36,7 @@ import com.manish.smartcart.user.repository.UsersRepository;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -247,6 +249,12 @@ public class OrderService {
 
             orderItems.add(orderItem);
             computedTotal = computedTotal.add(lineTotal);
+        }
+        // LOYALTY REDEMPTION: 100 points = ₹10 discount
+        if(orderRequest.getRedeemLoyaltyPoints() != null && orderRequest.getRedeemLoyaltyPoints() > 0){
+            BigDecimal pointsDiscount = getBigDecimal(orderRequest, user);
+            // Reduce total amount, but never below zero
+            computedTotal = computedTotal.subtract(pointsDiscount).max(BigDecimal.ZERO);
         }
         order.setOrderItems(orderItems);
 
@@ -472,5 +480,21 @@ public class OrderService {
                         order.getCouponCode(), order.getId(), e.getMessage());
             }
         }
+    }
+
+    // Loyalty Point Helper Method
+    private BigDecimal getBigDecimal(OrderRequest orderRequest, Users user) {
+        int pointsToRedeem  = orderRequest.getRedeemLoyaltyPoints();
+        CustomerProfile customerProfile = user.getCustomerProfile();
+
+        if(customerProfile.getLoyaltyPoints() < pointsToRedeem){
+            throw new BusinessLogicException("Insufficient loyalty points. " +
+                    "Available: " + customerProfile.getLoyaltyPoints() + ", Requested: " + pointsToRedeem);
+        }
+        // Deduct points from profile
+        customerProfile.setLoyaltyPoints(customerProfile.getLoyaltyPoints() - pointsToRedeem);
+
+        // Calculate money value (points / 10)
+        return BigDecimal.valueOf(pointsToRedeem).divide(BigDecimal.TEN);
     }
 }

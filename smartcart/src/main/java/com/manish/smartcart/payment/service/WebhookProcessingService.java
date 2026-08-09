@@ -10,6 +10,7 @@ import com.manish.smartcart.shared.exception.BusinessLogicException;
 import com.manish.smartcart.shared.exception.ResourceNotFoundException;
 import com.manish.smartcart.order.model.Order;
 import com.manish.smartcart.order.repository.OrderRepository;
+import com.manish.smartcart.user.model.CustomerProfile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
@@ -75,6 +76,14 @@ public class WebhookProcessingService {
         order.setRazorpaySignature(razorpaySignature);
         orderRepository.save(order);
 
+        // LOYALTY ACCRUAL: Earn 1 point per ₹10 spent.
+        int pointsEarned = order.getTotalAmount().intValue()/10;
+        if(pointsEarned > 0  && order.getUser().getCustomerProfile() != null){
+            CustomerProfile profile = order.getUser().getCustomerProfile();
+            profile.setLoyaltyPoints(profile.getLoyaltyPoints() + pointsEarned);
+            // Dirty checking will automatically save the profile changes inside this @Transactional block
+        }
+
         orderEventService.record(order.getId(), OrderStatus.PAID,
                 "SYSTEM", "Payment verified via frontend callback | Razorpay: " + razorpayPaymentId);
 
@@ -109,6 +118,14 @@ public class WebhookProcessingService {
                     order.setPaymentStatus(PaymentStatus.PAID);
                     order.setRazorpayPaymentId(razorpayPaymentId);
                     orderRepository.save(order);
+
+                    // LOYALTY ACCRUAL: Earn 1 point per ₹10 spent.
+                    int pointsEarned = order.getTotalAmount().intValue() / 10;
+                    if (pointsEarned > 0 && order.getUser().getCustomerProfile() != null) {
+                        CustomerProfile profile = order.getUser().getCustomerProfile();
+                        profile.setLoyaltyPoints(profile.getLoyaltyPoints() + pointsEarned);
+                    }
+
                     orderEventService.record(order.getId(), OrderStatus.PAID,
                             "SYSTEM", "Payment confirmed via Razorpay webhook | Razorpay: " + razorpayPaymentId);
                     publishOrderPaidEvent(order.getId(), "razorpay-webhook");

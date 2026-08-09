@@ -80,7 +80,7 @@ public class InAppNotificationService {
 
     private NotificationResponse mapToResponse(Notification notification) {
         return NotificationResponse.builder()
-                .id(notification.getId())
+                .notificationPublicId(notification.getPublicId())
                 .type(notification.getType())
                 .title(notification.getTitle())
                 .message(notification.getMessage())

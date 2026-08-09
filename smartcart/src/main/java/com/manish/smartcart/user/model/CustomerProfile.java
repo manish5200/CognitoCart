@@ -29,9 +29,8 @@ public class CustomerProfile extends BaseEntity {
     @JoinColumn(name = "user_id", foreignKey = @ForeignKey(name = "fk_customer_profile_user"))
     private Users user;
 
-    /**
-     * Platform currency used for discounts and gamification.
-     */
+    // Running tally of earned loyalty points. 1 point = ₹0.10 redemption value.
+    // Accrual: 1 point per ₹10 spent (net of discounts). Never negative.
     @Builder.Default
     private Integer loyaltyPoints = 0;
 

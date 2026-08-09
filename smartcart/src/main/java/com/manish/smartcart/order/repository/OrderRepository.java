@@ -9,6 +9,7 @@ import jakarta.persistence.QueryHint;
 import org.hibernate.jpa.HibernateHints;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.QueryHints;
@@ -48,8 +49,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     Long countByOrderStatus(OrderStatus status);
 
-    @Query("SELECT o FROM Order o WHERE o.user.id = :userId ORDER BY o.orderDate DESC")
-    Optional<Order> findFirstByUserIdOrderByOrderDateDesc(@Param("userId") Long userId);
+    Optional<Order> findFirstByUserIdOrderByOrderDateDesc(Long userId);
 
     @Query("SELECT o FROM Order o WHERE o.user.id = :userId")
     Page<Order> findByUserId(@Param("userId") Long userId, Pageable pageable);
@@ -142,7 +142,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     Page<Long> findOrderIdsByUserId(@Param("userId") Long userId, Pageable pageable);
 
     /** Step 2: Hydrates the specific slice with full associations, avoiding expensive Cartesian products. */
-    @Query("SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.orderItems oi LEFT JOIN FETCH oi.variant.product " +
+    @Query("SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.user LEFT JOIN FETCH o.orderItems oi LEFT JOIN FETCH oi.variant.product " +
             "WHERE o.id IN :orderIds ORDER BY o.orderDate DESC")
     List<Order> findOrdersWithItemsByIds(@Param("orderIds") List<Long> orderIds);
 
