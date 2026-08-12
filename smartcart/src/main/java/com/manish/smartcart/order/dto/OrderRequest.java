@@ -21,4 +21,8 @@ public class OrderRequest {
     @Builder.Default
     private Integer redeemLoyaltyPoints = 0;
 
+    // Customer choice: true if they want to pay using their wallet balance
+    @Builder.Default
+    private boolean useWalletBalance = false;
+
 }

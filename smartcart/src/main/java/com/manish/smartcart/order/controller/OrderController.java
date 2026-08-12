@@ -8,6 +8,7 @@ import com.manish.smartcart.security.CustomUserDetails;
 import com.manish.smartcart.order.dto.OrderRequest;
 import com.manish.smartcart.order.dto.OrderResponse;
 import com.manish.smartcart.order.dto.ReturnRequestDTO;
+import com.manish.smartcart.shared.enums.RefundDestination;
 import com.manish.smartcart.shared.exception.BusinessLogicException;
 import com.manish.smartcart.order.service.OrderQueryService;
 import com.manish.smartcart.order.service.OrderReturnService;
@@ -90,15 +91,17 @@ public class OrderController {
                 @ApiResponse(responseCode = "404", description = "Order not found")
         })
         @PutMapping("/{orderIdentifier}/cancel")
-        public ResponseEntity<?> cancelOrder(@PathVariable String orderIdentifier,
-                                             Authentication authentication){
+        public ResponseEntity<?> cancelOrder(
+                @PathVariable String orderIdentifier,
+                @RequestParam(defaultValue = "ORIGINAL") RefundDestination refundDestination,
+                        Authentication authentication){
                 Long userId = extractUserId(authentication);
 
                 // 1. Resolve the external identifier to our internal database Entity
                 Order order = orderQueryService.resolveOrder(orderIdentifier);
 
                 // 2. Pass the internal Long ID to the core service (Keeping DB logic isolated)
-                OrderResponse orderResponse = orderService.cancelOrder(userId, order.getId());
+                OrderResponse orderResponse = orderService.cancelOrder(userId, order.getId(), refundDestination);
                 return ResponseEntity.ok(orderResponse);
         }
 

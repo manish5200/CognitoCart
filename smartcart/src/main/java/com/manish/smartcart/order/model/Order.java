@@ -51,6 +51,12 @@ public class Order extends BaseEntity {
     @Builder.Default
     private BigDecimal totalAmount = BigDecimal.ZERO;
 
+    @Builder.Default
+    private BigDecimal walletAmountPaid = BigDecimal.ZERO;
+
+    @Builder.Default
+    private BigDecimal gatewayAmountPaid = BigDecimal.ZERO;
+
     // --- PHASE 1: COUPON SNAPSHOT (IMMUTABLE) ---
     private String couponCode;
 

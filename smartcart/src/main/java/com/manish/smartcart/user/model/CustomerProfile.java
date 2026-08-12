@@ -6,6 +6,8 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import java.math.BigDecimal;
+
 /**
  * Stores shopper-specific preferences and marketing metrics.
  * <p>
@@ -33,6 +35,13 @@ public class CustomerProfile extends BaseEntity {
     // Accrual: 1 point per ₹10 spent (net of discounts). Never negative.
     @Builder.Default
     private Integer loyaltyPoints = 0;
+
+    /**
+     * Instant refund wallet (Store Credit). Real money value.
+     */
+    @Column(precision = 10, scale = 2, nullable = false)
+    @Builder.Default
+    private BigDecimal walletBalance = BigDecimal.ZERO;
 
     /**
      * JSON payload or comma-separated list of product categories the user prefers.

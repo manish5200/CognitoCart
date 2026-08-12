@@ -3,6 +3,8 @@ package com.manish.smartcart.order.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.manish.smartcart.cart.service.CartService;
+import com.manish.smartcart.config.RabbitMQConfig;
+import com.manish.smartcart.infrastructure.messaging.OrderPaidEvent;
 import com.manish.smartcart.order.coupon.service.CouponService;
 import com.manish.smartcart.order.dto.OrderRequest;
 import com.manish.smartcart.order.dto.OrderResponse;
@@ -14,6 +16,7 @@ import com.manish.smartcart.payment.service.PaymentService;
 import com.manish.smartcart.payment.service.RazorpayRefundService;
 import com.manish.smartcart.product.repository.ProductVariantRepository;
 import com.manish.smartcart.sale.repository.FlashSaleItemRepository;
+import com.manish.smartcart.shared.enums.RefundDestination;
 import com.manish.smartcart.shared.mapper.OrderMapper;
 import com.manish.smartcart.cart.model.Cart;
 import com.manish.smartcart.cart.model.CartItem;
@@ -36,7 +39,7 @@ import com.manish.smartcart.user.repository.UsersRepository;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jspecify.annotations.NonNull;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -78,6 +81,7 @@ public class OrderService {
     private final FlashSaleItemRepository flashSaleItemRepository;
     private final TransactionTemplate transactionTemplate;
     private final OrderEventService orderEventService;
+    private final RabbitTemplate rabbitTemplate;
 
     // ─────────────────────────────────────────────────────────────────────────────
     // CORE CHECKOUT FLOW (Saga Pattern)
@@ -111,7 +115,12 @@ public class OrderService {
         // High-latency HTTP call. Because TX 1 is closed, our Hikari pool remains fully available
         // for other concurrent users. This is the key to massive horizontal scale.
         try {
-            razorpayOrderId = paymentService.createRazorpayOrder(savedOrder);
+            if(savedOrder.getGatewayAmountPaid().compareTo(BigDecimal.ZERO)==0){
+                // 100% PAID BY WALLET OR POINTS! Skip Razorpay entirely!
+                razorpayOrderId = "WALLET_" + java.util.UUID.randomUUID().toString().substring(0,8);
+            }else{
+                razorpayOrderId = paymentService.createRazorpayOrder(savedOrder);
+            }
         } catch (Exception e) {
             log.error("Razorpay order creation FAILED for Order ID: {}. Executing compensating rollback. Error: {}",
                     savedOrder.getId(), e.getMessage(), e);
@@ -134,6 +143,24 @@ public class OrderService {
             Order freshOrder = orderRepository.findByIdWithItems(savedOrder.getId())
                     .orElseThrow(() -> new ResourceNotFoundException("Order desync after save: " + savedOrder.getId()));
             freshOrder.setRazorpayOrderId(razorpayOrderId);
+
+            // IF fully paid without Razorpay, instantly transition to PAY!
+            if(freshOrder.getGatewayAmountPaid().compareTo(BigDecimal.ZERO)==0){
+                freshOrder.setOrderStatus(OrderStatus.PAID);
+                freshOrder.setPaymentStatus(PaymentStatus.PAID);
+
+                // Accrue Loyalty Points for 100% Wallet checkouts!
+                int pointsEarned =  freshOrder.getTotalAmount().intValue() / 10;
+                if (pointsEarned > 0 && freshOrder.getUser().getCustomerProfile() != null) {
+                   CustomerProfile profile = freshOrder.getUser().getCustomerProfile();
+                    profile.setLoyaltyPoints(profile.getLoyaltyPoints() + pointsEarned);
+                }
+                orderEventService.record(freshOrder.getId(),
+                        OrderStatus.PAID, "SYSTEM", "Fully paid via Wallet/Points");
+                rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_ORDER, RabbitMQConfig.ROUTING_KEY_ORDER_PAID,
+                        new OrderPaidEvent(freshOrder.getId()));
+            }
+
             Order result = orderRepository.save(freshOrder);
 
             cartService.clearTheCart(userId);
@@ -280,8 +307,30 @@ public class OrderService {
             computedTotal = computedTotal.add(order.getDeliveryFee());
         }
 
-        // FLOOR LIMIT: Prevent negative totals (edge case with massive flat-rate coupons).
-        order.setTotalAmount(computedTotal.max(BigDecimal.ZERO));
+        // FLOOR LIMIT: Calculate the TRUE total for accounting
+        BigDecimal trueTotal = computedTotal.max(BigDecimal.ZERO);
+        order.setTotalAmount(trueTotal); // The invoice will show the correct full amount!
+
+        // WALLET REDEMPTION: Split the tender
+        BigDecimal walletPaid = BigDecimal.ZERO;
+        BigDecimal gatewayPaid = trueTotal;
+
+        if(orderRequest.isUseWalletBalance() && user.getCustomerProfile() != null){
+            CustomerProfile profile = user.getCustomerProfile();
+            BigDecimal availableWallet = profile.getWalletBalance();
+
+            if(availableWallet.compareTo(BigDecimal.ZERO) > 0){
+                // Take whichever is smaller: the available wallet, or the total order cost
+                walletPaid = availableWallet.min(trueTotal);
+                gatewayPaid = trueTotal.subtract(walletPaid);
+
+                // Deduct from profile
+                profile.setWalletBalance(availableWallet.subtract(walletPaid));
+            }
+        }
+
+        order.setWalletAmountPaid(walletPaid);
+        order.setGatewayAmountPaid(gatewayPaid);
 
         return orderRepository.save(order);
     }
@@ -290,9 +339,12 @@ public class OrderService {
     // CANCELLATION FLOW (Network-First Execution Paradigm)
     // ─────────────────────────────────────────────────────────────────────────────
 
-    public OrderResponse cancelOrder(Long userId, Long orderId) {
+    public OrderResponse cancelOrder(Long userId, Long orderId, RefundDestination refundDestination) {
+        // Trackers for Phase 2
+        final boolean[] requiresRefund = {false};
         final String[] capturedPaymentId = {null};
-        final BigDecimal[] capturedTotal = {null};
+        final BigDecimal[] capturedGatewayTotal = {BigDecimal.ZERO};
+        final BigDecimal[] capturedWalletTotal = {BigDecimal.ZERO};
 
         // PHASE 1: Validation & Status Check
         Order cancelledOrder = transactionTemplate.execute(status -> {
@@ -316,9 +368,12 @@ public class OrderService {
             restoreStockForOrder(order);
 
             // Capture immutable data needed for the external gateway before closing the TX.
-            if(order.getPaymentStatus() == PaymentStatus.PAID && order.getRazorpayPaymentId() != null){
-                capturedPaymentId[0] = order.getRazorpayPaymentId();
-                capturedTotal[0] = order.getTotalAmount();
+            // CAPTURE FINANCIALS: Explicitly map out the split tender
+            if(order.getPaymentStatus() == PaymentStatus.PAID){
+                requiresRefund[0] = true;
+                capturedPaymentId[0] = order.getRazorpayPaymentId(); // Will be null if 100% wallet paid
+                capturedGatewayTotal[0] = order.getGatewayAmountPaid();
+                capturedWalletTotal[0] = order.getWalletAmountPaid();
             }
 
             reverseCouponUsage(order);
@@ -331,33 +386,68 @@ public class OrderService {
             return savedOrder;
         });
 
-        // PHASE 2: Gateway Integration (Zero DB Locks)
-        if (capturedPaymentId[0] != null) {
-            try {
-                // If this network call succeeds, the money is moving back to the user.
-                String refundId = razorpayRefundService.initiateFullRefund(capturedPaymentId[0], capturedTotal[0]);
-                log.info("Razorpay refund initiated for Order ID {}, refundId: {}", orderId, refundId);
+        // PHASE 2: Gateway Integration OR Wallet Refund [ Independent Refund Routing ]
+        if (requiresRefund[0]) {
 
-                // PHASE 3: Acknowledge Success
-                transactionTemplate.execute(status -> {
-                    Order fresh = orderRepository.findByIdWithItems(orderId).orElseThrow();
+            // ROUTE 1: Wallet Operations (Handles BOTH choices)
+            transactionTemplate.execute(status -> {
+               Order fresh = orderRepository.findByIdWithItems(orderId).orElseThrow();
+               CustomerProfile profile = fresh.getUser().getCustomerProfile();
+
+               if(refundDestination == RefundDestination.WALLET){
+                   // ALL money goes to wallet (Gateway Amount + Wallet Amount)
+                   BigDecimal totalRefund = capturedGatewayTotal[0].add(capturedWalletTotal[0]);
+                   if(totalRefund.compareTo(BigDecimal.ZERO) > 0){
+                       profile.setWalletBalance(profile.getWalletBalance().add(totalRefund));
+                       orderEventService.record(fresh.getId(), OrderStatus.CANCELLED, "SYSTEM",
+                               "Instant Refund of " + totalRefund + " to Store Credit Wallet");
+                   }
+               }else{
+                   // ORIGINAL chosen: Refund ONLY the wallet portion back to the wallet
+                   if(capturedWalletTotal[0].compareTo(BigDecimal.ZERO) > 0) {
+                       profile.setWalletBalance(profile.getWalletBalance().add(capturedWalletTotal[0]));
+                       orderEventService.record(fresh.getId(), OrderStatus.CANCELLED, "SYSTEM",
+                               "Refunded " + capturedWalletTotal[0] + " to Store Credit Wallet");
+                   }
+               }
+                // If everything went to the wallet, OR if there was no gateway charge, we are fully refunded.
+                if(refundDestination == RefundDestination.WALLET || fresh.getGatewayAmountPaid().compareTo(BigDecimal.ZERO) == 0){
                     fresh.setPaymentStatus(PaymentStatus.REFUNDED);
-                    Order saved = orderRepository.save(fresh);
-                    orderNotificationService.sendRefundEmail(orderMapper.toOrderResponse(saved), refundId);
-                    return saved;
-                });
+                }
+                return orderRepository.save(fresh);
+            });
 
-            } catch (Exception e) {
-                // PARTIAL SAGA FAILURE STATE:
-                // The order is canceled and stock is restored, but the Gateway refused the refund
-                // (or timed out). We gracefully degrade to a manual ops state instead of crashing.
-                log.error("Razorpay refund FAILED for Order ID: {}. Flagging MANUAL_REFUND_REQUIRED. Error: {}", orderId, e.getMessage(), e);
+            // ROUTE 2: Razorpay Network Call (Only if ORIGINAL chosen AND Gateway Amount > 0)
+            if(refundDestination == RefundDestination.ORIGINAL && capturedGatewayTotal[0].compareTo(BigDecimal.ZERO) > 0){
+                if(capturedPaymentId[0] != null){
+                    try {
+                        // Notice we ONLY refund the gatewayAmountPaid!
+                        // If this network call succeeds, the money is moving back to the user.
+                        String refundId = razorpayRefundService.initiateFullRefund(capturedPaymentId[0], capturedGatewayTotal[0]); // Ensure capturedTotal[0] is set to fresh.getGatewayAmountPaid() in Phase 1!
+                        log.info("Razorpay refund initiated for Order ID {}, refundId: {}", orderId, refundId);
 
-                transactionTemplate.execute(status -> {
-                    Order fresh = orderRepository.findByIdWithItems(orderId).orElseThrow();
-                    fresh.setOrderStatus(OrderStatus.MANUAL_REFUND_REQUIRED);
-                    return orderRepository.save(fresh);
-                });
+                        // PHASE 3: Acknowledge Success
+                        transactionTemplate.execute(status -> {
+                            Order fresh = orderRepository.findByIdWithItems(orderId).orElseThrow();
+                            fresh.setPaymentStatus(PaymentStatus.REFUNDED);
+                            Order saved = orderRepository.save(fresh);
+                            orderNotificationService.sendRefundEmail(orderMapper.toOrderResponse(saved), refundId);
+                            return saved;
+                        });
+
+                    } catch (Exception e) {
+                        // PARTIAL SAGA FAILURE STATE:
+                        // The order is canceled and stock is restored, but the Gateway refused the refund
+                        // (or timed out). We gracefully degrade to a manual ops state instead of crashing.
+                        log.error("Razorpay refund FAILED for Order ID: {}. Flagging MANUAL_REFUND_REQUIRED. Error: {}", orderId, e.getMessage(), e);
+
+                        transactionTemplate.execute(status -> {
+                            Order fresh = orderRepository.findByIdWithItems(orderId).orElseThrow();
+                            fresh.setOrderStatus(OrderStatus.MANUAL_REFUND_REQUIRED);
+                            return orderRepository.save(fresh);
+                        });
+                    }
+                }
             }
         }
 
