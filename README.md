@@ -136,9 +136,10 @@ src/main/java/com/manish/smartcart/
 │
 ├── ❤️ wishlist/                # Wishlist toggle, one-click wishlist-to-cart, price-drop alerts
 ├── ⭐ review/                  # Verified-purchase reviews, upsert logic, rating distribution
+│   └── ReviewImages            # Cloudinary CDN integration for customer review photos (max 3)
 │
 ├── 👤 user/                    # User profile, address book
-│   ├── service/CustomerService # Dashboard: total orders, total spent, recent orders
+│   ├── service/CustomerService # Dashboard, Loyalty Points tally, Store Credit Wallet balance
 │   └── service/AddressService  # Address CRUD with UUID-based IDOR protection
 │
 ├── 🔔 notification/            # In-app notifications, SMS, Order notifications
@@ -332,6 +333,21 @@ Returns: "Noise-Cancelling Headphones" (zero keyword overlap)
 
 ---
 
+### 8. Split-Tender Checkout Engine & Store Credit
+
+```
+1. Gross Subtotal  = Σ (Price × Qty)
+2. Net Subtotal    = Gross - Promo Code Discount - (Loyalty Points ÷ 10)
+3. Final Total     = Net Subtotal + Delivery Fee
+4. Gateway Payable = Final Total - Applied Store Credit Wallet
+```
+
+Checkout handles complex split payments seamlessly:
+- **100% Wallet/Points**: If `Gateway Payable == 0`, the Razorpay network call is bypassed entirely, transitioning instantly to PAID.
+- **Smart Refund Routing**: When cancelling, customers choose `WALLET` (instant 100% store credit) or `ORIGINAL`. If `ORIGINAL`, the system automatically splits the refund: returning the precise wallet portion to the Store Credit Wallet, and firing a Razorpay API call for the exact bank portion.
+
+---
+
 ## 🛡️ Security Model & IDOR Prevention
 
 | Layer | Mechanism | Detail |
@@ -518,7 +534,7 @@ POST /api/v1/admin/sales/events
 |---|---|---|---|
 | GET | `/api/v1/reviews/{productPublicId}` | Public | All reviews for a product |
 | GET | `/api/v1/reviews/{productPublicId}/distribution` | Public | Star rating histogram |
-| POST | `/api/v1/reviews/{productPublicId}` | CUSTOMER | Submit/update review (verified purchase only) |
+| POST | `/api/v1/reviews/{productPublicId}` | CUSTOMER | Submit review + up to 3 Images (multipart/form-data) |
 | DELETE | `/api/v1/reviews/{reviewPublicId}` | CUSTOMER | Delete own review |
 | DELETE | `/api/v1/reviews/admin/{reviewPublicId}` | ADMIN | Force-delete any review |
 
@@ -678,6 +694,8 @@ http://localhost:8080/actuator/prometheus
 |---|---|---|
 | Overselling during flash sales | `SELECT FOR UPDATE` + `@Modifying` atomic increment | Pessimistic Locking |
 | Razorpay call holding DB connection for 5s | `TransactionTemplate` programmatic boundary splitting | Saga Pattern |
+| Split-tender math corruption | Immutable DB trackers (`walletAmountPaid`, `gatewayAmountPaid`) + atomic rollback | Ledger Routing |
+| 5-7 day refund delays | Store Credit Wallet for instant zero-latency refunds | Financial Proxy |
 | Long IDs enabling IDOR attacks | UUID `publicId` on every entity, Long only internal | 3-ID Security System |
 | 50k emails blocking the API thread | RabbitMQ fan-out, async worker threads, DLQ | Event-Driven Architecture |
 | Price exploit via stale cart | Price deviation check ≤ ₹0.05 at checkout time | Checkout Validation |
