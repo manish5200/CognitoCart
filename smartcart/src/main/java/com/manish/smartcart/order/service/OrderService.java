@@ -486,6 +486,16 @@ public class OrderService {
             restoreStockForOrder(order);
             reverseCouponUsage(order);
 
+            // COMPENSATING TX: If Razorpay crashed mid-checkout after wallet was already deducted,
+            // this restores the customer's money. Without this → customer loses money silently.
+            if(order.getWalletAmountPaid() != null
+                    && order.getWalletAmountPaid().compareTo(BigDecimal.ZERO) > 0
+                    && order.getUser().getCustomerProfile() != null) {
+                CustomerProfile profile = order.getUser().getCustomerProfile();
+                profile.setWalletBalance(profile.getWalletBalance().add(order.getWalletAmountPaid()));
+                log.info("Compensating TX: Restored ₹{} to wallet for cancelled Order #{}",
+                        order.getWalletAmountPaid(), order.getId());
+            }
             order.setOrderStatus(OrderStatus.CANCELLED);
             orderRepository.save(order);
             orderEventService.record(order.getId(), OrderStatus.CANCELLED,

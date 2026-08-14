@@ -62,7 +62,7 @@ public class ShipmentService {
 
         // 3. Guard: prevent duplicate shipment creation for the same order
         if(shipmentRepository.findByOrder_Id(order.getId()).isPresent()){
-            throw new RuntimeException("A shipment already exists for Order #" + orderPublicId);
+            throw new BusinessLogicException("A shipment already exists for Order #" + orderPublicId);
         }
 
         // 4. Build and save the Shipment entity
