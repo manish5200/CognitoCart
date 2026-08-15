@@ -135,6 +135,14 @@ razorpay:
   key-secret: ${RAZORPAY_KEY_SECRET:placeholder_secret}
   webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:my_secure_webhook_secret_123}
 
+# ─── Shiprocket Configuration ────────────────────────────────────────────────
+# Sandbox: sign up free at https://app.shiprocket.in → use your email/password
+# The API returns a JWT token valid for 24h which we cache in Redis
+shiprocket:
+  email: ${SHIPROCKET_EMAIL:your_sandbox@email.com}
+  password: ${SHIPROCKET_PASSWORD:your_sandbox_password}
+  base-url: https://apiv2.shiprocket.in/v1/external
+
 # ─── Cloudinary Configuration ───────────────────────────────────────────────
 # Sign up free at https://cloudinary.com/ → Dashboard shows cloud-name, key, secret
 # Images are stored on Cloudinary's CDN and served via https://res.cloudinary.com/...

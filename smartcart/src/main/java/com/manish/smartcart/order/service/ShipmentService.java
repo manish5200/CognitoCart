@@ -33,6 +33,7 @@ public class ShipmentService {
     private final OrderMapper orderMapper;
     private final OrderNotificationService orderNotificationService;
     private final OrderEventService orderEventService;
+    private final ShiprocketOrderService shiprocketOrderService;
 
     /*
      * CONCEPT: This is the core "fulfillment" operation.
@@ -65,24 +66,35 @@ public class ShipmentService {
             throw new BusinessLogicException("A shipment already exists for Order #" + orderPublicId);
         }
 
-        // 4. Build and save the Shipment entity
+        // ─── AWB GENERATION ───────────────────────────────────────────────────────────
+        // PRODUCTION PATH: Call Shiprocket API to auto-generate the AWB tracking number.
+        // MANUAL OVERRIDE PATH: Admin explicitly provided a tracking number
+        //  (used for walk-in drops, non-Shiprocket couriers, or Shiprocket outages).
+        String awb;
+        if(request.getTrackingNumber() != null && !request.getTrackingNumber().isBlank()){
+            awb = request.getTrackingNumber();
+            log.info("Manual AWB override for Order#{}: {}", orderPublicId, awb);
+        }else{
+            // Auto-generate via Shiprocket — handles auth, serviceability, retry, and polling internally
+            awb = shiprocketOrderService.createShipmentAndGetAwb(order, request);
+        }
+
+        // Build the public tracking URL.
+        // If admin provided a custom URL (rare), use it. Otherwise, use Shiprocket's standard page.
+        String trackingUrl = (request.getTrackingUrl() != null && !request.getTrackingUrl().isBlank())
+                ? request.getTrackingUrl()
+                : "https://shiprocket.co/tracking/" + awb;  // Real public Shiprocket tracking page
+
+
+        // 4. Build and persist the Shipment entity
         Shipment shipment = Shipment.builder()
                 .order(order)
                 .courierName(request.getCourierName())
-                .trackingNumber(request.getTrackingNumber())
+                .trackingNumber(awb)
+                .trackingUrl(trackingUrl)
                 .estimatedDeliveryDate(request.getEstimatedDeliveryDate())
                 .dispatchedBy(request.getDispatchedBy())
                 .build();
-
-
-        // Auto-build tracking URL if admin didn't provide one
-        // CONCEPT: You can build courier-specific URLs like Delhivery/BlueDart here
-        if(request.getTrackingUrl() != null){
-            shipment.setTrackingUrl(request.getTrackingUrl());
-        }else{
-            // Generic fallback — will be replaced with real courier URL logic later
-            shipment.setTrackingUrl("https://www.google.com/search?q=" + request.getTrackingNumber());
-        }
 
         shipmentRepository.save(shipment);
         log.info("Shipment created for Order #{} — AWB: {}", orderPublicId, request.getTrackingNumber());
