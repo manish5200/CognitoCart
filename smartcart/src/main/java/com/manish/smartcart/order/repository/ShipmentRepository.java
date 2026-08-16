@@ -6,14 +6,18 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface ShipmentRepository extends JpaRepository<Shipment, Long> {
-    // CONCEPT: Spring Data auto-generates the SQL from the method name.
-    // "findByOrder_Id" → SELECT * FROM shipments WHERE order_id = ?
-    // We use _ to navigate through the nested relationship: Shipment.order.id
+    /**
+     * Batch-loads shipments for multiple order IDs in ONE query.
+     * Eliminates the N+1 problem in seller order list: 20 orders = 1 query, not 20.
+     * Called ONCE before the order→DTO mapping loop, then looked up by orderId in a Map.
+     */
+    @Query("SELECT s FROM Shipment s WHERE s.order.id IN :orderIds")
     Optional<Shipment> findByOrder_Id(Long orderId);
 
     /**
@@ -46,4 +50,12 @@ public interface ShipmentRepository extends JpaRepository<Shipment, Long> {
      * The customer gets this code in their dispatch email and uses it to track delivery.
      */
     Optional<Shipment> findByTrackingCode(String trackingCode);
+
+    /**
+     * Batch-loads shipments for multiple order IDs in ONE query.
+     * Eliminates the N+1 problem in seller order list: 20 orders = 1 query, not 20.
+     * Called ONCE before the order→DTO mapping loop, then looked up by orderId in a Map.
+     */
+    @Query("SELECT s FROM Shipment s WHERE s.order.id IN :orderIds")
+    List<Shipment> findByOrderIds(@Param("orderIds") List<Long> orderIds);
 }

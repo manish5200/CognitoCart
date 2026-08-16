@@ -7,9 +7,9 @@ import com.manish.smartcart.order.model.Order;
 import com.manish.smartcart.user.model.Users;
 import jakarta.persistence.QueryHint;
 import org.hibernate.jpa.HibernateHints;
+import org.springframework.cglib.core.Local;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.QueryHints;
@@ -79,7 +79,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     // Finds all orders in a given status that are older than the threshold.
     // Used by the cleanup scheduler for both PAYMENT_PENDING and MANUAL_REFUND_REQUIRED sweeps.
     // The JPQL join fetch prevents LazyInitializationException when the scheduler
-    // accesses order.getOrderItems() outside of a Hibernate session.
+    // accesses order.getOrderItems() outside a Hibernate session.
     @Query("SELECT o FROM Order o LEFT JOIN FETCH o.orderItems oi LEFT JOIN FETCH oi.variant " +
             "WHERE o.orderStatus = :status AND o.orderDate < :threshold")
     List<Order> findByOrderStatusAndOrderDateBeforeWithItems(
@@ -178,7 +178,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.paymentStatus = 'REFUNDED'")
     BigDecimal calculatePlatformLostRevenue();
 
-    /** Aggregates return requests by reason code to identify systemic product or fulfillment issues. */
+    /** Aggregates return requests by Reason code to identify systemic product or fulfillment issues. */
     @Query("SELECT new com.manish.smartcart.admin.dto.ReturnReasonStats(" +
             "o.returnReason, COUNT(o), SUM(o.totalAmount)) " +
             "FROM Order o " +
@@ -277,4 +277,76 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
      * Example: ORD-20260710-K7P2MQ
      */
     Optional<Order> findByOrderNumber(String orderNumber);
+
+
+    //--------------------SELLER--------------------
+    /**
+     * STEP 1 of two-step pagination for seller orders.
+     * Returns a clean Page<Long> (ID slice) — no entity hydration, no Cartesian product.
+     * Uses GROUP BY instead of DISTINCT to satisfy PostgreSQL's strict ORDER BY rules.
+     * Uses cast(... as timestamp) to prevent Postgres "could not determine data type" errors on nulls.
+     */
+    @Query(value = "SELECT o.id FROM Order o JOIN o.orderItems oi " +
+            "WHERE oi.variant.product.sellerId = :sellerId " +
+            "AND (:status IS NULL OR o.orderStatus = :status) " +
+            "AND (cast(:from as timestamp) IS NULL OR o.orderDate >= :from) " +
+            "AND (cast(:to as timestamp) IS NULL OR o.orderDate <= :to) " +
+            "GROUP BY o.id " +
+            "ORDER BY MAX(o.orderDate) DESC",
+            countQuery = "SELECT COUNT(DISTINCT o.id) FROM Order o JOIN o.orderItems oi " +
+                    "WHERE oi.variant.product.sellerId = :sellerId " +
+                    "AND (:status IS NULL OR o.orderStatus = :status) " +
+                    "AND (cast(:from as timestamp) IS NULL OR o.orderDate >= :from) " +
+                    "AND (cast(:to as timestamp) IS NULL OR o.orderDate <= :to)")
+    Page<Long> findSellerOrderIds(@Param("sellerId") Long sellerId,
+                                  @Param("status") OrderStatus status,
+                                  @Param("from") LocalDateTime from,
+                                  @Param("to") LocalDateTime to,
+                                  Pageable pageable);
+
+    /**
+     * STEP 2 of two-step pagination — hydrates ONLY this page's orders with all associations.
+     * Fetches variant + product in the same query to avoid N+1 during DTO mapping.
+     */
+    @Query("SELECT DISTINCT o FROM Order o " +
+            "LEFT JOIN FETCH o.orderItems oi " +
+            "LEFT JOIN FETCH oi.variant v " +
+            "LEFT JOIN FETCH v.product " +
+            "LEFT JOIN FETCH o.user " +
+            "WHERE o.id IN :orderIds " +
+            "ORDER BY o.orderDate DESC")
+    List<Order> findOrdersWithFullDetailsByIds(@Param("orderIds") List<Long> orderIds);
+
+    /**
+     * Eager fetch for seller order detail view.
+     * Prevents LazyInitializationException when mapping items outside a Hibernate session.
+     */
+    @Query("SELECT o FROM Order o " +
+            "LEFT JOIN FETCH o.orderItems oi " +
+            "LEFT JOIN FETCH oi.variant v " +
+            "LEFT JOIN FETCH v.product " +
+            "WHERE o.publicId = :publicId")
+    Optional<Order> findByPublicIdWithFullItems(@Param("publicId") UUID publicId);
+
+    /**
+     * Single GROUP BY query for sidebar badge counts.
+     * e.g., { CONFIRMED: 12, SHIPPED: 28 } — one DB call, not one per status.
+     */
+    @Query("SELECT o.orderStatus, COUNT(DISTINCT o.id) FROM Order o " +
+            "JOIN o.orderItems oi " +
+            "WHERE oi.variant.product.sellerId = :sellerId " +
+            "GROUP BY o.orderStatus")
+    List<Object[]> countOrdersByStatusForSeller(@Param("sellerId") Long sellerId);
+
+    /**
+     * Human-readable order number search — for customer support workflows.
+     * e.g., customer calls with "ORD-20260816-K7P2MQ" → seller types it in search.
+     */
+    @Query("SELECT o FROM Order o " +
+            "LEFT JOIN FETCH o.orderItems oi " +
+            "LEFT JOIN FETCH oi.variant v " +
+            "LEFT JOIN FETCH v.product " +
+            "WHERE o.orderNumber = :orderNumber")
+    Optional<Order> findByOrderNumberWithItems(@Param("orderNumber") String orderNumber);
+
 }
