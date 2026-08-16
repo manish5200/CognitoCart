@@ -135,13 +135,16 @@ razorpay:
   key-secret: ${RAZORPAY_KEY_SECRET:placeholder_secret}
   webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:my_secure_webhook_secret_123}
 
-# ─── Shiprocket Configuration ────────────────────────────────────────────────
-# Sandbox: sign up free at https://app.shiprocket.in → use your email/password
-# The API returns a JWT token valid for 24h which we cache in Redis
-shiprocket:
-  email: ${SHIPROCKET_EMAIL:your_sandbox@email.com}
-  password: ${SHIPROCKET_PASSWORD:your_sandbox_password}
-  base-url: https://apiv2.shiprocket.in/v1/external
+# ─── Delhivery Configuration ──────────────────────────────────────────────────
+# India's largest logistics courier — free developer staging access.
+# Sign up at: https://ucp.delhivery.com
+# Get token: Main Menu → Settings → API Setup → Generate Token
+# warehouse-name must EXACTLY match your pickup location name in Delhivery dashboard.
+delhivery:
+  api-token: ${DELHIVERY_API_TOKEN:your_staging_token_here}
+  base-url: https://staging-express.delhivery.com  # staging; prod = https://track.delhivery.com
+  warehouse-name: Primary
+  mock: true  # Set false once you have real staging token from Delhivery One dashboard
 
 # ─── Cloudinary Configuration ───────────────────────────────────────────────
 # Sign up free at https://cloudinary.com/ → Dashboard shows cloud-name, key, secret

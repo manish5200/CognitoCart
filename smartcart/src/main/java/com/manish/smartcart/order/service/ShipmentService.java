@@ -33,7 +33,7 @@ public class ShipmentService {
     private final OrderMapper orderMapper;
     private final OrderNotificationService orderNotificationService;
     private final OrderEventService orderEventService;
-    private final ShiprocketOrderService shiprocketOrderService;
+    private final DelhiveryShipmentService delhiveryShipmentService;
 
     /*
      * CONCEPT: This is the core "fulfillment" operation.
@@ -73,17 +73,19 @@ public class ShipmentService {
         String awb;
         if(request.getTrackingNumber() != null && !request.getTrackingNumber().isBlank()){
             awb = request.getTrackingNumber();
-            log.info("Manual AWB override for Order#{}: {}", orderPublicId, awb);
+            log.info("[SHIPMENT] Manual AWB override for Order#{}: {}", orderPublicId, awb);
         }else{
-            // Auto-generate via Shiprocket — handles auth, serviceability, retry, and polling internally
-            awb = shiprocketOrderService.createShipmentAndGetAwb(order, request);
+            // AUTO-GENERATE via Delhivery API (standard production path)
+            // Internally handles serviceability, mock mode, error logging.
+            awb = delhiveryShipmentService.createShipmentAndGetAwb(order, request);
         }
 
-        // Build the public tracking URL.
-        // If admin provided a custom URL (rare), use it. Otherwise, use Shiprocket's standard page.
+
+// Build tracking URL — custom URL takes priority (for non-Delhivery couriers).
+// Otherwise, build Delhivery's standard tracking link from the AWB.
         String trackingUrl = (request.getTrackingUrl() != null && !request.getTrackingUrl().isBlank())
                 ? request.getTrackingUrl()
-                : "https://shiprocket.co/tracking/" + awb;  // Real public Shiprocket tracking page
+                : "https://www.delhivery.com/track/package/" + awb;
 
 
         // 4. Build and persist the Shipment entity
