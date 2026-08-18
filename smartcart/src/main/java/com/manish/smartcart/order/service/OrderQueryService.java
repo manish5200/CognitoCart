@@ -79,4 +79,20 @@ public class OrderQueryService {
         return orderRepository.findByOrderNumber(identifier)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found for number: " + identifier));
     }
+
+    /**
+     * Resolves an order and its items in a single SQL query using JOIN FETCH.
+     * Prevents LazyInitializationException for workflows that strictly require OrderItems.
+     */
+    public Order resolveOrderWithItems(String identifier){
+        // 1. UUID Pattern Match (8-4-4-4-12 hex format)
+        if(identifier.matches("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")){
+            return orderRepository.findByPublicIdWithFullItems(UUID.fromString(identifier))
+                    .orElseThrow(() -> new ResourceNotFoundException("Order not found for UUID: " + identifier));
+        }
+
+        // 2. Human ID Fallback (ORD-YYYYMMDD-XXXXXX format)
+        return orderRepository.findByOrderNumberWithItems(identifier)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found for number: " + identifier));
+    }
 }

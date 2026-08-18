@@ -1,6 +1,7 @@
 package com.manish.smartcart.order.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.manish.smartcart.infrastructure.invoice.InvoiceService;
 import com.manish.smartcart.order.dto.OrderEventResponse;
 import com.manish.smartcart.order.model.Order;
 import com.manish.smartcart.order.service.OrderEventService;
@@ -14,6 +15,7 @@ import com.manish.smartcart.order.service.OrderQueryService;
 import com.manish.smartcart.order.service.OrderReturnService;
 import com.manish.smartcart.order.service.OrderService;
 import com.manish.smartcart.shared.exception.ResourceNotFoundException;
+import com.manish.smartcart.shared.mapper.OrderMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -22,6 +24,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -47,6 +50,10 @@ public class OrderController {
         private final OrderEventService orderEventService;
         private final OrderQueryService orderQueryService;
         private final OrderReturnService orderReturnService;
+        // NEW INJECTIONS: Required for converting the Order to a Response, then to a PDF
+        private final InvoiceService invoiceService;
+        private final OrderMapper orderMapper;
+
 
         @Operation(summary = "Checkout and place order", description =  "Processes the cart and creates a permanent order record. "
                 + "Snapshots address, pricing, and return policy. "
@@ -174,6 +181,57 @@ public class OrderController {
 
                 return ResponseEntity.ok(orderEventService.getTimeline(order.getId()));
         }
+
+
+        // =====================================================================================
+        // INVOICE DOWNLOAD (Customer)
+        // =====================================================================================
+        /**
+         * GET /api/v1/orders/{orderIdentifier}/invoice
+         * <p>
+         * MOTIVE: Customers need a legal tax invoice for their purchases for warranty claims.
+         * AGENDA: Fetches the order, verifies ownership (IDOR protection), converts to DTO,
+         *         and streams a dynamically generated iText7 PDF to the browser.
+         */
+        @Operation(summary = "Download Order Invoice", description = "Generates a clean PDF tax invoice on the fly.")
+        @ApiResponses({
+                @ApiResponse(responseCode = "200", description = "PDF successfully generated"),
+                @ApiResponse(responseCode = "404", description = "Order not found or does not belong to user")
+        })
+        @GetMapping("/{orderIdentifier}/invoice")
+        public ResponseEntity<byte[]> downloadInvoice(
+                @PathVariable String orderIdentifier,
+                Authentication authentication){
+
+                Long userId = extractUserId(authentication);
+
+                // 1. Resolve order (UUID or ORD- format)
+                Order order = orderQueryService.resolveOrderWithItems(orderIdentifier);
+
+                // 2. IDOR Guard: Customers can only download their OWN invoices
+                if(!order.getUser().getId().equals(userId)){
+                        throw new ResourceNotFoundException("Order not found: " + orderIdentifier);
+                }
+
+                // 3. Map to DTO (InvoiceService requires a detached DTO, not a live Hibernate entity)
+                // NOTE: We intentionally skip mapping shipment tracking here to save a DB query,
+                //       as the PDF invoice does not display tracking numbers anyway.
+                OrderResponse orderResponse = orderMapper.toOrderResponse(order);
+
+                // 4. Generate raw PDF bytes
+                byte[] pdfBytes = invoiceService.generateInvoice(orderResponse);
+
+                // 5. Construct safe filename
+                String filename = "invoice_"  + (order.getOrderNumber() != null ? order.getOrderNumber() : order.getPublicId()) + ".pdf";
+
+                // 6. Stream directly to the browser
+                return ResponseEntity.ok()
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                        .contentType(MediaType.APPLICATION_PDF)
+                        .contentLength(pdfBytes.length)
+                        .body(pdfBytes);
+        }
+
 
         //HELPER FUNCTION TO EXTRACT UserId
         private long extractUserId(Authentication authentication) {

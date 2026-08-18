@@ -2,10 +2,13 @@ package com.manish.smartcart.admin.controller;
 
 import com.manish.smartcart.admin.dto.*;
 import com.manish.smartcart.admin.service.AdminService;
+import com.manish.smartcart.infrastructure.invoice.InvoiceService;
+import com.manish.smartcart.order.model.Order;
+import com.manish.smartcart.order.service.OrderQueryService;
 import com.manish.smartcart.payment.service.WebhookDlqService;
 import com.manish.smartcart.seller.dto.SellerProductAnalyticsResponse;
 import com.manish.smartcart.seller.dto.SellerSummaryResponse;
-import com.manish.smartcart.seller.service.SellerService;
+import com.manish.smartcart.shared.mapper.OrderMapper;
 import com.manish.smartcart.user.model.SellerProfile;
 import com.manish.smartcart.order.coupon.service.CouponService;
 import com.manish.smartcart.order.dto.OrderResponse;
@@ -20,7 +23,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -47,7 +52,11 @@ public class AdminController {
     private final ShipmentService shipmentService;
     private final WebhookDlqService webhookDlqService;
     private final ReturnAdminService returnAdminService;
-    private final SellerService sellerService;
+
+    private final OrderQueryService orderQueryService;
+    private final InvoiceService invoiceService;
+    private final OrderMapper orderMapper;
+
 
     @Operation(summary = "Get Dashboard Stats", description = "Retrieves top-selling products and low-stock alerts. Access restricted to users with ROLE_ADMIN.")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved statistics")
@@ -319,4 +328,40 @@ public class AdminController {
         return ResponseEntity.ok(responses);
     }
 
+    // =====================================================================================
+    // INVOICE DOWNLOAD (Admin)
+    // =====================================================================================
+    /**
+     * GET /api/v1/admin/orders/{orderIdentifier}/invoice
+     * <p>
+     * MOTIVE: Admins need the ability to pull up tax invoices for ANY order in the system
+     *         (e.g., for B2B accounting audits or handling support tickets "I lost my invoice").
+     * AGENDA: Bypasses the IDOR ownership check since the caller is an Admin.
+     */
+    @Operation(summary = "Download any order invoice (Admin)", description = "Generates a PDF invoice for any order globally.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "PDF successfully generated"),
+            @ApiResponse(responseCode = "404", description = "Order not found")
+    })
+    @GetMapping("/orders/{orderIdentifier}/invoice")
+    public ResponseEntity<byte[]> downloadInvoiceAdmin (@PathVariable String orderIdentifier){
+
+        // 1. Resolve order globally
+        Order order = orderQueryService.resolveOrderWithItems(orderIdentifier);
+
+        // 2. Map to DTO (Shipment omitted to save queries, PDF doesn't need it)
+        OrderResponse orderResponse = orderMapper.toOrderResponse(order);
+
+        // 3. Generate PDF
+        byte[] pdfBytes = invoiceService.generateInvoice(orderResponse);
+
+        // 4. Stream to browser
+        String filename = "invoice_" + (order.getOrderNumber()!= null ? order.getOrderNumber() : order.getPublicId()) + ".pdf";
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .contentLength(pdfBytes.length)
+                .body(pdfBytes);
+    }
 }
