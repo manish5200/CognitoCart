@@ -4,6 +4,8 @@ import com.manish.smartcart.product.dto.ProductRequest;
 import com.manish.smartcart.product.dto.ProductResponse;
 import com.manish.smartcart.product.dto.ProductSearchDTO;
 import com.manish.smartcart.infrastructure.ai.EmbeddingService;
+import com.manish.smartcart.seller.repository.SellerProfileRepository;
+import com.manish.smartcart.shared.enums.KycStatus;
 import com.manish.smartcart.shared.mapper.ProductMapper;
 import com.manish.smartcart.product.model.Category;
 import com.manish.smartcart.product.model.Product;
@@ -14,6 +16,7 @@ import com.manish.smartcart.product.repository.ProductVariantRepository;
 import com.manish.smartcart.product.repository.specifications.ProductSpecifications;
 import com.manish.smartcart.shared.util.VectorAttributeConverter;
 import com.manish.smartcart.shared.exception.BusinessLogicException;
+import com.manish.smartcart.user.model.SellerProfile;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.AllArgsConstructor;
 import com.manish.smartcart.shared.exception.ResourceNotFoundException;
@@ -26,7 +29,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -42,6 +44,7 @@ public class ProductService {
     private final ProductMapper productMapper;
     private final CategoryService categoryService;
     private final EmbeddingService embeddingService;
+    private final SellerProfileRepository sellerProfileRepository;
 
     /**
      * ACTIVITY: Onboarding (Creation)
@@ -53,6 +56,16 @@ public class ProductService {
             @CacheEvict(value = "product-slug", allEntries = true)
     })
     public ProductResponse createProduct(ProductRequest productRequest, Long currentSellerId) {
+
+        // 1. KYC SECURITY LOCK (EDGE CASE: Block unverified sellers)
+        SellerProfile seller = sellerProfileRepository.findById(currentSellerId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Seller Profile" + "id #" + currentSellerId));
+
+        if(seller.getKycStatus() != KycStatus.VERIFIED){
+            throw new BusinessLogicException("KYC Enforcement: Your profile is currently "
+                    + seller.getKycStatus() + ". You must be VERIFIED to list products.");
+        }
 
         Product product = productMapper.toProduct(productRequest);
 

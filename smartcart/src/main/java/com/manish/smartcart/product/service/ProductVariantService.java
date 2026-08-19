@@ -4,6 +4,8 @@ import com.manish.smartcart.product.dto.InventoryAdjustmentRequest;
 import com.manish.smartcart.product.dto.ProductVariantRequest;
 import com.manish.smartcart.product.dto.ProductVariantResponse;
 import com.manish.smartcart.infrastructure.storage.CloudinaryService;
+import com.manish.smartcart.seller.repository.SellerProfileRepository;
+import com.manish.smartcart.shared.enums.KycStatus;
 import com.manish.smartcart.shared.exception.BusinessLogicException;
 import com.manish.smartcart.shared.exception.InsufficientStockException;
 import com.manish.smartcart.shared.exception.ResourceNotFoundException;
@@ -12,6 +14,7 @@ import com.manish.smartcart.product.model.ProductVariant;
 import com.manish.smartcart.product.repository.ProductRepository;
 import com.manish.smartcart.product.repository.ProductVariantRepository;
 import com.manish.smartcart.shared.util.FileValidator;
+import com.manish.smartcart.user.model.SellerProfile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,6 +33,7 @@ public class ProductVariantService {
     private final ProductVariantRepository productVariantRepository;
     private final ProductRepository productRepository;
     private final CloudinaryService cloudinaryService;
+    private final SellerProfileRepository sellerProfileRepository;
 
     /**
      * PUBLIC GET: Retrieve all active variants for a product
@@ -52,6 +56,15 @@ public class ProductVariantService {
     @Transactional
     public ProductVariantResponse addProductVariant(UUID productPublicId, ProductVariantRequest request,
                                                     Long currentSellerId){
+
+        // 1. KYC SECURITY LOCK (EDGE CASE: Block variant loophole)
+        SellerProfile seller = sellerProfileRepository.findById(currentSellerId).orElseThrow(() ->
+                new ResourceNotFoundException("Seller Profile" + "id #" + currentSellerId));
+
+        if (seller.getKycStatus() != KycStatus.VERIFIED) {
+            throw new BusinessLogicException("KYC Enforcement: Your profile is currently "
+                    + seller.getKycStatus() + ". You must be VERIFIED to add new variants.");
+        }
 
         Long productId = productRepository.findByPublicId(productPublicId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + productPublicId))

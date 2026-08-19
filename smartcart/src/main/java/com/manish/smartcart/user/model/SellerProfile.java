@@ -12,7 +12,8 @@ import lombok.experimental.SuperBuilder;
  * Stores vendor-specific business and regulatory details.
  * <p>
  * DESIGN NOTE: Shares a Primary Key with the Users entity via @MapsId.
- * This guarantees a strict 1:1 relationship at the database level and eliminates
+ * This guarantees a strict 1:1 relationship at the database level and
+ * eliminates
  * the need for a separate sequence generator.
  */
 @Entity
@@ -63,7 +64,7 @@ public class SellerProfile extends BaseEntity {
      */
     @PrePersist
     private void humanIDGenerator() {
-        if(this.sellerCode == null){
+        if (this.sellerCode == null) {
             this.sellerCode = HumanIdGenerator.generate("SEL");
         }
     }
