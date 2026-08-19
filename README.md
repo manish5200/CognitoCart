@@ -11,6 +11,7 @@
 [![Redis](https://img.shields.io/badge/Redis-Upstash-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://upstash.com/)
 [![RabbitMQ](https://img.shields.io/badge/RabbitMQ-CloudAMQP-FF6600?style=for-the-badge&logo=rabbitmq&logoColor=white)](https://www.rabbitmq.com/)
 [![Razorpay](https://img.shields.io/badge/Razorpay-Payments-3395FF?style=for-the-badge)](https://razorpay.com/)
+[![Delhivery](https://img.shields.io/badge/Delhivery-Logistics-E3000F?style=for-the-badge)](https://www.delhivery.com/)
 
 </div>
 
@@ -23,6 +24,8 @@
 - [Module Structure](#-module-structure)
 - [Core Domain Concepts](#-core-domain-concepts)
 - [Security Model](#-security-model--idor-prevention)
+- [On-the-Fly PDF Invoicing](#-on-the-fly-pdf-invoicing-new)
+- [Multi-Vendor & Logistics](#-multi-vendor--logistics)
 - [Flash Sale Engine](#-flash-sale-engine)
 - [API Reference](#-api-reference)
 - [Scheduled Jobs](#-scheduled-jobs)
@@ -33,41 +36,74 @@
 
 ## 🏗️ Architecture Overview
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                       External Clients                               │
-│         Postman · Web Frontend · Mobile App · Swagger UI             │
-└───────────────────────────────┬─────────────────────────────────────┘
-                                │  HTTPS
-                                ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                    Spring Boot 3.4.1 API Gateway                     │
-│                                                                      │
-│  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌────────────┐    │
-│  │   Auth     │  │  Products  │  │    Cart    │  │   Orders   │    │
-│  │ JWT + OTP  │  │ Variants   │  │ PG + Redis │  │  Checkout  │    │
-│  │ Google SSO │  │ pgvector   │  │ Guest TTL  │  │  Razorpay  │    │
-│  └────────────┘  └────────────┘  └────────────┘  └────────────┘    │
-│                                                                      │
-│  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌────────────┐    │
-│  │  Returns   │  │ Analytics  │  │    Infra   │  │   Async    │    │
-│  │ Policy     │  │ CLV/Churn  │  │ Bucket4j   │  │  RabbitMQ  │    │
-│  │ Snapshot   │  │ CSV/Dash   │  │ ShedLock   │  │  Invoice   │    │
-│  └────────────┘  └────────────┘  └────────────┘  └────────────┘    │
-│                                                                      │
-│  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌────────────┐    │
-│  │ Flash Sale │  │ Wishlist   │  │  Reviews   │  │     AI     │    │
-│  │ 3-Tier Eng │  │ Cart Conv. │  │ Summarizer │  │  Semantic  │    │
-│  │ RabbitMQ   │  │ Price Drop │  │ AI Batch   │  │  Search    │    │
-│  └────────────┘  └────────────┘  └────────────┘  └────────────┘    │
-└────────────────────────┬──────────────────────┬─────────────────────┘
-                         │                      │
-              ┌──────────▼───────┐    ┌─────────▼────────┐
-              │   PostgreSQL 18  │    │   Redis (Upstash) │
-              │   + pgvector     │    │  Guest Carts (TTL)│
-              │   + Flyway v35   │    │  Rate Limit Buckets│
-              │   + ShedLock     │    │  Refresh Token BL │
-              └──────────────────┘    └──────────────────┘
+```mermaid
+graph TD
+    %% Styling
+    classDef gateway fill:#2b3137,stroke:#24292e,stroke-width:2px,color:#fff;
+    classDef domain fill:#f1f8ff,stroke:#0366d6,stroke-width:2px,color:#0366d6;
+    classDef db fill:#f0fff4,stroke:#28a745,stroke-width:2px,color:#28a745;
+    classDef cache fill:#ffeef0,stroke:#d73a49,stroke-width:2px,color:#d73a49;
+    classDef mq fill:#fff5eb,stroke:#e36209,stroke-width:2px,color:#e36209;
+    classDef ext fill:#f6f8fa,stroke:#6a737d,stroke-width:2px,color:#24292e,stroke-dasharray: 5 5;
+
+    Clients["📱 External Clients (Web, Mobile, Postman)"] -->|HTTPS / REST| API["🚀 Spring Boot 3.4.1 API Gateway"]
+    class API gateway
+    
+    subgraph "Core Domain Modules"
+        Auth["🔐 Auth (JWT, OAuth)"]
+        Catalog["🛍️ Catalog (pgvector)"]
+        Cart["🛒 Dual Cart (Redis + DB)"]
+        Order["📦 Order & Checkout"]
+        Payment["💳 Razorpay Webhooks"]
+        Seller["🏬 Seller & KYC"]
+        Returns["🔄 Returns & Invoices"]
+        Admin["🏛️ Admin Analytics"]
+    end
+    
+    API --> Auth
+    API --> Catalog
+    API --> Cart
+    API --> Order
+    API --> Payment
+    API --> Seller
+    API --> Returns
+    API --> Admin
+
+    class Auth,Catalog,Cart,Order,Payment,Seller,Returns,Admin domain
+
+    subgraph "Data & Infra"
+        DB[("🐘 PostgreSQL 18 + Flyway")]
+        Redis[("⚡ Redis (Guest Carts, Rate Limits)")]
+        RabbitMQ{"🐇 RabbitMQ (Async Events)"}
+    end
+
+    class DB db
+    class Redis cache
+    class RabbitMQ mq
+
+    Catalog --> DB
+    Order --> DB
+    Admin --> DB
+    Seller --> DB
+    Returns --> DB
+    
+    Cart --> Redis
+    Auth --> Redis
+    
+    Payment --> RabbitMQ
+    Order --> RabbitMQ
+    Returns --> RabbitMQ
+
+    %% External
+    Razorpay["💳 Razorpay Gateway"]
+    Delhivery["🚚 Delhivery APIs"]
+    HuggingFace["🧠 HuggingFace AI"]
+
+    class Razorpay,Delhivery,HuggingFace ext
+
+    Payment <--> Razorpay
+    Returns <--> Delhivery
+    Catalog <--> HuggingFace
 ```
 
 ---
@@ -364,6 +400,29 @@ Checkout handles complex split payments seamlessly:
 | **Email Verification** | OTP on registration | Orders blocked until email is verified |
 | **IDOR (Orders)** | 404 not 403 | Returning 404 for wrong-owner orders prevents valid ID enumeration |
 | **Flash Sale Security** | `@Modifying` atomic SQL | Bypasses Hibernate L1 cache to prevent overselling in concurrent checkouts |
+
+---
+
+## 📄 On-the-Fly PDF Invoicing (NEW)
+
+CognitoCart features a production-grade invoice generator built on **iText 7**. 
+
+When a user or admin hits `GET /api/v1/orders/{orderId}/invoice`:
+1. The `OrderQueryService` executes a highly optimized **JPQL `JOIN FETCH`** to eagerly load the order and its items in a single query (eliminating `LazyInitializationException`).
+2. The `InvoiceService` paints an Amazon-style PDF in memory, calculating subtotals, taxes, and shipping dynamically.
+3. The raw `byte[]` is streamed directly to the client with `Content-Disposition: attachment`, triggering a native file download in the browser.
+4. **Security:** Customers are protected via strict IDOR checks; Admins bypass this to pull any invoice globally.
+
+---
+
+## 🚚 Multi-Vendor & Logistics 
+
+CognitoCart is designed as a **Multi-Vendor Marketplace** (like Amazon or Flipkart). 
+
+- **Seller KYC:** New sellers undergo strict KYC (Pending → In Review → Verified). Unverified sellers are blocked from listing products.
+- **Data Isolation:** `SellerController` endpoints enforce absolute data isolation. Sellers can only view, manage, and pack their *own* products.
+- **N+1 Query Elimination:** The seller order dashboard uses advanced two-step DB pagination to load hundreds of orders in just 2 queries, sidestepping Hibernate's Cartesian product nightmare.
+- **Logistics (Delhivery):** Integrated with Delhivery for automated AWB (Airway Bill) generation and webhook-driven tracking updates.
 
 ---
 
