@@ -19,6 +19,7 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 @Component
 @RequiredArgsConstructor
@@ -47,8 +48,10 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         String email = oAuth2User.getAttribute("email");
         String name = oAuth2User.getAttribute("name");
 
+        String frontendUrl = "http://localhost:4200/oauth2/callback";
+
         if(email == null){
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Email not provided by Google");
+            response.sendRedirect(frontendUrl + "?error=no_email");
             return;
         }
 
@@ -59,7 +62,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             Users newUser = Users.builder()
                     .email(email)
                     .fullName(name)
-                    .authProvider(AuthProvider.GOOGLE)
+                    .authProvider(provider)
                     .emailVerified(true) // Google confirmed the email
                     .role(Role.CUSTOMER) // Default role -- MUST be Customer first!
                     .active(true)
@@ -74,9 +77,9 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         });
 
         // Prevent LOCAL users from hijacking accounts
-        if(user.getAuthProvider() != AuthProvider.GOOGLE){
-            log.warn("User {} tried to login with Google but is registered as LOCAL.", email);
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Please sign in with your password.");
+        if(user.getAuthProvider() != provider){
+            log.warn("User {} tried to login with OAuth2 but is registered as LOCAL.", email);
+            response.sendRedirect(frontendUrl + "?error=local_account_exists");
             return;
         }
 
@@ -84,25 +87,19 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         String accessToken = jwtUtil.generateToken(user.getEmail());
         String refreshToken = refreshTokenService.createRefreshToken(user.getId()).getToken();
 
-        // NO FRONTEND YET: We print the tokens directly to the browser!
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
-
-        String jsonPayload = String.format(
-                """
-                        {
-                          "message": "Google Login Successful! Copy these tokens to Swagger/Postman.\
-                        ",
-                          "email": "%s",
-                          "accessToken": "%s",
-                          "refreshToken":\
-                         "%s"
-                        }""",
-                email, accessToken, refreshToken
+        
+        // Build URL carefully, URL-encoding could be added but for simple names it works.
+        String redirectUrl = String.format("%s?token=%s&refresh=%s&id=%d&email=%s&name=%s&role=%s", 
+                frontendUrl, 
+                accessToken, 
+                refreshToken,
+                user.getId(),
+                java.net.URLEncoder.encode(user.getEmail(), StandardCharsets.UTF_8),
+                java.net.URLEncoder.encode(user.getFullName(), StandardCharsets.UTF_8),
+                user.getRole().name()
         );
-
-        response.getWriter().write(jsonPayload);
-        response.getWriter().flush();
+        
+        response.sendRedirect(redirectUrl);
     }
 
 }

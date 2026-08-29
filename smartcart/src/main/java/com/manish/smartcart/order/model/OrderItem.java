@@ -3,6 +3,7 @@ package com.manish.smartcart.order.model;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.manish.smartcart.shared.model.BaseEntity;
 import com.manish.smartcart.product.model.ProductVariant;
+import com.manish.smartcart.shared.enums.PolicyType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import lombok.*;
@@ -83,4 +84,12 @@ public class OrderItem extends BaseEntity {
     // Preserved visual identity at checkout. Mitigates "bait-and-switch" vendor modifications.
     @Column(length = 500)
     private String imageUrlSnapshot;
+
+    // ─── RETURN POLICY SNAPSHOTS (Immutable) ──────────────────────────────────
+    @Enumerated(EnumType.STRING)
+    @Column(name = "policy_type_snapshot")
+    private PolicyType policyTypeSnapshot;
+
+    @Column(name = "return_window_days_snapshot")
+    private Integer returnWindowDaysSnapshot;
 }

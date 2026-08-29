@@ -112,9 +112,33 @@ public class AdminSaleService {
      *
      * @return List containing the summarized details of all platform events.
      */
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public List<PlatformSaleEventResponse> getAllEvents(){
         return eventRepository.findAll().stream()
                 .map(this::mapToEventResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Retrieves all items submitted to a specific flash sale event (For Admin Dashboard).
+     */
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public List<com.manish.smartcart.sale.dto.FlashSaleItemResponse> getEventSubmissions(UUID eventPublicId) {
+        return itemRepository.findByPlatformSaleEventPublicId(eventPublicId).stream()
+                .map(item -> com.manish.smartcart.sale.dto.FlashSaleItemResponse.builder()
+                        .publicId(item.getPublicId())
+                        .saleEventPublicId(item.getPlatformSaleEvent().getPublicId())
+                        .id(item.getId())
+                        .eventId(item.getPlatformSaleEvent().getId())
+                        .eventName(item.getPlatformSaleEvent().getEventName())
+                        .variantId(item.getProductVariant().getId())
+                        .sku(item.getProductVariant().getSku())
+                        .discountPercentage(item.getDiscountPercentage())
+                        .maxUnits(item.getMaxUnits())
+                        .maxUnitsPerUser(item.getMaxUnitsPerUser())
+                        .usedUnits(item.getUsedUnits())
+                        .approvalStatus(item.getApprovalStatus())
+                        .build())
                 .collect(Collectors.toList());
     }
 
@@ -123,7 +147,7 @@ public class AdminSaleService {
      */
     private PlatformSaleEventResponse mapToEventResponse(PlatformSaleEvent event) {
         return PlatformSaleEventResponse.builder()
-                .id(event.getId())
+                .saleEventPublicId(event.getPublicId())
                 .eventName(event.getEventName())
                 .description(event.getDescription())
                 .startTime(event.getStartTime())

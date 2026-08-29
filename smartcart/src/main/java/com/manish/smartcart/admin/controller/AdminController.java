@@ -159,10 +159,19 @@ public class AdminController {
         );
     }
 
+    @Operation(summary = "Get All Orders", description = "Retrieves a paginated list of all orders. Access restricted to Admin.")
+    @ApiResponse(responseCode = "200", description = "Orders retrieved successfully")
+    @GetMapping("/orders")
+    public ResponseEntity<org.springframework.data.domain.Page<OrderResponse>> getAllOrders(
+            @RequestParam(name = "pageNumber", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNumber,
+            @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int pageSize) {
+        return ResponseEntity.ok(adminService.getAllOrders(pageNumber, pageSize));
+    }
+
     @Operation(summary = "Update Order Status", description = "Change the lifecycle state of an order (e.g., PENDING to SHIPPED). Access restricted to Admin.")
     @ApiResponse(responseCode = "200", description = "Order status updated successfully")
     @ApiResponse(responseCode = "404", description = "Order ID not found", content = @Content)
-    @PatchMapping("/{orderPublicId}/status")
+    @PatchMapping("/orders/{orderPublicId}/status")
     public ResponseEntity<?> changeOrderStatus(@PathVariable java.util.UUID orderPublicId,
                                                @RequestBody StatusChangeRequest request) {
         request.setOrderPublicId(orderPublicId);

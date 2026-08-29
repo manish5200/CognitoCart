@@ -68,7 +68,7 @@ public class Product extends BaseEntity {
     // ─── DISCOVERY & SOCIAL PROOF ─────────────────────────────────────────────
 
     // Faceted search tags (e.g., "wireless", "waterproof").
-    @ElementCollection(fetch = FetchType.LAZY)
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "product_tags", joinColumns = @JoinColumn(name = "product_id"))
     @Column(name = "tag")
     @Builder.Default
@@ -130,7 +130,7 @@ public class Product extends BaseEntity {
     private ProductInsights insights;
 
     // Master image gallery. Shared across all variants unless overridden by a variant swatch.
-    @ElementCollection(fetch = FetchType.LAZY)
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "product_images", joinColumns = @JoinColumn(name = "product_id"))
     @Column(name = "image_url")
     @Builder.Default

@@ -122,6 +122,12 @@ public class AdminService {
                 dailyTrend
         );
     }
+    
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<OrderResponse> getAllOrders(int pageNumber, int pageSize) {
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "orderDate"));
+        return orderRepository.findAll(pageable).map(orderMapper::toOrderResponse);
+    }
 
     // Play with the order
     @Transactional
@@ -214,6 +220,8 @@ public class AdminService {
 
     private SellerSummaryResponse toSellerSummary(SellerProfile sp) {
         return SellerSummaryResponse.builder()
+                .sellerPublicId(sp.getPublicId())
+                .sellerCode(sp.getSellerCode())
                 .sellerId(sp.getId())
                 .fullName(sp.getUser().getFullName())
                 .email(sp.getUser().getEmail())

@@ -54,6 +54,11 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.NOT_FOUND, "RESOURCE_NOT_FOUND", ex.getMessage(), null);
     }
 
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResourceFound(org.springframework.web.servlet.resource.NoResourceFoundException ex) {
+        return buildErrorResponse(HttpStatus.NOT_FOUND, "ENDPOINT_NOT_FOUND", "The requested endpoint does not exist: " + ex.getResourcePath(), null);
+    }
+
     // 6. BUSINESS LOGIC ERRORS (HTTP 400)
     @ExceptionHandler(BusinessLogicException.class)
     public ResponseEntity<ErrorResponse> handleBusinessLogic(BusinessLogicException ex) {

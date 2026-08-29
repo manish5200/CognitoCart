@@ -213,6 +213,15 @@ public class ProductVariantService {
     }
 
     /**
+     * SELLER: Get paginated variants for the seller
+     */
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<ProductVariantResponse> getVariantsBySellerId(Long sellerId, org.springframework.data.domain.Pageable pageable) {
+        return productVariantRepository.findBySellerIdAndActive(sellerId, pageable)
+                .map(this::toResponse);
+    }
+
+    /**
      * Maps a ProductVariant entity to the public-facing DTO.
      * Exposes UUIDs + productCode/productName — internal Long PKs are NEVER included.
      */

@@ -9,6 +9,7 @@ import com.manish.smartcart.security.CustomUserDetails;
 import com.manish.smartcart.order.dto.OrderRequest;
 import com.manish.smartcart.order.dto.OrderResponse;
 import com.manish.smartcart.order.dto.ReturnRequestDTO;
+import com.manish.smartcart.shared.enums.OrderStatus;
 import com.manish.smartcart.shared.enums.RefundDestination;
 import com.manish.smartcart.shared.exception.BusinessLogicException;
 import com.manish.smartcart.order.service.OrderQueryService;
@@ -53,6 +54,9 @@ public class OrderController {
         // NEW INJECTIONS: Required for converting the Order to a Response, then to a PDF
         private final InvoiceService invoiceService;
         private final OrderMapper orderMapper;
+        
+        @org.springframework.beans.factory.annotation.Value("${razorpay.key-id:rzp_test_xxx}")
+        private String razorpayKeyId;
 
 
         @Operation(summary = "Checkout and place order", description =  "Processes the cart and creates a permanent order record. "
@@ -77,7 +81,7 @@ public class OrderController {
                 description = "Paginated past orders for the authenticated customer. "
                         + "Default: page=0, size=10, sorted by orderDate DESC.")
         @ApiResponse(responseCode = "200", description = "Paginated order history")
-        @GetMapping("/history")
+        @GetMapping({"/history", "/history/"})
         public ResponseEntity<?> getOrderHistory(
                 Authentication authentication,
                 @PageableDefault(
@@ -89,6 +93,32 @@ public class OrderController {
                 return ResponseEntity.ok(history);
         }
 
+
+        @Operation(summary = "Get order details", description = "Fetches a specific order by UUID or Human ID")
+        @ApiResponses({
+                @ApiResponse(responseCode = "200", description = "Order details returned"),
+                @ApiResponse(responseCode = "404", description = "Order not found or does not belong to user")
+        })
+        @GetMapping("/detail/{orderIdentifier}")
+        public ResponseEntity<OrderResponse> getOrderDetail(
+                @PathVariable String orderIdentifier,
+                Authentication authentication) {
+                Long userId = extractUserId(authentication);
+                
+                Order order = orderQueryService.resolveOrderWithItems(orderIdentifier);
+                
+                // IDOR Guard
+                if(!order.getUser().getId().equals(userId)){
+                        throw new ResourceNotFoundException("Order not found: " + orderIdentifier);
+                }
+                
+                OrderResponse response = orderMapper.toOrderResponse(order);
+                // Inject razorpayKeyId for pending orders so frontend can retry payment
+                if (order.getOrderStatus() == com.manish.smartcart.shared.enums.OrderStatus.PAYMENT_PENDING) {
+                        response.setRazorpayKeyId(razorpayKeyId);
+                }
+                return ResponseEntity.ok(response);
+        }
 
         @Operation(summary = "Cancel order",
                 description = "Cancels an order if it has not been shipped. Accepts UUID or Human Order Number.")

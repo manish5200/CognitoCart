@@ -11,6 +11,8 @@ import org.springframework.stereotype.Repository;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -110,13 +112,45 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
         * @param queryVector The search query converted to float[] by EmbeddingService
         * @param limit       How many results to return (e.g., top 10)
         */
-       @Query(value = "SELECT * FROM products " +
-                     "WHERE embedding IS NOT NULL AND is_deleted = false " +
-                     "ORDER BY embedding <=> CAST(:queryVector AS vector) " +
-                     "LIMIT :limit", nativeQuery = true)
-       List<Product> findBySimilarity(
-                     @Param("queryVector") String queryVector,
-                     @Param("limit") int limit);
+       // ─── NEW (fixed) ────────────────────────────────────────────────────────────
+       // Added is_available = true → no more hidden products in AI search
+       // Also returns the cosine distance alongside each row (used for scoring)
+       @Query(value = """
+        SELECT *, (embedding <=> CAST(:queryVector AS vector)) AS distance
+        FROM products
+        WHERE embedding IS NOT NULL
+          AND is_deleted  = false
+          AND is_available = true
+        ORDER BY distance ASC
+        LIMIT :limit
+        """, nativeQuery = true)
+       List<Object[]> findBySimilarity(@Param("queryVector") String queryVector,
+                                       @Param("limit") int limit);
+
+       // ─── NEW: AI search + price/rating filter in one query ─────────────────────
+       // Used when user combines AI search with sidebar filters (e.g. "under ₹2000")
+       @Query(value = """
+        SELECT *, (embedding <=> CAST(:queryVector AS vector)) AS distance
+        FROM products
+        WHERE embedding IS NOT NULL
+          AND is_deleted   = false
+          AND is_available = true
+          AND (:minPrice   IS NULL OR price >= :minPrice)
+          AND (:maxPrice   IS NULL OR price <= :maxPrice)
+          AND (:minRating  IS NULL OR average_rating >= :minRating)
+        ORDER BY distance ASC
+        LIMIT :limit
+        """, nativeQuery = true)
+       List<Object[]> findBySimilarityWithFilters(
+               @Param("queryVector") String queryVector,
+               @Param("limit") int limit,
+               @Param("minPrice") BigDecimal minPrice,
+               @Param("maxPrice") BigDecimal maxPrice,
+               @Param("minRating") Double minRating);
+
+       // CORRECT — native SQL goes directly to PostgreSQL, which does know the column
+       @Query(value = "SELECT * FROM products WHERE embedding IS NULL AND is_deleted = false", nativeQuery = true)
+       List<Product> findAllWithNullEmbedding();
 
        /**
         * Updates the embedding column for a product using a native SQL CAST.

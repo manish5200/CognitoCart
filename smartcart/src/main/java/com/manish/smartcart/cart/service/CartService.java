@@ -139,10 +139,10 @@ public class CartService {
         return cartRepository.save(cart);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Cart getCartForUser(Long userId) {
         return cartRepository.findByUserId(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
+                .orElseGet(() -> creatNewCart(userId));
     }
 
     @Transactional
@@ -187,10 +187,11 @@ public class CartService {
     @Transactional
     public Cart removeItemFromCart(Long userId, UUID variantPublicId) {
 
-        Long variantId = cartItemRepository.findByPublicId(variantPublicId)
-                .orElseThrow(() -> new ResourceNotFoundException("Cart Item no found for: #"+ variantPublicId))
-                .getId();
         Cart cart = cartRepository.findByUserId(userId).orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
+
+        ProductVariant variant = productVariantRepository.findByPublicId(variantPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product variant not found: " + variantPublicId));
+        Long variantId = variant.getId();
 
         CartItem itemToRemove = cart.getItems().stream()
                 .filter(item -> item.getVariant() != null  && item.getVariant().getId().equals(variantId))
@@ -206,6 +207,36 @@ public class CartService {
         return cartRepository.save(cart);
     }
 
+    @Transactional
+    public Cart updateItemQuantity(Long userId, UUID variantPublicId, int quantity) {
+        Cart cart = getCartForUser(userId);
+        
+        ProductVariant variant = productVariantRepository.findByPublicId(variantPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product variant not found: " + variantPublicId));
+                
+        CartItem cartItem = cartItemRepository.findByCartIdAndVariantId(cart.getId(), variant.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Variant not found in your cart."));
+                
+        if (quantity < 1) {
+            cart.removeCartItem(cartItem);
+        } else {
+            if (quantity > variant.getAvailableStock()) {
+                throw new InsufficientStockException("Insufficient stock for: " + variant.getDisplayLabel() + 
+                        ". Available: " + variant.getAvailableStock());
+            }
+            
+            Optional<FlashSaleItem> activeFlashSale = flashSaleItemRepository.findActiveDiscountForVariant(variant.getId());
+            if (activeFlashSale.isPresent() && quantity > activeFlashSale.get().getMaxUnitsPerUser()) {
+                throw new BusinessLogicException("Flash Sale Limit: You can only buy " 
+                        + activeFlashSale.get().getMaxUnitsPerUser() + " unit(s) per user.");
+            }
+            
+            cartItem.setQuantity(quantity);
+        }
+        
+        updateCartTotal(cart);
+        return cartRepository.save(cart);
+    }
     /**
      * THE MATH ENGINE: This runs every time an item is added, removed, or a coupon is applied.
      * It recalculates the 5-step algebraic pipeline securely and logs its decisions using SLF4J.

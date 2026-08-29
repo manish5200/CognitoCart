@@ -57,6 +57,7 @@ public class SellerController {
     private final SellerAnalyticsExportService sellerAnalyticsExportService;
     private final ReturnPolicyService returnPolicyService;
     private final SellerOrderService sellerOrderService;
+    private final com.manish.smartcart.product.service.ProductVariantService productVariantService;
 
     /**
      * Dashboard Data Aggregation endpoint.
@@ -74,6 +75,17 @@ public class SellerController {
     public ResponseEntity<SellerDashboardResponse> getDashboard(Authentication authentication) {
         Long sellerId = extractSellerId(authentication);
         return ResponseEntity.ok(sellerService.getDashboard(sellerId));
+    }
+
+    @GetMapping("/variants")
+    @PreAuthorize("hasRole('SELLER')")
+    @Operation(summary = "My Variants", description = "Returns all variants for this seller (paginated)")
+    public ResponseEntity<org.springframework.data.domain.Page<com.manish.smartcart.product.dto.ProductVariantResponse>> getMyVariants(
+            Authentication authentication,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "100") int size) {
+        Long sellerId = extractSellerId(authentication);
+        return ResponseEntity.ok(productVariantService.getVariantsBySellerId(sellerId, PageRequest.of(page, size)));
     }
 
     /**

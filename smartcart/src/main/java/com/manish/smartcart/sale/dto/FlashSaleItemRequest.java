@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 /**
  * Payload submitted by the Seller to opt in a specific Variant to an Admin Event.
@@ -16,10 +17,10 @@ import java.math.BigDecimal;
 public class FlashSaleItemRequest {
 
     @NotNull(message = "Platform Event ID is required")
-    private Long platformSaleEventId;
+    private UUID saleEventPublicId;
 
     @NotNull(message = "Variant ID is required")
-    private Long productVariantId;
+    private UUID variantPublicId;
     @NotNull(message = "Discount percentage is required")
 
     @Min(value = 5, message = "Sellers must offer at least a 5% discount to participate")

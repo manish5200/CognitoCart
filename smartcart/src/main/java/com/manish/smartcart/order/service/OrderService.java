@@ -83,6 +83,9 @@ public class OrderService {
     private final OrderEventService orderEventService;
     private final RabbitTemplate rabbitTemplate;
 
+    @org.springframework.beans.factory.annotation.Value("${razorpay.key-id:rzp_test_placeholder}")
+    private String razorpayKeyId;
+
     // ─────────────────────────────────────────────────────────────────────────────
     // CORE CHECKOUT FLOW (Saga Pattern)
     // ─────────────────────────────────────────────────────────────────────────────
@@ -173,6 +176,7 @@ public class OrderService {
         Objects.requireNonNull(finalOrder, "TX2 failed silently: Razorpay ID not attached. RazorpayOrderId=" + razorpayOrderId);
         OrderResponse orderResponse = orderMapper.toOrderResponse(finalOrder);
         orderResponse.setRazorpayOrderId(razorpayOrderId);
+        orderResponse.setRazorpayKeyId(razorpayKeyId);
 
         log.info("Order processed as PENDING for local orderId {} and razorpayId {}", orderResponse.getOrderPublicId(), razorpayOrderId);
         return orderResponse;
@@ -542,6 +546,12 @@ public class OrderService {
                 } catch (Exception e) {
                     log.warn("Could not fetch return policy snapshot for product {}: {}", product.getId(), e.getMessage());
                 }
+            }
+            // Set the snapshots on the order item for the DTO
+            PolicySnapshot snapshot = policyMap.get(product.getId());
+            if (snapshot != null) {
+                item.setPolicyTypeSnapshot(snapshot.getPolicyType());
+                item.setReturnWindowDaysSnapshot(snapshot.getReturnWindowDays());
             }
         }
         try {

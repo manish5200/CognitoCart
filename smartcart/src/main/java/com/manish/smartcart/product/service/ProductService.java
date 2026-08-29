@@ -4,6 +4,7 @@ import com.manish.smartcart.product.dto.ProductRequest;
 import com.manish.smartcart.product.dto.ProductResponse;
 import com.manish.smartcart.product.dto.ProductSearchDTO;
 import com.manish.smartcart.infrastructure.ai.EmbeddingService;
+import com.manish.smartcart.product.dto.SemanticSearchResponse;
 import com.manish.smartcart.seller.repository.SellerProfileRepository;
 import com.manish.smartcart.shared.enums.KycStatus;
 import com.manish.smartcart.shared.mapper.ProductMapper;
@@ -29,9 +30,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -130,12 +132,7 @@ public class ProductService {
         // We use a native UPDATE with CAST(:value AS vector) because JPA would otherwise
         // bind the string as VARCHAR which PostgreSQL's vector column rejects.
         try {
-            String tagsText = savedProduct.getTags() != null
-                    ? String.join(" ", savedProduct.getTags()) : "";
-            String textToEmbed = savedProduct.getProductName() + " " +
-                    (savedProduct.getDescription() != null ? savedProduct.getDescription() : "") +
-                    " " + tagsText;
-
+            String textToEmbed = buildEmbeddingText(savedProduct);
             float[] embedding = embeddingService.generateEmbedding(textToEmbed);
 
             // Convert float[] → "[0.021,-0.455,...]" using our VectorAttributeConverter
@@ -154,6 +151,48 @@ public class ProductService {
                     savedProduct.getProductName(), e.getMessage());
         }
 
+        return productMapper.toProductResponse(savedProduct);
+    }
+
+    /**
+     * ACTIVITY: Update Product
+     * Updates basic product details.
+     */
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "products", allEntries = true),
+            @CacheEvict(value = "product-slug", allEntries = true)
+    })
+    public ProductResponse updateProduct(java.util.UUID productPublicId, ProductRequest productRequest, Long currentSellerId) {
+        Product product = productRepository.findByPublicId(productPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID: " + productPublicId));
+
+        if (!product.getSellerId().equals(currentSellerId)) {
+            throw new BusinessLogicException("Access Denied: You do not have permission to modify this product.");
+        }
+
+        if (productRequest.getProductName() != null) {
+            product.setProductName(productRequest.getProductName());
+        }
+        if (productRequest.getDescription() != null) {
+            product.setDescription(productRequest.getDescription());
+        }
+        if (productRequest.getPrice() != null) {
+            product.setPrice(productRequest.getPrice());
+        }
+        if (productRequest.getDiscountPrice() != null) {
+            product.setDiscountPrice(productRequest.getDiscountPrice());
+        }
+        if (productRequest.getTags() != null) {
+            product.setTags(productRequest.getTags());
+        }
+        if (productRequest.getCategoryId() != null) {
+            Category category = categoryRepository.findById(productRequest.getCategoryId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID: " + productRequest.getCategoryId()));
+            product.setCategory(category);
+        }
+
+        Product savedProduct = productRepository.save(product);
         return productMapper.toProductResponse(savedProduct);
     }
 
@@ -218,37 +257,112 @@ public class ProductService {
                 .map(productMapper::toProductResponse);
     }
 
-    /**
-     * ACTIVITY: AI Semantic Vector Search
-     */
+    // ════════════════════════════════════════════════════════════════════════════
+    // UPDATE — semanticSearch now returns scored results + supports filters
+    // ════════════════════════════════════════════════════════════════════════════
     @Transactional(readOnly = true)
-    public List<ProductResponse>semanticSearch(String query, int limit){
+    public SemanticSearchResponse semanticSearch(
+            String query, int limit,
+            BigDecimal minPrice,
+            BigDecimal maxPrice,
+            Double minRating){
 
-        // Step 1: Convert the user's plain-English query into a 384-dim vector
-        // using the same HuggingFace model used when products were indexed
+        // Step 1: Convert the user's plain English query into a 384-dimensional vector
+        // Same model used when products were indexed → comparable vector space
+        //Format float[] → "[0.021,-0.455,...]" for the native SQL CAST
         float[] queryVector = embeddingService.generateEmbedding(query);
-        // Step 2: Format float[] → "[0.021,-0.455,...]" for the native SQL CAST
         String vectorString = new VectorAttributeConverter().convertToDatabaseColumn(queryVector);
 
-        // Step 3: Fetch Product
-        List<Product> results = productRepository.findBySimilarity(vectorString, limit);
+        // Step 2: Fetch ranked results (with optional price/rating filters)
+        // Each row is [product columns..., distance]
+        boolean hasFilter = minPrice != null || maxPrice != null ||minRating != null;
 
-        // Step 4: Map to DTOs (Hibernate Session is kept open here, so lazy loading works!)
-        return results.stream()
-                .map(productMapper::toProductResponse)
-                .collect(Collectors.toList());
+        List<Object[]> rawResults = hasFilter ?
+                productRepository.findBySimilarityWithFilters(vectorString, limit, minPrice, maxPrice, minRating)
+                : productRepository.findBySimilarity(vectorString, limit);
+
+        // Step 3: Convert raw rows → RankedProduct DTOs with relevance scores
+        List<SemanticSearchResponse.RankedProduct> ranked = new ArrayList<>();
+        for(int i = 0; i < rawResults.size(); i++) {
+            Object[] row = rawResults.get(i);
+
+            // The last column in the SELECT is the cosine distance
+            // distance = 0.0 means identical, 1.0 means completely unrelated
+            double distance = ((Number) row[row.length - 1]).doubleValue();
+
+            // Convert distance → similarity score (higher = better match)
+            // similarity = 1 - distance  (so distance 0.05 → similarity 0.95 = 95%)
+            double similarity = Math.max(0.0, 1.0 - distance);
+
+            // Map the SQL row back to a Product entity, then to a DTO
+            // We reload from the repository to get fully hydrated Hibernate entity
+            Long productId = ((Number) row[0]).longValue();
+
+            productRepository.findById(productId).ifPresent(product -> {
+                ranked.add(SemanticSearchResponse.RankedProduct.builder()
+                        .product(productMapper.toProductResponse(product))
+                        .relevanceScore(similarity)
+                        .relevanceLabel(String.format("%.0f%%", similarity * 100))
+                        .rank(ranked.size() + 1)
+                        .build());
+            });
+
+        }
+        return SemanticSearchResponse.builder()
+                .query(query)
+                .totalFound(ranked.size())
+                .results(ranked)
+                .build();
     }
 
+    // ════════════════════════════════════════════════════════════════════════════
+    // NEW — backfill embeddings for all products that are missing one
+    // ════════════════════════════════════════════════════════════════════════════
     /**
-     * ACTIVITY: Discovery (Fetch by Slug)
-     * Returns DTO so Redis can safely serialize/deserialize without Hibernate
-     * session.
+     * WHY: Products created before the HuggingFace system was live have
+     * NULL in the embedding column. They are completely invisible to AI search.
+     * This method fetches all of them and generates their embeddings now.
+     * <p>
+     * Called by: POST /api/v1/products/admin/reindex  (manual trigger)
      */
+    @Transactional
+    public int reindexMissingEmbeddings(){
+        List<Product> unindexed = productRepository.findAllWithNullEmbedding();
+        log.info("Starting embedding backfill for {} products", unindexed.size());
+
+        int successCount = 0;
+
+        for(Product product : unindexed){
+            try {
+                // Build the rich embedding text (same format as new products)
+                String text = buildEmbeddingText(product);
+                float[] embedding = embeddingService.generateEmbedding(text);
+                String vectorString = new VectorAttributeConverter().convertToDatabaseColumn(embedding);
+                productRepository.updateEmbedding(product.getId(), vectorString);
+                successCount++;
+                log.info("✅ Reindexed product '{}' (id={})", product.getProductName(), product.getId());
+            }catch (Exception e){
+                // Don't stop the whole batch if one product fails
+                log.warn("⚠️ Failed to reindex '{}': {}", product.getProductName(), e.getMessage());
+            }
+        }
+        log.info("Reindex complete: {}/{} products indexed", successCount, unindexed.size());
+        return successCount;
+    }
+
+
     @Transactional(readOnly = true)
     @Cacheable(value = "product-slug", key = "#p0")
-    public ProductResponse getProductBySlug(String slug) {
-        Product product = productRepository.findBySlug(slug)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found for slug: " + slug));
+    public ProductResponse getProductByIdentifier(String identifier) {
+        Product product;
+        try {
+            java.util.UUID publicId = java.util.UUID.fromString(identifier);
+            product = productRepository.findByPublicId(publicId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Product not found for publicId: " + identifier));
+        } catch (IllegalArgumentException e) {
+            product = productRepository.findBySlug(identifier)
+                    .orElseThrow(() -> new ResourceNotFoundException("Product not found for slug: " + identifier));
+        }
         return productMapper.toProductResponse(product);
     }
 
@@ -256,7 +370,6 @@ public class ProductService {
      * Delete product by using product id.
      * Done by seller or Admin only
      */
-
     @Transactional
     @Caching(evict = {
             @CacheEvict(value = "products", allEntries = true),
@@ -315,5 +428,49 @@ public class ProductService {
     }
 
 
+    // ════════════════════════════════════════════════════════════════════════════
+    // HELPER — builds a rich descriptive sentence for the AI embedding
+    // ════════════════════════════════════════════════════════════════════════════
+
+    /**
+     * WHY THIS MATTERS:
+     * "all-MiniLM-L6-v2" (our AI model) understands meaning through context.
+     * A thin input like "Prox BT-500" gives the model almost no clues.
+     * A rich sentence like:
+     *   "Prox BT-500 - Premium noise-cancelling headphones.
+     *    Category: Electronics > Headphones. Brand: Prox.
+     *    Tags: wireless, Bluetooth, noise-cancelling."
+     * gives the model enough context to understand WHAT this product is,
+     * resulting in much more accurate semantic matches.
+     */
+    private String buildEmbeddingText(Product product) {
+        StringBuilder sb = new StringBuilder();
+
+        // Product name is the most important signal — put it first
+        sb.append(product.getProductName()).append(" - ");
+
+        // Description adds semantic depth (what the product does / who it's for)
+        if (product.getDescription() != null && !product.getDescription().isBlank()) {
+            sb.append(product.getDescription()).append(". ");
+        }
+
+        // Category name helps the model understand the product domain
+        // e.g. "Electronics" vs "Clothing" creates completely different vector regions
+        if (product.getCategory() != null) {
+            sb.append("Category: ").append(product.getCategory().getName()).append(". ");
+        }
+
+        // Brand is a strong semantic anchor (e.g. "Sony" = premium audio)
+        if (product.getBrand() != null && !product.getBrand().isBlank()) {
+            sb.append("Brand: ").append(product.getBrand()).append(". ");
+        }
+
+        // Tags are keyword boosters (short, high-signal terms)
+        if (product.getTags() != null && !product.getTags().isEmpty()) {
+            sb.append("Tags: ").append(String.join(", ", product.getTags())).append(".");
+        }
+
+        return sb.toString().trim();
+    }
 
 }

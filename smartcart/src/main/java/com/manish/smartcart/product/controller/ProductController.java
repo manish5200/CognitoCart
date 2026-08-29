@@ -2,15 +2,13 @@ package com.manish.smartcart.product.controller;
 
 import com.manish.smartcart.infrastructure.returnpolicy.ReturnPolicyService;
 import com.manish.smartcart.infrastructure.storage.CloudinaryService;
+import com.manish.smartcart.product.dto.*;
 import com.manish.smartcart.product.service.CategoryService;
 import com.manish.smartcart.product.service.ProductService;
 import com.manish.smartcart.security.CustomUserDetails;
-import com.manish.smartcart.product.dto.ProductRequest;
-import com.manish.smartcart.product.dto.ProductResponse;
-import com.manish.smartcart.product.dto.ProductSearchDTO;
-import com.manish.smartcart.product.dto.ReturnPolicyResponse;
 import com.manish.smartcart.product.model.Product;
 import com.manish.smartcart.product.repository.ProductRepository;
+import com.manish.smartcart.shared.exception.ResourceNotFoundException;
 import com.manish.smartcart.shared.util.AppConstants;
 import com.manish.smartcart.shared.util.FileValidator;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,9 +31,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.math.BigDecimal;
+import java.util.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -75,13 +72,28 @@ public class ProductController {
     }
 
     /**
-     * GET: Product Detail by Slug (Public)
+     * PUT: Update product (Seller only)
      */
-    @Operation(summary = "Get product by slug", description = "Finds a specific product using its SEO-friendly slug.")
+    @Operation(summary = "Update Product (Seller Only)", description = "Updates an existing product in the catalog.")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Product updated successfully"), @ApiResponse(responseCode = "403", description = "Forbidden - Seller access required")})
+    @SecurityRequirement(name = "bearerAuth")
+    @PutMapping("/{productPublicId}")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<?> updateProduct(@PathVariable java.util.UUID productPublicId, @RequestBody ProductRequest productRequest, Authentication authentication) {
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        assert userDetails != null;
+        ProductResponse updatedProduct = productService.updateProduct(productPublicId, productRequest, userDetails.getUser().getId());
+        return ResponseEntity.status(HttpStatus.OK).body(updatedProduct);
+    }
+
+    /**
+     * GET: Product Detail by Slug or PublicId (Public)
+     */
+    @Operation(summary = "Get product by slug or ID", description = "Finds a specific product using its SEO-friendly slug or UUID.")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Product found"), @ApiResponse(responseCode = "404", description = "Product not found")})
-    @GetMapping("/{slug}")
-    public ResponseEntity<?> getProductBySlug(@PathVariable String slug) {
-        return ResponseEntity.status(HttpStatus.OK).body(productService.getProductBySlug(slug));
+    @GetMapping("/{identifier}")
+    public ResponseEntity<?> getProductByIdentifier(@PathVariable String identifier) {
+        return ResponseEntity.status(HttpStatus.OK).body(productService.getProductByIdentifier(identifier));
 
     }
 
@@ -164,8 +176,9 @@ public class ProductController {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Image uploaded and CDN URL returned"), @ApiResponse(responseCode = "400", description = "Invalid file type or size limits exceeded")})
     @PostMapping("/{productPublicId}/upload-image")
     @PreAuthorize("hasRole('SELLER')")
+    @org.springframework.transaction.annotation.Transactional
     public ResponseEntity<?> uploadProductImage(
-                    @PathVariable java.util.UUID productPublicId,
+                    @PathVariable UUID productPublicId,
                     @RequestParam("file") MultipartFile file) {
 
         // STEP 1. Validate the file (Security First!)
@@ -182,14 +195,14 @@ public class ProductController {
         // STEP 3: Fetch the product from DB.
         // We need the current product entity to append the new URL to its image list.
         Product product = productRepository.findByPublicId(productPublicId)
-                        .orElseThrow(() -> new com.manish.smartcart.shared.exception.ResourceNotFoundException("Product not found: " + productPublicId));
+                        .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + productPublicId));
 
         // STEP 4: Append the CDN URL to the product's image list.
         // IMPORTANT: We APPEND — we do NOT overwrite! A product can have many images.
         // The @ElementCollection on Product.imageUrls stores each URL as a row
         // in the product_images table. Adding to the list = inserting a new row.
         // Append new image URL to existing list (do NOT overwrite)
-        List<String> existingUrls = product.getImageUrls() != null ? new java.util.ArrayList<>(product.getImageUrls()) : new java.util.ArrayList<>();
+        List<String> existingUrls = product.getImageUrls() != null ? new ArrayList<>(product.getImageUrls()) : new ArrayList<>();
 
         existingUrls.add(imageUrl);
         product.setImageUrls(existingUrls);
@@ -219,13 +232,14 @@ public class ProductController {
     @ApiResponse(responseCode = "200", description = "Image deleted successfully")
     @DeleteMapping("/{productPublicId}/images")
     @PreAuthorize("hasRole('SELLER')")
+    @org.springframework.transaction.annotation.Transactional
     public ResponseEntity<?> deleteProductImage(
-                    @PathVariable java.util.UUID productPublicId,
+                    @PathVariable UUID productPublicId,
                     @RequestParam String publicId) { // e.g. "products/usb-hub-abc123"
 
         // STEP 1: Fetch the product entity.
         Product product = productRepository.findByPublicId(productPublicId)
-                        .orElseThrow(() -> new com.manish.smartcart.shared.exception.ResourceNotFoundException("Product not found: " + productPublicId));
+                        .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + productPublicId));
 
         // STEP 2: Find the matching CDN URL in the stored imageUrls list.
         // WHY: We store full URLs like
@@ -265,21 +279,63 @@ public class ProductController {
      * "earphones for studying" → finds "Noise Cancelling Headphones" even with no matching words.
      * Flow: query text → HuggingFace float[384] vector → pgvector cosine similarity → top N results
      */
-    @Operation(summary = "🤖 Semantic AI Search", description = "Find products by meaning using HuggingFace AI + pgvector. " + "Example: 'earphones for noisy cafe' finds noise-cancelling headphones.")
+    // ─── UPDATED: /search/semantic now supports optional filter params ──────────
+    @Operation(summary = "🤖 Semantic AI Search",
+            description = "Find products by meaning. Optionally combine with price/rating filters.")
     @ApiResponse(responseCode = "200", description = "Top N closest semantic matches determined by cosine distance")
     @GetMapping("/search/semantic")
-    public ResponseEntity<List<ProductResponse>> semanticSearch(@RequestParam String q, @RequestParam(defaultValue = "10") int limit) {
-        // Delegate entirely to the service layer
-        List<ProductResponse> response = productService.semanticSearch(q, limit);
+    public ResponseEntity<SemanticSearchResponse> semanticSearch(
+            @RequestParam String q,
+            @RequestParam(defaultValue = "10") int limit,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false) Double minRating) {
+        SemanticSearchResponse response = productService.semanticSearch(q, limit, minPrice, maxPrice, minRating);
         return ResponseEntity.ok(response);
     }
 
+    // ─── NEW: Admin endpoint to fix old products with missing embeddings ─────────
+    // Only admins can trigger this (it makes ~N HuggingFace API calls)
+    @Operation(summary = "🔄 Reindex product embeddings",
+            description = "Admin-only: generates AI embeddings for all products that are missing one.")
+    @PostMapping("/admin/reindex")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> reindexEmbeddings() {
+        int indexed = productService.reindexMissingEmbeddings();
+        return ResponseEntity.ok(Map.of(
+                "message", "Reindex complete",
+                "productsIndexed", indexed
+        ));
+    }
 
     @Operation(summary = "Get return policy for product", description = "Returns the live applicable return/exchange policy for a product. " + "Follows the chain: product-level → category-level → NON_RETURNABLE default.")
     @ApiResponse(responseCode = "200", description = "Policy retrieved")
     @GetMapping("/{productPublicId}/return-policy")
-    public ResponseEntity<ReturnPolicyResponse> getProductReturnPolicy(@PathVariable java.util.UUID productPublicId) {
+    public ResponseEntity<ReturnPolicyResponse> getProductReturnPolicy(@PathVariable UUID productPublicId) {
         return ResponseEntity.ok(returnPolicyService.getLivePolicyResponse(productPublicId));
+    }
+
+    @Operation(summary = "Set return policy", description = "Creates a return policy for a product or category.")
+    @ApiResponse(responseCode = "201", description = "Policy created")
+    @PostMapping("/return-policy")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<ReturnPolicyResponse> createReturnPolicy(
+            @RequestBody ReturnPolicyRequest request,
+            Authentication authentication) {
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        return ResponseEntity.status(HttpStatus.CREATED).body(returnPolicyService.createPolicy(userDetails.getUser().getId(), request));
+    }
+
+    @Operation(summary = "Update return policy", description = "Updates an existing return policy.")
+    @ApiResponse(responseCode = "200", description = "Policy updated")
+    @PutMapping("/return-policy/{policyPublicId}")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<ReturnPolicyResponse> updateReturnPolicy(
+            @PathVariable UUID policyPublicId,
+            @RequestBody ReturnPolicyRequest request,
+            Authentication authentication) {
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        return ResponseEntity.ok(returnPolicyService.updatePolicy(userDetails.getUser().getId(), policyPublicId, request));
     }
 }
 

@@ -20,6 +20,7 @@ public class ProductResponse {
     // by productPublicId (UUID) for API calls, and productCode for human display.
     private UUID productPublicId;           // Use this in all API calls (e.g., /products/{productPublicId}/variants)
     private String productCode;             // Human-readable ID (e.g., PRD-20260808-XXXXX)
+    private String slug;                    // SEO-friendly slug for public URLs
 
     private String productName;
     private String description;
@@ -27,6 +28,7 @@ public class ProductResponse {
     private BigDecimal discountPrice;
     // Variant-level fields (sku, stockQuantity) intentionally omitted.
     // Use GET /api/v1/products/{productPublicId}/variants to get per-SKU inventory details.
+    private Long categoryId;
     private String categoryName;
     private Set<String> tags;
     private Double averageRating;
@@ -34,4 +36,5 @@ public class ProductResponse {
     private List<String> imageUrls;
     private String aiSummary;               // From ProductInsights
     private LocalDateTime insightLastGenerated;
+    private Integer totalSold;
 }
