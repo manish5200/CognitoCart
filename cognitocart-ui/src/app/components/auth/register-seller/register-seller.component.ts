@@ -102,7 +102,7 @@ import { AuthLayoutComponent } from '../auth-layout.component';
         </div>
 
         <div class="form-group">
-          <input type="text" [(ngModel)]="otp" class="form-input otp-input" placeholder="• • • • • •" maxlength="6" />
+          <input type="text" [(ngModel)]="otp" class="form-input otp-input" placeholder="* * * * * *" maxlength="6" />
         </div>
 
         <button class="btn btn-primary btn-full btn-lg auth-submit-btn" (click)="verifyOtp()" [disabled]="loading || otp.length < 6">
