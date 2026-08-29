@@ -1779,10 +1779,16 @@ td {
 }
 
 .command-center {
-  padding: 32px 40px 64px;
+  padding: calc(var(--navbar-h) + 32px) 40px 64px;
   max-width: 1400px; margin: 0 auto;
 }
-@media (max-width: 768px) { .command-center { padding: 24px 16px 64px; } }
+.dashboard-content.command-center {
+  padding-top: 32px;
+}
+@media (max-width: 768px) { 
+  .command-center { padding: calc(var(--navbar-h) + 24px) 16px 64px; }
+  .dashboard-content.command-center { padding-top: 24px; }
+}
 
 .cc-header {
   display: flex; justify-content: space-between; align-items: flex-end;
