@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+﻿import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -51,7 +51,7 @@ import { ToastService } from '../../services/toast.service';
               <div class="form-group">
                 <label class="form-label">Full Name</label>
                 <div class="input-wrap">
-                  <span class="input-icon">👤</span>
+                  <span class="input-icon">ðŸ‘¤</span>
                   <input type="text" class="form-control" [(ngModel)]="user.fullName" name="fullName" required placeholder="John Doe" autofocus>
                 </div>
               </div>
@@ -59,7 +59,7 @@ import { ToastService } from '../../services/toast.service';
               <div class="form-group">
                 <label class="form-label">Email Address</label>
                 <div class="input-wrap">
-                  <span class="input-icon">✉️</span>
+                  <span class="input-icon">âœ‰ï¸</span>
                   <input type="email" class="form-control" [(ngModel)]="user.email" name="email" required placeholder="name@company.com">
                 </div>
               </div>
@@ -67,7 +67,7 @@ import { ToastService } from '../../services/toast.service';
               <div class="form-group">
                 <label class="form-label">Password</label>
                 <div class="input-wrap">
-                  <span class="input-icon">🔒</span>
+                  <span class="input-icon">ðŸ”’</span>
                   <input type="password" class="form-control" [(ngModel)]="user.password" name="password" required placeholder="At least 6 characters">
                 </div>
               </div>
@@ -339,6 +339,6 @@ export class RegisterComponent {
   }
 
   signUpWithGoogle() {
-    window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+    window.location.href = 'https://cognitocart-api.onrender.com/oauth2/authorization/google';
   }
 }

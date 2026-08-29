@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+﻿import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
@@ -27,7 +27,7 @@ import { GoogleBtnComponent } from '../google-btn.component';
           <span>AI Shopping Assistant</span>
         </div>
         <div class="ai-preview-chat">
-          <div class="chat-bubble user">"Looking for wireless headphones under ₹5,000 with strong battery life?"</div>
+          <div class="chat-bubble user">"Looking for wireless headphones under â‚¹5,000 with strong battery life?"</div>
           <div class="chat-bubble ai">AI is ready to help you find the perfect match.</div>
         </div>
       </div>
@@ -317,7 +317,7 @@ export class LoginComponent {
     
     // Redirect to the existing backend Google OAuth initiation endpoint
     // We use the standard Spring Security path
-    window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+    window.location.href = 'https://cognitocart-api.onrender.com/oauth2/authorization/google';
   }
 
   private getRedirect(role: string): string {

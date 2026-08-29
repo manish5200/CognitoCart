@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+﻿import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
@@ -97,7 +97,7 @@ import { GoogleBtnComponent } from '../google-btn.component';
         </div>
 
         <div class="form-group">
-          <input type="text" [(ngModel)]="otp" class="form-input otp-input" placeholder="• • • • • •" maxlength="6" />
+          <input type="text" [(ngModel)]="otp" class="form-input otp-input" placeholder="â€¢ â€¢ â€¢ â€¢ â€¢ â€¢" maxlength="6" />
         </div>
 
         <button class="btn btn-primary btn-full btn-lg auth-submit-btn" (click)="verifyOtp()" [disabled]="loading || otp.length < 6">
@@ -349,6 +349,6 @@ export class RegisterComponent {
     this.oauthLoading = true;
     
     // Redirect to the existing backend Google OAuth initiation endpoint
-    window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+    window.location.href = 'https://cognitocart-api.onrender.com/oauth2/authorization/google';
   }
 }

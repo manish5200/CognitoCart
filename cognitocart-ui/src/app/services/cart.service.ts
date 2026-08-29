@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+﻿import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, catchError, of, tap, concatMap, from, toArray } from 'rxjs';
 import { AuthService } from './auth.service';
@@ -6,8 +6,8 @@ import { ToastService } from './toast.service';
 
 @Injectable({ providedIn: 'root' })
 export class CartService {
-  private readonly API = 'http://localhost:8080/api/v1/cart';
-  private readonly GUEST_API = 'http://localhost:8080/api/v1/guest-cart';
+  private readonly API = 'https://cognitocart-api.onrender.com/api/v1/cart';
+  private readonly GUEST_API = 'https://cognitocart-api.onrender.com/api/v1/guest-cart';
   private cartSubject = new BehaviorSubject<any>(null);
   public cart$ = this.cartSubject.asObservable();
 

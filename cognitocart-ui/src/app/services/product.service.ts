@@ -1,11 +1,11 @@
-import { Injectable } from '@angular/core';
+﻿import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class ProductService {
-  private readonly API = 'http://localhost:8080/api/v1/products';
-  private readonly CAT_API = 'http://localhost:8080/api/v1/categories';
+  private readonly API = 'https://cognitocart-api.onrender.com/api/v1/products';
+  private readonly CAT_API = 'https://cognitocart-api.onrender.com/api/v1/categories';
 
   constructor(private http: HttpClient) {}
 
@@ -39,7 +39,7 @@ export class ProductService {
     return this.http.get(`${this.API}/search`, { params: p });
   }
 
-  // AI semantic search — converts a plain-English query into vector search results.
+  // AI semantic search â€” converts a plain-English query into vector search results.
   // Optionally narrows results by price range or minimum rating (hybrid search).
   // Returns: { query, totalFound, results: [{product, relevanceScore, relevanceLabel, rank}] }
   semanticSearch(
@@ -47,7 +47,7 @@ export class ProductService {
     limit = 20,
     filters?: { minPrice?: number; maxPrice?: number; minRating?: number }
   ): Observable<any> {
-    // Build query params dynamically — only attach filters that have actual values
+    // Build query params dynamically â€” only attach filters that have actual values
     let p = new HttpParams()
       .set('q', query)
       .set('limit', limit.toString());

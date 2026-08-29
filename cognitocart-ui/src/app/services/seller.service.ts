@@ -1,19 +1,19 @@
-import { Injectable } from '@angular/core';
+﻿import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class SellerService {
-  private readonly API = 'http://localhost:8080/api/v1/sellers';
-  private readonly SALE_API = 'http://localhost:8080/api/v1/seller/sales';
+  private readonly API = 'https://cognitocart-api.onrender.com/api/v1/sellers';
+  private readonly SALE_API = 'https://cognitocart-api.onrender.com/api/v1/seller/sales';
 
   constructor(private http: HttpClient) {}
 
-  // ── Dashboard ──
+  // â”€â”€ Dashboard â”€â”€
   getDashboard(): Observable<any> { return this.http.get(`${this.API}/dashboard`); }
   getDashboardStats(): Observable<any> { return this.http.get(`${this.API}/dashboard`); }
 
-  // ── Orders ──
+  // â”€â”€ Orders â”€â”€
   getOrders(params?: { status?: string; from?: string; to?: string; page?: number; size?: number }): Observable<any> {
     let p = new HttpParams();
     if (params?.status) p = p.set('status', params.status);
@@ -36,7 +36,7 @@ export class SellerService {
     return this.http.patch(`${this.API}/orders/${orderPublicId}/pack`, {});
   }
 
-  // ── Analytics ──
+  // â”€â”€ Analytics â”€â”€
   getProductAnalytics(): Observable<any> { return this.http.get(`${this.API}/analytics/products`); }
 
   downloadRevenueCsvUrl(): string { return `${this.API}/reports/revenue.csv`; }
@@ -45,7 +45,7 @@ export class SellerService {
     return this.http.get(`${this.API}/reports/revenue.csv`, { responseType: 'blob' });
   }
 
-  // ── Return Policies ──
+  // â”€â”€ Return Policies â”€â”€
   getPolicies(): Observable<any> { return this.http.get(`${this.API}/return-policy`); }
 
   createPolicy(data: any): Observable<any> { return this.http.post(`${this.API}/return-policy`, data); }
@@ -58,7 +58,7 @@ export class SellerService {
     return this.http.delete(`${this.API}/return-policy/${policyPublicId}`);
   }
 
-  // ── Flash Sales ──
+  // â”€â”€ Flash Sales â”€â”€
   submitFlashSaleItem(data: any): Observable<any> { return this.http.post(`${this.SALE_API}/items`, data); }
 
   getMySubmissions(): Observable<any> { return this.http.get(`${this.SALE_API}/items`); }

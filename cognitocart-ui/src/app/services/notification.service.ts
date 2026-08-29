@@ -1,10 +1,10 @@
-import { Injectable } from '@angular/core';
+﻿import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, Subject, tap } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class NotificationService {
-  private readonly API = 'http://localhost:8080/api/v1/notifications';
+  private readonly API = 'https://cognitocart-api.onrender.com/api/v1/notifications';
   
   public notificationsUpdated$ = new Subject<void>();
 

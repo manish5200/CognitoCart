@@ -1,10 +1,10 @@
-import { Injectable } from '@angular/core';
+﻿import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class AddressService {
-  private readonly API = 'http://localhost:8080/api/v1/addresses';
+  private readonly API = 'https://cognitocart-api.onrender.com/api/v1/addresses';
 
   constructor(private http: HttpClient) {}
 

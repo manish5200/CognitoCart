@@ -1,11 +1,11 @@
-import { Injectable } from '@angular/core';
+﻿import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class OrderService {
-  private readonly API = 'http://localhost:8080/api/v1/orders';
-  private readonly PAY_API = 'http://localhost:8080/api/v1/payments';
+  private readonly API = 'https://cognitocart-api.onrender.com/api/v1/orders';
+  private readonly PAY_API = 'https://cognitocart-api.onrender.com/api/v1/payments';
 
   constructor(private http: HttpClient) {}
 

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+﻿import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -51,7 +51,7 @@ import { ToastService } from '../../services/toast.service';
               <div class="form-group">
                 <label class="form-label">Email Address</label>
                 <div class="input-wrap">
-                  <span class="input-icon">✉️</span>
+                  <span class="input-icon">âœ‰ï¸</span>
                   <input type="email" class="form-control" [(ngModel)]="credentials.email" name="email" required placeholder="name@company.com" autofocus>
                 </div>
               </div>
@@ -62,8 +62,8 @@ import { ToastService } from '../../services/toast.service';
                   <a href="#" class="auth-link">Forgot password?</a>
                 </div>
                 <div class="input-wrap">
-                  <span class="input-icon">🔒</span>
-                  <input type="password" class="form-control" [(ngModel)]="credentials.password" name="password" required placeholder="••••••••">
+                  <span class="input-icon">ðŸ”’</span>
+                  <input type="password" class="form-control" [(ngModel)]="credentials.password" name="password" required placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢">
                 </div>
               </div>
 
@@ -336,6 +336,6 @@ export class LoginComponent {
   }
 
   signInWithGoogle() {
-    window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+    window.location.href = 'https://cognitocart-api.onrender.com/oauth2/authorization/google';
   }
 }

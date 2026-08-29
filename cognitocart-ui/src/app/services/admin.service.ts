@@ -1,15 +1,15 @@
-import { Injectable } from '@angular/core';
+﻿import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class AdminService {
-  private readonly API = 'http://localhost:8080/api/v1/admin';
-  private readonly SALE_API = 'http://localhost:8080/api/v1/admin/sales';
+  private readonly API = 'https://cognitocart-api.onrender.com/api/v1/admin';
+  private readonly SALE_API = 'https://cognitocart-api.onrender.com/api/v1/admin/sales';
 
   constructor(private http: HttpClient) {}
 
-  // ── Analytics ──
+  // â”€â”€ Analytics â”€â”€
   getStats(pageNumber = 0, pageSize = 50): Observable<any> {
     return this.http.get(`${this.API}/stats?pageNumber=${pageNumber}&pageSize=${pageSize}`);
   }
@@ -30,7 +30,7 @@ export class AdminService {
     return this.http.get(`${this.API}/analytics/customers?top=${top}&churnAfterDays=${churnAfterDays}`);
   }
 
-  // 📦 Orders 📦
+  // ðŸ“¦ Orders ðŸ“¦
   changeOrderStatus(orderPublicId: string, targetStatus: string, comment?: string): Observable<any> {
     return this.http.patch(`${this.API}/orders/${orderPublicId}/status`, {
       orderStatus: targetStatus,
@@ -64,7 +64,7 @@ export class AdminService {
     return this.http.get(`${this.API}/orders/${orderIdentifier}/invoice`, { responseType: 'blob' });
   }
 
-  // ── Sellers & KYC ──
+  // â”€â”€ Sellers & KYC â”€â”€
   getAllSellers(): Observable<any> { return this.http.get(`${this.API}/sellers`); }
 
   getPendingKycSellers(): Observable<any> { return this.http.get(`${this.API}/sellers/kyc/pending`); }
@@ -77,7 +77,7 @@ export class AdminService {
     return this.http.get(`${this.API}/sellers/${sellerPublicId}/analytics`);
   }
 
-  // ── Coupons ──
+  // â”€â”€ Coupons â”€â”€
   getCoupons(): Observable<any> { return this.http.get(`${this.API}/coupons`); }
 
   createCoupon(data: {
@@ -89,14 +89,14 @@ export class AdminService {
     return this.http.patch(`${this.API}/coupons/${couponPublicId}/toggle`, {}, { responseType: 'text' });
   }
 
-  // ── Webhooks DLQ ──
+  // â”€â”€ Webhooks DLQ â”€â”€
   getPendingWebhooks(): Observable<any> { return this.http.get(`${this.API}/webhooks/dlq/pending`); }
 
   replayWebhook(eventPublicId: string): Observable<any> {
     return this.http.post(`${this.API}/webhooks/dlq/${eventPublicId}/replay`, {}, { responseType: 'text' });
   }
 
-  // ── Flash Sales ──
+  // â”€â”€ Flash Sales â”€â”€
   createSaleEvent(data: { eventName: string; description?: string; startTime: string; endTime: string }): Observable<any> {
     return this.http.post(`${this.SALE_API}/events`, data);
   }

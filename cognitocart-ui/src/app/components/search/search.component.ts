@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
@@ -33,7 +33,7 @@ import { ProductCardComponent } from '../shared/product-card/product-card.compon
         </div>
 
         <div *ngIf="!loading && products.length === 0" class="empty-state">
-          <div class="empty-icon">🔍</div>
+          <div class="empty-icon">ðŸ”</div>
           <h3 class="empty-title">No direct matches found</h3>
           <p class="empty-subtitle">We couldn't find anything matching your exact query. Try using more general terms.</p>
         </div>
@@ -141,7 +141,7 @@ export class SearchComponent implements OnInit {
   performSemanticSearch() {
     this.loading = true;
     // Semantic Vector AI Search Call
-    this.http.get<any>(`http://localhost:8080/api/v1/products/search/semantic?q=${encodeURIComponent(this.query)}&limit=10`).subscribe({
+    this.http.get<any>(`https://cognitocart-api.onrender.com/api/v1/products/search/semantic?q=${encodeURIComponent(this.query)}&limit=10`).subscribe({
       next: (res: any) => {
         // AI endpoint returns a flat List<ProductResponse>
         this.products = res;
@@ -169,7 +169,7 @@ export class SearchComponent implements OnInit {
     this.wishlistService.toggle(id).subscribe({
       next: () => {
         product.isWishlisted = !product.isWishlisted;
-        this.toast.success(product.isWishlisted ? 'Added to wishlist ❤️' : 'Removed from wishlist');
+        this.toast.success(product.isWishlisted ? 'Added to wishlist â¤ï¸' : 'Removed from wishlist');
       },
       error: (e: any) => this.toast.error(e?.error?.message || 'Wishlist update failed')
     });
