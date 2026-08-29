@@ -1072,7 +1072,7 @@ td {
 }
 
 .dashboard-content {
-  margin-left: 72px;
+  margin-left: 72px !important;
   flex: 1;
   padding: 32px;
   min-height: calc(100vh - var(--navbar-h));
