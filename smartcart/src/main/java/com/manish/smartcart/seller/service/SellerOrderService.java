@@ -90,9 +90,11 @@ public class SellerOrderService {
         // STEP 3: Batch-load ALL shipments for this page in ONE query — eliminates N+1
         // Without this: 20 orders = 20 separate shipment DB calls. With this: 1.
         List<Long> orderIds = orders.stream().map(Order::getId).toList();
-        Map<Long, Shipment> shipmentByOrderId = shipmentRepository.findByOrderIds(orderIds)
-                .stream()
-                .collect(Collectors.toMap(s -> s.getOrder().getId(), s -> s));
+        Map<Long, Shipment> shipmentByOrderId = orderIds.isEmpty() ? 
+                java.util.Collections.emptyMap() : 
+                shipmentRepository.findByOrderIds(orderIds)
+                        .stream()
+                        .collect(Collectors.toMap(s -> s.getOrder().getId(), s -> s));
 
         // STEP 4: Map to seller-scoped DTOs (only this seller's items, revenue prorated)
         List<SellerOrderSummaryDTO> dtos = orders.stream()

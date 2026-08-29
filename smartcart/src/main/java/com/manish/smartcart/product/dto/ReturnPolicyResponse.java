@@ -8,6 +8,7 @@ import lombok.Data;
 @Builder
 public class ReturnPolicyResponse {
     private Long policyId;
+    private java.util.UUID policyPublicId;
 
     // Product-level fields (null if category-level)
     private Long productId;

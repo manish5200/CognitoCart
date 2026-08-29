@@ -26,7 +26,7 @@ public class OrderRabbitListener {
     // This method is triggered the instant a message arrives in the queue!
     // @RabbitListener makes this method instantly trigger when a JSON message enters the queue.
     @RabbitListener(queues = RabbitMQConfig.QUEUE_ORDER_PAID)
-    @Transactional(readOnly = true)
+    @Transactional
     public void processOrderPaidEvent(OrderPaidEvent event) {
         log.info("📥 [RabbitMQ Listener] Picked up paid order ID: {}", event.getOrderId());
 

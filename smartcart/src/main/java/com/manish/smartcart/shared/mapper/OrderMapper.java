@@ -15,6 +15,7 @@ public class OrderMapper {
     public OrderResponse toOrderResponse(Order order) {
         OrderResponse orderResponse = new OrderResponse();
         orderResponse.setOrderPublicId(order.getPublicId());
+        orderResponse.setOrderNumber(order.getOrderNumber());
         orderResponse.setEmail(order.getUser().getEmail());
         orderResponse.setCustomerName(order.getUser().getFullName()); // Uses hoisted name
         orderResponse.setCustomerPublicId(order.getUser().getPublicId());
@@ -55,13 +56,16 @@ public class OrderMapper {
     }
 
     private OrderResponse.OrderItemDTO toItemDTO(OrderItem orderItem) {
-        return new OrderResponse.OrderItemDTO(
+        OrderResponse.OrderItemDTO dto = new OrderResponse.OrderItemDTO(
                 orderItem.getProductNameSnapshot(),
                 // Snapshot is frozen at checkout — always correct even if product is renamed/deleted.
                 // InvoiceService reads this via OrderItemDTO.productName → no PDF change needed.
                 orderItem.getQuantity(),
                 orderItem.getPriceAtPurchase() // Correctly uses the "Frozen" price
         );
+        dto.setPolicyType(orderItem.getPolicyTypeSnapshot());
+        dto.setReturnWindowDays(orderItem.getReturnWindowDaysSnapshot());
+        return dto;
     }
 
     // Add this helper method to OrderMapper.java

@@ -15,6 +15,8 @@ import java.math.BigDecimal;
 @Builder
 public class FlashSaleItemResponse {
 
+    private java.util.UUID publicId;
+    private java.util.UUID saleEventPublicId;
     private Long id;
     private Long eventId;
     private String eventName;

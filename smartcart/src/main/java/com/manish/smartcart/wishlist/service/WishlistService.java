@@ -1,6 +1,7 @@
 package com.manish.smartcart.wishlist.service;
 
 import com.manish.smartcart.cart.dto.CartResponse;
+import com.manish.smartcart.cart.mapper.CartMapper;
 import com.manish.smartcart.product.dto.ProductResponse;
 import com.manish.smartcart.product.repository.ProductRepository;
 import com.manish.smartcart.product.repository.ProductVariantRepository;
@@ -41,6 +42,7 @@ public class WishlistService {
     private final UsersRepository usersRepository;
     private final ProductMapper productMapper;
     private final CartService cartService;
+    private final CartMapper cartMapper;
 
     /**
      * Idempotent Wishlist Toggle.
@@ -122,7 +124,7 @@ public class WishlistService {
         // 5. Complete Domain Transfer
         wishlistRepository.delete(existedProductInWishlist);
 
-        return new CartResponse().getCartResponse(cart);
+        return cartMapper.toCartResponse(cart);
     }
 
     /**

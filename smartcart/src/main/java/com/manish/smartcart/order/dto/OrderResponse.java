@@ -4,11 +4,13 @@ import com.manish.smartcart.shared.enums.OrderStatus;
 import com.manish.smartcart.shared.enums.PaymentStatus;
 import com.manish.smartcart.shared.enums.ReturnReason;
 import com.manish.smartcart.shared.enums.ReturnType;
+import com.manish.smartcart.shared.enums.PolicyType;
 import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Setter
 @Getter
@@ -18,7 +20,10 @@ public class OrderResponse {
     private java.util.UUID orderPublicId;
     private String email;
     private String customerName;
-    private java.util.UUID customerPublicId;
+    private UUID customerPublicId;
+
+    private String orderNumber; // Human ID (e.g. ORD-YYYYMMDD-XXXXXX)
+
     private String shippingPhone;
     private LocalDateTime orderDate;
     private BigDecimal totalAmount;
@@ -34,6 +39,7 @@ public class OrderResponse {
 
     // Used by Frontend to initialize Razorpay checkout overlay
     private String razorpayOrderId;
+    private String razorpayKeyId;
     // List of the items we ordered
     private List<OrderItemDTO> items;
 
@@ -51,6 +57,10 @@ public class OrderResponse {
         private Integer quantity;
         private BigDecimal priceAtPurchase; // The "Frozen" price
         private BigDecimal subtotal; // quantity * priceAtPurchase
+
+        // Return policy snapshot at the time of order / current
+        private PolicyType policyType;
+        private Integer returnWindowDays;
 
         public OrderItemDTO(String productName, Integer quantity, BigDecimal priceAtPurchase) {
             this.productName = productName;

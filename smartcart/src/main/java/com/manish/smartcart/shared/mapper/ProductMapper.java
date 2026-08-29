@@ -20,6 +20,7 @@ public class ProductMapper {
         ProductResponse productResponse = new ProductResponse();
         productResponse.setProductPublicId(product.getPublicId());  // UUID — the only public identifier
         productResponse.setProductCode(product.getProductCode());    // Human-readable code e.g. PRD-YYYYMMDD-XXXXX
+        productResponse.setSlug(product.getSlug());
         productResponse.setProductName(product.getProductName());
         productResponse.setDescription(product.getDescription());
         productResponse.setPrice(product.getPrice());
@@ -29,6 +30,7 @@ public class ProductMapper {
         // Variant-level detail is returned by GET /api/v1/products/{id}/variants
         productResponse.setAverageRating(product.getAverageRating());
         productResponse.setTotalReviews(product.getTotalReviews());
+        productResponse.setTotalSold(product.getTotalSold());
         // Copy into plain Java collections — CRITICAL for Redis serialization.
         // Hibernate's PersistentSet/PersistentBag is session-bound and cannot be
         // serialized by Jackson after the Hibernate session is closed.
@@ -42,6 +44,7 @@ public class ProductMapper {
         // --- Recursive Category Mapping ---
         // We extract the name from the Category entity associated with the product
         if (product.getCategory() != null) {
+            productResponse.setCategoryId(product.getCategory().getId());
             productResponse.setCategoryName(product.getCategory().getName());
         } else {
             productResponse.setCategoryName("Uncategorized");

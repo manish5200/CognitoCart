@@ -5,11 +5,12 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Data
 @Builder
 public class PlatformSaleEventResponse {
-    private Long id;
+    private UUID saleEventPublicId;
     private String eventName;
     private String description;
     private LocalDateTime startTime;

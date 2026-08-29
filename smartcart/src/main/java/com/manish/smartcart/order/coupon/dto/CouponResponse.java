@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 @Setter
 @AllArgsConstructor
 public class CouponResponse {
+    private java.util.UUID publicId;
     private Long id;
     private String code;
     private DiscountType discountType;

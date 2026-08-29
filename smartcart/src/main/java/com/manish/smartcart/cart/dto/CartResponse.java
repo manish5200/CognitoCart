@@ -1,7 +1,6 @@
 package com.manish.smartcart.cart.dto;
 
-import com.manish.smartcart.cart.model.Cart;
-import com.manish.smartcart.cart.model.CartItem;
+import com.manish.smartcart.shared.enums.PolicyType;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -30,29 +29,11 @@ public class CartResponse {
         private BigDecimal price;
         private Integer quantity;
         private BigDecimal subtotal;
-    }
-    // Helper method
-    public CartResponse getCartResponse(Cart updatedCart) {
-        List<ItemDTO> items = new ArrayList<>();
-        for (CartItem item : updatedCart.getItems()) {
-            // Navigate variant → product for the product name.
-            // Guard: variant could theoretically be null if hard-deleted mid-session (extremely rare).
-            String productName = (item.getVariant() != null && item.getVariant().getProduct() != null)
-                    ? item.getVariant().getProduct().getProductName()
-                    : "Unknown Product";
-            ItemDTO newItem = new ItemDTO(
-                    productName,
-                    item.getPriceAtAdding(),
-                    item.getQuantity(),
-                    item.getPriceAtAdding().multiply(new BigDecimal(item.getQuantity())));
-            items.add(newItem);
-        }
-        return new CartResponse(
-                updatedCart.getId(),
-                updatedCart.getTotalAmount(),
-                updatedCart.getCouponCode(),
-                updatedCart.getDiscountAmount(),
-                updatedCart.getDeliveryFee(), // <-- NEW FIELD HERE
-                items);
+        private java.util.UUID variantPublicId;
+        private java.util.UUID productPublicId;
+        private String imageUrl;
+        private String variantInfo;
+        private PolicyType policyType;
+        private Integer returnWindowDays;
     }
 }

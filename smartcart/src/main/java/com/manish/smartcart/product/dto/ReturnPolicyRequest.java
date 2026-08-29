@@ -8,12 +8,12 @@ import lombok.Data;
 @Data
 public class ReturnPolicyRequest {
     /**
-     * Set productId to apply policy to a specific product.
-     * Set categoryId to apply policy to an entire category.
+     * Set productPublicId to apply policy to a specific product.
+     * Set categoryPublicId to apply policy to an entire category.
      * EXACTLY ONE must be provided — validated in service layer.
      */
-    private Long productId;
-    private Long categoryId;
+    private java.util.UUID productPublicId;
+    private java.util.UUID categoryPublicId;
 
     @NotNull(message = "policyType is required. "
             + "Valid: RETURN_AND_EXCHANGE, RETURN_ONLY, EXCHANGE_ONLY, REPLACEMENT_ONLY, NON_RETURNABLE")

@@ -55,7 +55,7 @@ public class PublicSaleController {
 
     private PlatformSaleEventResponse mapToResponse(PlatformSaleEvent event) {
         return PlatformSaleEventResponse.builder()
-                .id(event.getId())
+                .saleEventPublicId(event.getPublicId())
                 .eventName(event.getEventName())
                 .description(event.getDescription())
                 .startTime(event.getStartTime())

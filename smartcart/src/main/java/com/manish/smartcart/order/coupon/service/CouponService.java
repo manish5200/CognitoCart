@@ -220,7 +220,7 @@ public class CouponService {
 
     private CouponResponse toResponse(Coupon coupon) {
         return new CouponResponse(
-                coupon.getId(), coupon.getCode(), coupon.getDiscountType(),
+                coupon.getPublicId(), coupon.getId(), coupon.getCode(), coupon.getDiscountType(),
                 coupon.getDiscountValue(), coupon.getMinOrderAmount(),
                 coupon.getMaxDiscountAmount(), coupon.getMaxUses(),
                 coupon.getCurrentUses(), coupon.getMaxUsesPerUser(),

@@ -39,6 +39,12 @@ public class AdminSaleController {
         return ResponseEntity.ok(adminSaleService.getAllEvents());
     }
 
+    @GetMapping("/events/{eventPublicId}/submissions")
+    public ResponseEntity<List<com.manish.smartcart.sale.dto.FlashSaleItemResponse>> getEventSubmissions(
+            @PathVariable UUID eventPublicId) {
+        return ResponseEntity.ok(adminSaleService.getEventSubmissions(eventPublicId));
+    }
+
     @PatchMapping("/items/{itemPublicId}/review")
     public ResponseEntity<String> reviewSellerSubmission(
             @PathVariable UUID itemPublicId,

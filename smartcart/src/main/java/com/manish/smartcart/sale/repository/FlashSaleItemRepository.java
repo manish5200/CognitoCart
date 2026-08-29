@@ -21,6 +21,11 @@ public interface FlashSaleItemRepository extends JpaRepository<FlashSaleItem, Lo
     List<FlashSaleItem> findByPlatformSaleEventIdAndApprovalStatus(Long eventId, ApprovalStatus status);
 
     /**
+     * Fetches all items for a specific event by public ID (Admin use).
+     */
+    List<FlashSaleItem> findByPlatformSaleEventPublicId(UUID eventPublicId);
+
+    /**
      * MAGIC QUERY FOR CART SERVICE:
      * Instantly checks if a given variant is part of an ACTIVE event and is APPROVED.
      * Prevents sellers from bypassing rules if the parent event ends.

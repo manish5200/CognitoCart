@@ -249,19 +249,33 @@ public class AuthService {
 
         String accessToken = authorizationHeader.substring(7);
 
-        // 1. Blacklist the access token in Redis
-        String jti = jwtUtil.extractJti(accessToken);
-        long remainingTtl = jwtUtil.getRemainingTtlSeconds(accessToken);
-        tokenBlacklistService.blacklist(jti, remainingTtl);
+        try {
+            // 1. Blacklist the access token in Redis
+            String jti = jwtUtil.extractJti(accessToken);
+            long remainingTtl = jwtUtil.getRemainingTtlSeconds(accessToken);
+            tokenBlacklistService.blacklist(jti, remainingTtl);
 
-        // 2. Delete the refresh token from DB so rotation is broken
-        String email = jwtUtil.extractUsername(accessToken);
+            // 2. Delete the refresh token from DB so rotation is broken
+            String email = jwtUtil.extractUsername(accessToken);
 
-        usersRepository.findByEmail(email).ifPresent(user ->
-                refreshTokenService.deleteByUserId(user.getId())
-        );
+            usersRepository.findByEmail(email).ifPresent(user ->
+                    refreshTokenService.deleteByUserId(user.getId())
+            );
 
-        log.info("✅ User logged out successfully: {}", email);
+            log.info("✅ User logged out successfully: {}", email);
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            // If the access token is already expired, we don't need to blacklist it.
+            // But we should still try to invalidate their refresh token.
+            String email = e.getClaims().getSubject();
+            if (email != null) {
+                usersRepository.findByEmail(email).ifPresent(user ->
+                        refreshTokenService.deleteByUserId(user.getId())
+                );
+                log.info("✅ User logged out successfully (with expired access token): {}", email);
+            }
+        } catch (Exception e) {
+            log.warn("Logout failed or token invalid: {}", e.getMessage());
+        }
     }
 
 

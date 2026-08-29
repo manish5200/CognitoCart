@@ -6,6 +6,7 @@ import com.manish.smartcart.cart.dto.CartResponse;
 import com.manish.smartcart.shared.exception.BusinessLogicException;
 import com.manish.smartcart.cart.model.Cart;
 import com.manish.smartcart.cart.service.CartService;
+import com.manish.smartcart.cart.mapper.CartMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -28,6 +29,7 @@ import java.util.UUID;
 public class CartController {
 
         private final CartService cartService;
+        private final CartMapper cartMapper;
 
         // POST: Add item to cart
         // Request Body: { "variantId": 5, "quantity": 2 }
@@ -45,8 +47,25 @@ public class CartController {
                                 userId,
                                 cartRequest.getVariantPublicId(),
                                 cartRequest.getQuantity());
-                CartResponse cartResponse = new CartResponse().getCartResponse(updatedCart);
+                CartResponse cartResponse = cartMapper.toCartResponse(updatedCart);
                 return ResponseEntity.ok().body(Map.of("Cart updated :", cartResponse));
+        }
+
+        // PUT: Update item quantity in cart
+        @Operation(summary = "Update item quantity", description = "Updates the quantity of a product in the user's cart.")
+        @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Item updated successfully"),
+            @ApiResponse(responseCode = "404", description = "User or Item not found"),
+            @ApiResponse(responseCode = "409", description = "Insufficient stock for requested quantity")
+        })
+        @PutMapping("/item/{variantPublicId}")
+        public ResponseEntity<?> updateItemQuantity(@PathVariable java.util.UUID variantPublicId,
+                        @RequestParam("quantity") int quantity,
+                        Authentication authentication) {
+                Long userId = extractUserId(authentication);
+                Cart updatedCart = cartService.updateItemQuantity(userId, variantPublicId, quantity);
+                CartResponse cartResponse = cartMapper.toCartResponse(updatedCart);
+                return ResponseEntity.ok().body(cartResponse);
         }
 
 
@@ -60,7 +79,7 @@ public class CartController {
         public ResponseEntity<?> getCartSummary(Authentication authentication) {
                 Long userId = extractUserId(authentication);
                 Cart cart = cartService.getCartForUser(userId);
-                CartResponse cartResponse = new CartResponse().getCartResponse(cart);
+                CartResponse cartResponse = cartMapper.toCartResponse(cart);
                 return ResponseEntity.ok().body(cartResponse);
 
         }
@@ -90,7 +109,7 @@ public class CartController {
                 Long userId = extractUserId(authentication);
                 Cart cart = cartService.applyCoupon(userId, code);
 
-                CartResponse cartResponse = new CartResponse().getCartResponse(cart);
+                CartResponse cartResponse = cartMapper.toCartResponse(cart);
 
                 return ResponseEntity.ok().body(cartResponse);
         }
@@ -106,7 +125,7 @@ public class CartController {
                         Authentication auth) {
                 Long userId = extractUserId(auth);
                 Cart cart = cartService.removeItemFromCart(userId, variantPublicId);
-                CartResponse cartResponse = new CartResponse().getCartResponse(cart);
+                CartResponse cartResponse = cartMapper.toCartResponse(cart);
                 return ResponseEntity.ok().body(cartResponse);
         }
 

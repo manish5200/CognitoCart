@@ -42,7 +42,7 @@ public class SellerSaleService {
     public FlashSaleItemResponse submitFlashSaleItem(FlashSaleItemRequest request, Long sellerId){
 
         // 1. Ensure the Event exists and is still accepting submissions (Not Ended)
-        PlatformSaleEvent event = eventRepository.findById(request.getPlatformSaleEventId())
+        PlatformSaleEvent event = eventRepository.findByPublicId(request.getSaleEventPublicId())
                 .orElseThrow(() -> new ResourceNotFoundException("Event not found"));
 
         if(event.getStatus() == EventStatus.ENDED){
@@ -50,7 +50,7 @@ public class SellerSaleService {
         }
 
         // 2. Ensure the Variant actually exists in the database
-        ProductVariant variant = variantRepository.findById(request.getProductVariantId())
+        ProductVariant variant = variantRepository.findByPublicId(request.getVariantPublicId())
                 .orElseThrow(() -> new ResourceNotFoundException("Product variant not found"));
 
         // 3. CRITICAL SECURITY (IDOR Prevention):
@@ -79,6 +79,7 @@ public class SellerSaleService {
     /**
      * Fetches all submissions for the Seller Dashboard.
      */
+    @Transactional(readOnly = true)
     public List<FlashSaleItemResponse> getSellerSubmissions(Long sellerId) {
         return itemRepository.findBySellerId(sellerId).stream()
                 .map(this::mapToItemResponse)

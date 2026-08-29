@@ -113,21 +113,21 @@ public class ReturnPolicyService {
     @Transactional
     public ReturnPolicyResponse createPolicy(Long sellerId, ReturnPolicyRequest request){
 
-        boolean hasProduct = request.getProductId() != null;
-        boolean hasCategory = request.getCategoryId() != null;
+        boolean hasProduct = request.getProductPublicId() != null;
+        boolean hasCategory = request.getCategoryPublicId() != null;
 
         // Rule 1: exactly one target
         if(hasProduct == hasCategory){
             throw new BusinessLogicException(
-                    "Provide either productId OR categoryId — not both, not neither.");
+                    "Provide either productPublicId OR categoryPublicId — not both, not neither.");
         }
         validatePolicyTypeConsistency(request);
 
         ProductReturnPolicy policy = new ProductReturnPolicy();
         if(hasProduct){
-            Product product = productRepository.findById(request.getProductId())
+            Product product = productRepository.findByPublicId(request.getProductPublicId())
                     .orElseThrow(() -> new ResourceNotFoundException(
-                            "Product not found with ID: " + request.getProductId()));
+                            "Product not found with ID: " + request.getProductPublicId()));
             // Rule 2: ownership — sellerId is a plain Long on Product
             if(!product.getSellerId().equals(sellerId)){
                 throw new BusinessLogicException(
@@ -135,7 +135,7 @@ public class ReturnPolicyService {
             }
 
             // Rule 3: duplicate guard
-            if(policyRepository.findByProduct_Id(request.getProductId()).isPresent()){
+            if(policyRepository.findByProduct_Id(product.getId()).isPresent()){
                 throw new BusinessLogicException(
                         "A return policy already exists for product '"
                                 + product.getProductName()
@@ -144,12 +144,12 @@ public class ReturnPolicyService {
             policy.setProduct(product);
         }else{
 
-            Category category = categoryRepository.findById(request.getCategoryId())
+            Category category = categoryRepository.findByPublicId(request.getCategoryPublicId())
                     .orElseThrow(() -> new ResourceNotFoundException(
-                            "Category not found with ID: " + request.getCategoryId()));
+                            "Category not found with ID: " + request.getCategoryPublicId()));
 
             // Rule 3: duplicate guard for category
-            if (policyRepository.findByCategory_Id(request.getCategoryId()).isPresent()) {
+            if (policyRepository.findByCategory_Id(category.getId()).isPresent()) {
                 throw new BusinessLogicException(
                         "A return policy already exists for category '"
                                 + category.getName()
@@ -218,6 +218,7 @@ public class ReturnPolicyService {
     /**
      * Returns the live applicable policy for a product (public — for product page display).
      */
+    @Transactional(readOnly = true)
     public ReturnPolicyResponse getLivePolicyResponse(java.util.UUID productPublicId){
         Product product = productRepository.findByPublicId(productPublicId)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -261,6 +262,7 @@ public class ReturnPolicyService {
         boolean isProductLevel = policy.getProduct() != null;
         return ReturnPolicyResponse.builder()
                 .policyId(policy.getId())
+                .policyPublicId(policy.getPublicId())
                 .productId(isProductLevel ? policy.getProduct().getId() : null)
                 .productName(isProductLevel ? policy.getProduct().getProductName() : null)
                 .categoryId(!isProductLevel && policy.getCategory() != null

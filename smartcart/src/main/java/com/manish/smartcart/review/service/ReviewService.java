@@ -24,6 +24,8 @@ import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
@@ -83,6 +85,10 @@ public class ReviewService {
             maxAttempts = 3,
             backoff = @Backoff(delay =  500)// Wait 500ms before trying again
     )
+    @Caching(evict = {
+            @CacheEvict(value = "products", allEntries = true),
+            @CacheEvict(value = "product-slug", allEntries = true)
+    })
     public Map<String,Object> addOrUpdateReview(Long userId, UUID productPublicId, ReviewRequestDTO reviewRequestDTO, MultipartFile[] images) {
 
         Long productId = productRepository.findByPublicId(productPublicId)
@@ -175,6 +181,10 @@ public class ReviewService {
      * Don't fetch first and check ownership in Java. Make the DB do it atomically.
      */
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "products", allEntries = true),
+            @CacheEvict(value = "product-slug", allEntries = true)
+    })
     public void deleteMyReview(UUID reviewPublicId, Long userId) {
 
         Long reviewId = reviewRepository.findByPublicId(reviewPublicId)
@@ -214,6 +224,10 @@ public class ReviewService {
      * The product's average is still corrected to maintain data integrity.
      */
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "products", allEntries = true),
+            @CacheEvict(value = "product-slug", allEntries = true)
+    })
     public void adminDeleteReview(UUID reviewPublicId){
 
         Long reviewId = reviewRepository.findByPublicId(reviewPublicId)

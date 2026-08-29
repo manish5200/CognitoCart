@@ -13,11 +13,8 @@ import java.util.UUID;
 @Repository
 public interface ShipmentRepository extends JpaRepository<Shipment, Long> {
     /**
-     * Batch-loads shipments for multiple order IDs in ONE query.
-     * Eliminates the N+1 problem in seller order list: 20 orders = 1 query, not 20.
-     * Called ONCE before the order→DTO mapping loop, then looked up by orderId in a Map.
+     * Finds a single shipment by its Order ID.
      */
-    @Query("SELECT s FROM Shipment s WHERE s.order.id IN :orderIds")
     Optional<Shipment> findByOrder_Id(Long orderId);
 
     /**
