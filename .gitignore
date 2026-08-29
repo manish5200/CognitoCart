@@ -50,8 +50,8 @@ Thumbs.db
 uploads/
 
 # Docker (until deployment)
-Dockerfile
-docker-compose.yml
+# Dockerfile
+# docker-compose.yml
 
 # Secret configs
 smartcart/src/main/resources/application.yml

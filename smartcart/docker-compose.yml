@@ -1,0 +1,55 @@
+services:
+  # 1. Database Service (PostgreSQL)
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: cognitocart-db
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_DB=cognitocart
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    ports:
+      - "${SERVER_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # Bug fix: was using wrong DB name 'smartcart' — corrected to 'cognitocart'
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d cognitocart -h localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 2. Application Service (CognitoCart API)
+  cognitocart-app:
+    build: .
+    container_name: cognitocart-api
+    env_file:
+      - .env
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    depends_on:
+      postgres-db:
+        condition: service_healthy  # App waits until DB is fully ready
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-dev}
+      - DB_URL=${DB_URL}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=${JWT_EXPIRATION}
+      - JWT_REFRESH_EXPIRATION=${JWT_REFRESH_EXPIRATION}
+      - MAIL_HOST=${MAIL_HOST}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - ADMIN_NAME=${ADMIN_NAME}
+      - ADMIN_PHONE=${ADMIN_PHONE}
+      - APP_UPLOAD_DIR=${APP_UPLOAD_DIR}
+    restart: unless-stopped
+
+# Required for data persistence
+volumes:
+  pgdata:
