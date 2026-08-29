@@ -1,4 +1,4 @@
-﻿import { Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
@@ -305,7 +305,8 @@ export class RegisterComponent {
   register(): void {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.loading = true;
-    const data = { ...this.form.value };
+    const data: any = { ...this.form.value, name: this.form.value.fullName };
+    delete data.fullName;
     if (!data.dateOfBirth) delete data.dateOfBirth;
     if (!data.gender) delete data.gender;
 

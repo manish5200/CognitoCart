@@ -301,9 +301,10 @@ export class RegisterSellerComponent {
   register(): void {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.loading = true;
-    const data = { ...this.form.value };
+    const data: any = { ...this.form.value, panCard: this.form.value.pan };
+    delete data.pan;
     if (!data.gstin) delete data.gstin;
-    if (!data.pan) delete data.pan;
+    if (!data.panCard) delete data.panCard;
 
     this.auth.registerSeller(data).subscribe({
       next: () => {
