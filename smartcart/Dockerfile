@@ -21,6 +21,7 @@ COPY --from=build /app/target/*.jar app.jar
 
 # Run as a non-root user for security (principle of least privilege)
 RUN addgroup -S spring && adduser -S spring -G spring
+RUN mkdir -p logs && chown -R spring:spring logs
 USER spring:spring
 
 EXPOSE 8080
