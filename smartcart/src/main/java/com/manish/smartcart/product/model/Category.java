@@ -41,14 +41,23 @@ public class Category extends BaseEntity {
     @Builder.Default
     private boolean deleted = false;
 
-    /** The "Parent" node. JsonIgnoreProperties prevents Jackson serialization crashes on LAZY proxies. */
+
+    /**
+     * serializing this side, preventing infinite circular JSON loops.
+     */
+    @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
-    @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
     private Category parentCategory;
 
-    @JsonIgnore
+
+    /**
+     * Children — serialized via CategoryDTO.from() in API responses.
+     */
+    @JsonIgnore   // ← add back — entity never returned from controller, only DTO is
     @OneToMany(mappedBy = "parentCategory", cascade = CascadeType.ALL)
     @Builder.Default
     private List<Category> subCategories = new ArrayList<>();
+
+
 }

@@ -1,5 +1,6 @@
 package com.manish.smartcart.product.controller;
 
+import com.manish.smartcart.product.dto.CategoryDTO;
 import com.manish.smartcart.product.model.Category;
 import com.manish.smartcart.product.service.CategoryService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,7 +38,7 @@ public class CategoryController {
     @SecurityRequirement(name = "bearerAuth")
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> addCategory(@RequestBody Category category) {
+    public ResponseEntity<CategoryDTO> addCategory(@RequestBody Category category) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(categoryService.createCategory(category));
     }
@@ -65,7 +66,7 @@ public class CategoryController {
     @ApiResponse(responseCode = "200", description = "Successfully retrieved all categories")
     @GetMapping
     public ResponseEntity<?> getCategories() {
-        return ResponseEntity.ok(categoryService.getAllCategories());
+        return ResponseEntity.ok(categoryService.getCategoryTree());
     }
     /**
      * PUT: Update an existing category
