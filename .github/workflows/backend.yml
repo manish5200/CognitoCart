@@ -1,0 +1,38 @@
+name: ☕ Backend CI
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'smartcart/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'smartcart/**'
+
+jobs:
+  build:
+    name: Build & Test Spring Boot App
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ⬇️ Checkout code
+        uses: actions/checkout@v4
+
+      - name: ☕ Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: 🔨 Build with Maven (skip tests for speed)
+        run: ./mvnw clean compile -DskipTests
+        working-directory: smartcart
+
+      - name: 🧪 Run Unit Tests
+        run: ./mvnw test
+        working-directory: smartcart
+
+      - name: ✅ Build succeeded
+        run: echo "Backend build and tests passed successfully!"
