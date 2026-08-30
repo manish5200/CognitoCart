@@ -157,10 +157,10 @@ interface CategoryDTO {
             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
           </div>
           <h3 class="confirm-title">Delete "{{ categoryToDelete?.name }}"?</h3>
-          <p class="confirm-body" *ngIf="categoryToDelete?.subCategories?.length > 0">
-            ⚠️ This will also delete <strong>{{ categoryToDelete!.subCategories.length }}</strong> subcategor{{ categoryToDelete!.subCategories.length === 1 ? 'y' : 'ies' }} recursively.
+          <p class="confirm-body" *ngIf="deleteHasSubs">
+            ⚠️ This will also delete <strong>{{ deleteSubCount }}</strong> subcategor{{ deleteSubCount === 1 ? 'y' : 'ies' }} recursively.
           </p>
-          <p class="confirm-body" *ngIf="!categoryToDelete?.subCategories?.length">
+          <p class="confirm-body" *ngIf="!deleteHasSubs">
             This action cannot be undone.
           </p>
           <div class="confirm-actions">
@@ -663,6 +663,14 @@ export class AdminCategoriesComponent implements OnInit {
         this.saving = false;
       }
     });
+  }
+
+  // ── Delete confirm helpers (getters avoid nullable comparisons in templates) ──
+  get deleteHasSubs(): boolean {
+    return (this.categoryToDelete?.subCategories?.length ?? 0) > 0;
+  }
+  get deleteSubCount(): number {
+    return this.categoryToDelete?.subCategories?.length ?? 0;
   }
 
   // ── Delete with confirm ───────────────────────────────────────────
