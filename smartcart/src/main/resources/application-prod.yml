@@ -1,6 +1,10 @@
 server:
   port: ${PORT:8080}
 
+resend:
+  api-key: ${RESEND_API_KEY}
+  from-email: ${RESEND_FROM_EMAIL:"CognitoCart <onboarding@resend.dev>"}
+
 spring:
   # From application.yml
 
@@ -57,9 +61,7 @@ spring:
       use-key-prefix: true
       cache-null-values: false
 
-# From application.yml
-server:
-  port: 8080
+# Cleaned up duplicate server block
 
 application:
   security:
