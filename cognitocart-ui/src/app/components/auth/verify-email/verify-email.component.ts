@@ -101,8 +101,16 @@ export class VerifyEmailComponent implements OnInit {
     this.loading = true;
     this.auth.verifyEmail(this.email, this.otp).subscribe({
       next: () => {
-        this.toast.success('Email verified successfully! You can now login.');
-        this.router.navigate(['/login']);
+        this.toast.success('Email verified successfully!');
+        
+        if (this.auth.isLoggedIn()) {
+          this.auth.refreshToken().subscribe({
+            next: () => this.router.navigate(['/dashboard']),
+            error: () => this.router.navigate(['/login'])
+          });
+        } else {
+          this.router.navigate(['/login']);
+        }
       },
       error: (e) => {
         this.loading = false;

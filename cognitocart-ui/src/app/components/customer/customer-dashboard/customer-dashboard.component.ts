@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
 import { OrderService } from '../../../services/order.service';
 import { WishlistService } from '../../../services/wishlist.service';
+import { ToastService } from '../../../services/toast.service';
 
 @Component({
   selector: 'app-customer-dashboard',
@@ -11,6 +12,22 @@ import { WishlistService } from '../../../services/wishlist.service';
   imports: [CommonModule, RouterLink],
   template: `
     <div class="page">
+      <!-- Unverified Email Warning Banner -->
+      <div *ngIf="!isEmailVerified" class="card" style="margin-bottom: 24px; background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.4);">
+        <div class="card-body" style="padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 24px; height: 24px; color: var(--amber-500);"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+            <div>
+              <strong style="color: var(--text-primary); display: block;">Action Required: Verify Your Email</strong>
+              <span style="color: var(--text-muted); font-size: 14px;">You must verify your email address before you can place orders or checkout.</span>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm" (click)="verifyNow()" [disabled]="loading">
+            {{ loading ? 'Sending...' : 'Verify Now' }}
+          </button>
+        </div>
+      </div>
+
       <!-- Welcome Banner -->
       <div class="card" style="margin-bottom:32px; background:linear-gradient(135deg, rgba(59,130,246,0.12) 0%, rgba(139,92,246,0.08) 100%); border-color:rgba(96,165,250,0.25);">
         <div class="card-body" style="padding:28px 32px;">
@@ -137,16 +154,23 @@ export class CustomerDashboardComponent implements OnInit {
   loading = true;
   recentOrders: any[] = [];
   userName = '';
+  userEmail = '';
+  isEmailVerified = true;
   summary = { totalOrders: 0, deliveredOrders: 0, pendingOrders: 0, wishlistCount: 0 };
 
   constructor(
     private auth: AuthService,
     private orderService: OrderService,
-    private wishlistService: WishlistService
+    private wishlistService: WishlistService,
+    private router: Router,
+    private toast: ToastService
   ) {}
 
   ngOnInit(): void {
-    this.userName = this.auth.getCurrentUser()?.name || 'Shopper';
+    const user = this.auth.getCurrentUser();
+    this.userName = user?.name || 'Shopper';
+    this.userEmail = user?.email || '';
+    this.isEmailVerified = user?.emailVerified ?? true;
 
     this.orderService.getMyOrders(0, 5).subscribe({
       next: (r: any) => {
@@ -163,6 +187,21 @@ export class CustomerDashboardComponent implements OnInit {
     this.wishlistService.getAll().subscribe({
       next: (w: any) => this.summary.wishlistCount = Array.isArray(w) ? w.length : (w.content?.length ?? 0),
       error: () => {}
+    });
+  }
+
+  verifyNow(): void {
+    if (!this.userEmail) return;
+    this.loading = true;
+    this.auth.resendOtp(this.userEmail).subscribe({
+      next: () => {
+        this.toast.success('New OTP sent! Please check your email.');
+        this.router.navigate(['/verify-email'], { queryParams: { email: this.userEmail } });
+      },
+      error: (e) => {
+        this.loading = false;
+        this.toast.error(e.error?.message || 'Failed to send OTP. Please try again.');
+      }
     });
   }
 }
