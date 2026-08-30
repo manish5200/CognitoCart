@@ -163,14 +163,14 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
                 />
               </div>
               <div class="field-hint" *ngIf="currentCategory.name">
-                Slug will be: <code>{{ currentCategory.name.toLowerCase().replace(/ /g, '-') }}</code>
+                Slug will be: <code>{{ slugPreview }}</code>
               </div>
             </div>
           </div>
 
           <div class="modal-footer">
             <button class="modal-cancel-btn" (click)="closeModal()">Cancel</button>
-            <button class="modal-save-btn" (click)="saveCategory()" [disabled]="!currentCategory.name?.trim()">
+            <button class="modal-save-btn" (click)="saveCategory()" [disabled]="!currentCategory.name.trim()">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
               {{ editingId ? 'Save Changes' : 'Create Category' }}
             </button>
@@ -423,6 +423,10 @@ export class AdminCategoriesComponent implements OnInit {
   editingId: string | null = null;
   parentCategoryName: string | null = null;
   currentCategory: { name: string, parentCategory?: { publicId: string } } = { name: '' };
+
+  get slugPreview(): string {
+    return this.currentCategory.name.toLowerCase().replace(/\s+/g, '-');
+  }
 
   private categoryColors = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#3b82f6'];
   private categoryEmojis: Record<string, string> = {
