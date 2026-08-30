@@ -1,85 +1,105 @@
 package com.manish.smartcart.infrastructure.email;
 
-import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
+
+import java.util.Base64;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
 public class EmailService {
 
-    private final JavaMailSender mailSender;
+    private final RestClient restClient;
 
-    public EmailService(JavaMailSender mailSender) {
-        this.mailSender = mailSender;
-    }
+    @Value("${resend.api-key}")
+    private String apiKey;
 
-    @Value("${spring.mail.username}")
+    @Value("${resend.from-email}")
     private String fromEmail;
 
+    public EmailService() {
+        // Initialize Spring's modern RestClient for the Resend API
+        this.restClient = RestClient.create("https://api.resend.com");
+    }
+
+    /**
+     * Sends an HTML email via Resend's REST API.
+     * Bypasses SMTP port blocking entirely.
+     */
     @Async
-    public void sendMail(String to, String subject, String body, String senderName) throws Exception {
+    public void sendMail(String to, String subject, String body, String senderName) {
         try {
-            // Create mime message instead of simple message
-            // MIME = Multipurpose Internet Mail Extensions
-            MimeMessage email = mailSender.createMimeMessage();
+            // Construct the JSON payload requested by Resend
+            Map<String, Object> payload = Map.of(
+                    "from", fromEmail,
+                    "to", List.of(to),
+                    "subject", subject,
+                    "html", body
+            );
 
-            // Use the MimeMessageHelper to build the message
-            // The 'true' argument enables multipart messages (for attachments, etc.)
-            MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(email, true);
+            // Execute the POST request
+            restClient.post()
+                    .uri("/emails")
+                    .header("Authorization", "Bearer " + apiKey)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(payload)
+                    .retrieve()
+                    .toBodilessEntity();
 
-            // Correct format: "CognitoCart <my-email@gmail.com>"
-            mimeMessageHelper.setFrom(fromEmail, senderName);
-
-            mimeMessageHelper.setTo(to);
-            mimeMessageHelper.setSubject(subject);
-            mimeMessageHelper.setText(body, true);// true = HTML
-            mailSender.send(email);
-            log.info("Email sent to {}", to);
+            log.info("Email sent to {} via Resend REST API", to);
         } catch (Exception e) {
-            log.warn("Failed to send email to {} (this is expected if SMTP port is blocked by Render): {}", to, e.getMessage());
+            log.error("Failed to send email to {} via Resend API: {}", to, e.getMessage());
         }
     }
 
     /**
-     * Sends an HTML email WITH a PDF attachment.
-     * CONCEPT: MimeMessageHelper(true) = multipart mode.
-     * Multipart = one email can carry both HTML body + binary file attachment
-     * together.
-     * Same pattern as Amazon invoices, Flipkart receipts, bank e-statements.
+     * Sends an HTML email WITH a PDF attachment via Resend's REST API.
+     * Attachments must be Base64 encoded strings in the JSON payload.
      *
      * @param attachmentBytes Raw bytes of the PDF (from InvoiceService)
-     * @param attachmentName  Filename shown in inbox e.g.
-     *                        "CognitoCart-Invoice-105.pdf"
+     * @param attachmentName  Filename shown in inbox e.g., "CognitoCart-Invoice-105.pdf"
      */
     @Async
     public void sendMailWithAttachment(String to, String subject, String body,
-            String senderName, byte[] attachmentBytes,
-            String attachmentName) throws Exception {
+                                       String senderName, byte[] attachmentBytes,
+                                       String attachmentName) {
         try {
-            MimeMessage email = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(email, true); // true = multipart
+            // Convert binary PDF bytes to a Base64 string for the JSON payload
+            String base64Content = Base64.getEncoder().encodeToString(attachmentBytes);
+            
+            // Build the attachment map
+            Map<String, Object> attachment = Map.of(
+                    "filename", attachmentName,
+                    "content", base64Content
+            );
 
-            helper.setFrom(fromEmail, senderName);
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(body, true); // true = HTML
+            // Build the full payload with the attachment array
+            Map<String, Object> payload = Map.of(
+                    "from", fromEmail,
+                    "to", List.of(to),
+                    "subject", subject,
+                    "html", body,
+                    "attachments", List.of(attachment)
+            );
 
-            // Wrap raw PDF bytes as a Spring Resource → attach with MIME type
-            // "application/pdf"
-            helper.addAttachment(attachmentName,
-                    new org.springframework.core.io.ByteArrayResource(attachmentBytes),
-                    "application/pdf");
+            // Execute the POST request
+            restClient.post()
+                    .uri("/emails")
+                    .header("Authorization", "Bearer " + apiKey)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(payload)
+                    .retrieve()
+                    .toBodilessEntity();
 
-            mailSender.send(email);
-            log.info("Email with attachment '{}' sent to {}", attachmentName, to);
-
+            log.info("Email with attachment '{}' sent to {} via Resend REST API", attachmentName, to);
         } catch (Exception e) {
-            log.warn("Failed to send email with attachment to {} (expected if SMTP blocked): {}", to, e.getMessage());
+            log.error("Failed to send email with attachment to {} via Resend API: {}", to, e.getMessage());
         }
     }
 }

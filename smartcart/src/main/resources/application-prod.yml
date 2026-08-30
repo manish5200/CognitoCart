@@ -1,19 +1,6 @@
 spring:
   # From application.yml
-  mail:
-    host: smtp.gmail.com
-    port: 587
-    username: manishneelambar@gmail.com
-    password: ${MAIL_PASSWORD}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-          connectiontimeout: 3000
-          timeout: 3000
-          writetimeout: 3000
+
 
   # From application-dev.yml
   security:
