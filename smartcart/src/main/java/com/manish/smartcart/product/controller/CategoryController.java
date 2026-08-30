@@ -14,6 +14,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 @RestController
@@ -64,5 +66,37 @@ public class CategoryController {
     @GetMapping
     public ResponseEntity<?> getCategories() {
         return ResponseEntity.ok(categoryService.getAllCategories());
+    }
+    /**
+     * PUT: Update an existing category
+     */
+    @Operation(summary = "Update category", description = "Admin only. Updates an existing category name and parent.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Category updated successfully"),
+        @ApiResponse(responseCode = "404", description = "Category not found")
+    })
+    @SecurityRequirement(name = "bearerAuth")
+    @PutMapping("/{publicId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> updateCategory(
+            @PathVariable UUID publicId,
+            @RequestBody Category category) {
+        return ResponseEntity.ok(categoryService.updateCategory(publicId, category));
+    }
+
+    /**
+     * DELETE: Soft delete a category
+     */
+    @Operation(summary = "Delete category", description = "Admin only. Soft deletes a category.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Category deleted successfully"),
+        @ApiResponse(responseCode = "404", description = "Category not found")
+    })
+    @SecurityRequirement(name = "bearerAuth")
+    @DeleteMapping("/{publicId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> deleteCategory(@PathVariable UUID publicId) {
+        categoryService.deleteCategory(publicId);
+        return ResponseEntity.ok(Map.of("message", "Category deleted successfully"));
     }
 }

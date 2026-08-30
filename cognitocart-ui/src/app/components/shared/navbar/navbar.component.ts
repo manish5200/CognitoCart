@@ -6,14 +6,30 @@ import { filter } from 'rxjs/operators';
 import { AuthService } from '../../../services/auth.service';
 import { CartService } from '../../../services/cart.service';
 import { NotificationService } from '../../../services/notification.service';
+import { ToastService } from '../../../services/toast.service';
 import { UserIdentityComponent } from '../../shared/user-identity/user-identity.component';
 
 @Component({
+// ... (imports remain the same above, I am replacing from CartService down to menuOpen)
+
   selector: 'app-navbar',
   standalone: true,
   imports: [CommonModule, RouterModule, FormsModule, UserIdentityComponent],
   template: `
-    <nav class="navbar">
+    <!-- Verification Banner -->
+    <div *ngIf="(auth.currentUser$ | async) as user">
+      <div *ngIf="user.emailVerified === false" class="verification-banner">
+        <span class="verification-text">
+          <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+          Your email address is not verified. You cannot checkout until it is verified.
+        </span>
+        <button class="btn btn-primary btn-sm verify-btn" (click)="triggerVerification(user.email)" [disabled]="isSendingOtp">
+          {{ isSendingOtp ? 'Sending...' : 'Verify Now' }}
+        </button>
+      </div>
+    </div>
+    
+    <nav class="navbar" [class.has-banner]="(auth.currentUser$ | async)?.emailVerified === false">
       <!-- Logo -->
       <a routerLink="/" class="nav-logo">
         <span class="logo-cognito">Cognito</span><span class="logo-cart">Cart</span><span class="logo-dot">.</span>
@@ -246,6 +262,33 @@ import { UserIdentityComponent } from '../../shared/user-identity/user-identity.
     </nav>
   `,
   styles: [`
+    .verification-banner {
+      background: rgba(239, 68, 68, 0.1);
+      border-bottom: 1px solid rgba(239, 68, 68, 0.2);
+      padding: 10px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #ef4444;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .verification-text {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .verify-btn {
+      margin: 0;
+      padding: 6px 12px;
+      font-size: 12px;
+      height: auto;
+      background: #ef4444;
+      border-color: #ef4444;
+      box-shadow: none;
+    }
+    .verify-btn:hover { background: #dc2626; border-color: #dc2626; }
+    
     .nav-cart-wrapper { position: relative; }
     .mini-cart-menu { width: 360px; right: -80px; z-index: 1000; padding: 0 !important; }
     .mini-cart-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.03); transition: 0.2s; }
@@ -275,6 +318,7 @@ export class NavbarComponent implements OnInit {
   cartItems: any[] = [];
   unreadCount = 0;
   notifications: any[] = [];
+  isSendingOtp = false;
 
   get isDashboard(): boolean {
     return this.currentPath.startsWith('/admin') || this.currentPath.startsWith('/seller');
@@ -284,7 +328,8 @@ export class NavbarComponent implements OnInit {
     public auth: AuthService, 
     public cartService: CartService, 
     private router: Router,
-    private notifService: NotificationService
+    private notifService: NotificationService,
+    private toast: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -357,5 +402,20 @@ export class NavbarComponent implements OnInit {
 
   removeCartItem(item: any): void {
     this.cartService.removeItem(item.variantPublicId || item.publicId).subscribe();
+  }
+
+  triggerVerification(email: string): void {
+    this.isSendingOtp = true;
+    this.auth.resendOtp(email).subscribe({
+      next: () => {
+        this.isSendingOtp = false;
+        this.toast.success('OTP sent! Please check your email.');
+        this.router.navigate(['/verify-email'], { queryParams: { email } });
+      },
+      error: () => {
+        this.isSendingOtp = false;
+        this.toast.error('Failed to send OTP. Please try again later.');
+      }
+    });
   }
 }

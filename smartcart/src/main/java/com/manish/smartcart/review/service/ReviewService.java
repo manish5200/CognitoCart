@@ -18,6 +18,10 @@ import com.manish.smartcart.review.repository.ReviewRepository;
 import com.manish.smartcart.user.repository.UsersRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
@@ -313,6 +317,19 @@ public class ReviewService {
                 .map(reviewMapper::toReviewResponseDTO)
                 .toList();
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // GET ALL REVIEWS — Admin Global Feed
+    // ─────────────────────────────────────────────────────────────────────────
+    @Transactional(readOnly = true)
+    public Page<ReviewResponseDTO> getAllReviewsForAdmin(int page, int size) {
+        Pageable pageable = PageRequest.of(
+                page, size, Sort.by("createdAt").descending()
+        );
+        return reviewRepository.findAllWithEagerFetch(pageable)
+                .map(reviewMapper::toReviewResponseDTO);
+    }
+
 
 
     // ─────────────────────────────────────────────────────────────────────────

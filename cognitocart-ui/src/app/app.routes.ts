@@ -38,6 +38,7 @@ export const routes: Routes = [
 
   // Admin
   { path: 'admin', canActivate: [adminGuard], loadComponent: () => import('./components/admin/admin-dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent) },
+  { path: 'admin/categories', canActivate: [adminGuard], loadComponent: () => import('./components/admin/admin-categories/admin-categories.component').then(m => m.AdminCategoriesComponent) },
   { path: 'admin/products/:id', canActivate: [adminGuard], loadComponent: () => import('./components/products/product-details-workspace/product-details-workspace.component').then(m => m.ProductDetailsWorkspaceComponent) },
   { path: 'admin/orders', canActivate: [adminGuard], loadComponent: () => import('./components/admin/admin-orders/admin-orders.component').then(m => m.AdminOrdersComponent) },
   { path: 'admin/returns', canActivate: [adminGuard], loadComponent: () => import('./components/admin/admin-returns/admin-returns.component').then(m => m.AdminReturnsComponent) },
@@ -46,6 +47,7 @@ export const routes: Routes = [
   { path: 'admin/sales', canActivate: [adminGuard], loadComponent: () => import('./components/admin/admin-sales/admin-sales.component').then(m => m.AdminSalesComponent) },
   { path: 'admin/webhooks', canActivate: [adminGuard], loadComponent: () => import('./components/admin/admin-webhooks/admin-webhooks.component').then(m => m.AdminWebhooksComponent) },
   { path: 'admin/intelligence', canActivate: [adminGuard], loadComponent: () => import('./components/admin/admin-intelligence/admin-intelligence.component').then(m => m.AdminIntelligenceComponent) },
+  { path: 'admin/reviews', canActivate: [adminGuard], loadComponent: () => import('./components/admin/admin-reviews/admin-reviews.component').then(m => m.AdminReviewsComponent) },
 
   { path: '**', redirectTo: '' }
 ];

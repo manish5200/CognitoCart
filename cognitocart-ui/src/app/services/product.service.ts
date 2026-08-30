@@ -1,4 +1,4 @@
-﻿import { Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
@@ -95,6 +95,18 @@ export class ProductService {
   // --- Categories ---
   getCategories(): Observable<any> {
     return this.http.get(this.CAT_API);
+  }
+
+  addCategory(category: { name: string; parentCategory?: { publicId: string } }): Observable<any> {
+    return this.http.post(this.CAT_API, category);
+  }
+
+  updateCategory(publicId: string, category: { name: string; parentCategory?: { publicId: string } }): Observable<any> {
+    return this.http.put(`${this.CAT_API}/${publicId}`, category);
+  }
+
+  deleteCategory(publicId: string): Observable<any> {
+    return this.http.delete(`${this.CAT_API}/${publicId}`);
   }
 
   // --- Seller ---

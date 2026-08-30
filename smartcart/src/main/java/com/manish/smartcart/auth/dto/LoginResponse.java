@@ -23,6 +23,7 @@ public class LoginResponse {
     private String email;
     private String fullName;
     private String role; // e.g., "ROLE_CUSTOMER" or "ROLE_SELLER"
+    private boolean emailVerified;
 
     // --- SESSION METADATA (Optional but helpful for Frontend) ---
     private Long accessTokenExpiryMillis; // Tells the frontend exactly when to refresh

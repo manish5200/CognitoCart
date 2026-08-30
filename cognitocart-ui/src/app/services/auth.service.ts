@@ -1,4 +1,4 @@
-﻿import { Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
@@ -8,6 +8,7 @@ export interface UserProfile {
   name: string;
   email: string;
   role: 'ROLE_CUSTOMER' | 'ROLE_SELLER' | 'ROLE_ADMIN';
+  emailVerified?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -39,7 +40,8 @@ export class AuthService {
           id: res.userId,
           name: res.fullName,
           email: res.email,
-          role: (res.role?.startsWith('ROLE_') ? res.role : `ROLE_${res.role}`) as any
+          role: (res.role?.startsWith('ROLE_') ? res.role : `ROLE_${res.role}`) as any,
+          emailVerified: res.emailVerified
         };
         this.saveSession(res.accessToken, res.refreshToken, user);
         if (typeof window !== 'undefined') {
@@ -121,7 +123,8 @@ export class AuthService {
       id: id,
       name: name,
       email: email,
-      role: (role?.startsWith('ROLE_') ? role : `ROLE_${role}`) as any
+      role: (role?.startsWith('ROLE_') ? role : `ROLE_${role}`) as any,
+      emailVerified: true
     };
     this.saveSession(accessToken, refreshToken, user);
   }

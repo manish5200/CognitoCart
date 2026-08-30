@@ -95,16 +95,22 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
                       Re-Review
                     </button>
                   </div>
-                  <div *ngIf="seller.kycStatus === 'VERIFIED'">
+                  <div *ngIf="seller.kycStatus === 'VERIFIED'" style="display:flex; gap:8px;">
                     <button class="btn btn-warning btn-sm" (click)="suspend(seller)" style="display:flex; align-items:center; gap:6px;">
                       <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3Z" /></svg>
                       Suspend
                     </button>
+                    <button class="btn btn-secondary btn-sm" (click)="openAnalytics(seller)" style="display:flex; align-items:center; gap:6px;" title="Investigate Seller Quality">
+                      <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" /></svg>
+                    </button>
                   </div>
-                  <div *ngIf="seller.kycStatus === 'SUSPENDED'">
+                  <div *ngIf="seller.kycStatus === 'SUSPENDED'" style="display:flex; gap:8px;">
                     <button class="btn btn-success btn-sm" (click)="approve(seller)" style="display:flex; align-items:center; gap:6px;">
                       <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
                       Reinstate
+                    </button>
+                    <button class="btn btn-secondary btn-sm" (click)="openAnalytics(seller)" style="display:flex; align-items:center; gap:6px;" title="Investigate Seller Quality">
+                      <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" /></svg>
                     </button>
                   </div>
                 </td>
@@ -113,15 +119,100 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
           </table>
         </div>
       </div>
+
+      <!-- Seller Analytics Modal -->
+      <div class="modal-overlay" *ngIf="showAnalyticsModal" (click)="closeAnalytics()">
+        <div class="modal" (click)="$event.stopPropagation()" style="width:700px; max-width:95vw;">
+          <div class="modal-header">
+            <h3>Analytics: {{ selectedSeller?.storeName }}</h3>
+            <button class="close-btn" (click)="closeAnalytics()">&times;</button>
+          </div>
+          <div class="modal-body" style="background:#f9fafb;">
+            <div class="loading-center" *ngIf="analyticsLoading"><div class="spinner"></div></div>
+            <div *ngIf="!analyticsLoading && analyticsData">
+              <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; margin-bottom:20px;">
+                <div class="stat-card" style="background:#fff; padding:16px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+                  <div style="font-size:12px; color:var(--text-muted); font-weight:600; text-transform:uppercase;">Score</div>
+                  <div style="font-size:24px; font-weight:bold; color:var(--brand);">{{ analyticsData.qualityScore }}</div>
+                </div>
+                <div class="stat-card" style="background:#fff; padding:16px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+                  <div style="font-size:12px; color:var(--text-muted); font-weight:600; text-transform:uppercase;">Rating</div>
+                  <div style="font-size:24px; font-weight:bold; color:var(--warning);">{{ analyticsData.averageRating | number:'1.1-1' }} ★</div>
+                </div>
+                <div class="stat-card" style="background:#fff; padding:16px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+                  <div style="font-size:12px; color:var(--text-muted); font-weight:600; text-transform:uppercase;">Refund Rate</div>
+                  <div style="font-size:24px; font-weight:bold; color:var(--danger);">{{ analyticsData.refundRate }}%</div>
+                </div>
+                <div class="stat-card" style="background:#fff; padding:16px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+                  <div style="font-size:12px; color:var(--text-muted); font-weight:600; text-transform:uppercase;">Returns</div>
+                  <div style="font-size:24px; font-weight:bold; color:var(--text-primary);">{{ analyticsData.totalReturns }}</div>
+                </div>
+              </div>
+              
+              <h4 style="margin:0 0 12px 0; font-size:14px; font-weight:600; color:var(--text-primary);">Critical Products</h4>
+              <div *ngIf="!analyticsData.criticalProducts || analyticsData.criticalProducts.length === 0" style="padding:16px; background:#fff; border-radius:8px; text-align:center; color:var(--text-muted); border:1px dashed var(--border-subtle);">
+                No critical products found. Quality is good.
+              </div>
+              <div *ngIf="analyticsData.criticalProducts?.length > 0" style="background:#fff; border-radius:8px; border:1px solid var(--border-subtle); overflow:hidden;">
+                <table style="width:100%; border-collapse:collapse;">
+                  <thead style="background:#f3f4f6; border-bottom:1px solid var(--border-subtle);">
+                    <tr>
+                      <th style="padding:12px 16px; text-align:left; font-size:12px; font-weight:600; color:var(--text-muted);">Product</th>
+                      <th style="padding:12px 16px; text-align:right; font-size:12px; font-weight:600; color:var(--text-muted);">Returns</th>
+                      <th style="padding:12px 16px; text-align:right; font-size:12px; font-weight:600; color:var(--text-muted);">Refund Rate</th>
+                      <th style="padding:12px 16px; text-align:left; font-size:12px; font-weight:600; color:var(--text-muted);">Main Reason</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let p of analyticsData.criticalProducts" style="border-bottom:1px solid var(--border-subtle);">
+                      <td style="padding:12px 16px; font-size:13px; font-weight:500;">{{ p.productName }}</td>
+                      <td style="padding:12px 16px; text-align:right; font-size:13px;">{{ p.returnCount }}</td>
+                      <td style="padding:12px 16px; text-align:right; font-size:13px; color:var(--danger); font-weight:600;">{{ p.refundRate }}%</td>
+                      <td style="padding:12px 16px; font-size:13px; color:var(--text-secondary);">{{ p.mainReturnReason || 'N/A' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer" style="padding:16px; border-top:1px solid var(--border-subtle); display:flex; justify-content:flex-end;">
+            <button class="btn btn-secondary" (click)="closeAnalytics()">Close</button>
+          </div>
+        </div>
+      </div>
     </app-admin-shell>
   `,
-  styles: []
+  styles: [`
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 2000;
+      backdrop-filter: blur(2px);
+    }
+    .modal {
+      background: #fff; border-radius: 12px; width: 400px; max-width: 90vw;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+      animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .modal-header { padding: 16px 24px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; }
+    .modal-header h3 { margin: 0; font-size: 18px; color: var(--text-primary); }
+    .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-muted); }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  `]
 })
 export class AdminKycComponent implements OnInit {
   sellers: any[] = [];
   loading = true;
   activeTab = 'pending';
   kycComments: Record<string, string> = {};
+
+  // Analytics Modal
+  showAnalyticsModal = false;
+  analyticsLoading = false;
+  selectedSeller: any = null;
+  analyticsData: any = null;
 
   constructor(private adminService: AdminService, private toast: ToastService) {}
 
@@ -174,5 +265,29 @@ export class AdminKycComponent implements OnInit {
       next: () => { seller.kycStatus = 'SUSPENDED'; this.toast.warning(`${seller.storeName} suspended`); },
       error: (e) => this.toast.error(e.error?.message || 'Failed')
     });
+  }
+
+  openAnalytics(seller: any): void {
+    this.selectedSeller = seller;
+    this.showAnalyticsModal = true;
+    this.analyticsLoading = true;
+    this.analyticsData = null;
+
+    this.adminService.getSellerAnalytics(seller.sellerPublicId).subscribe({
+      next: (data) => {
+        this.analyticsData = data;
+        this.analyticsLoading = false;
+      },
+      error: () => {
+        this.toast.error('Failed to load analytics data.');
+        this.analyticsLoading = false;
+      }
+    });
+  }
+
+  closeAnalytics(): void {
+    this.showAnalyticsModal = false;
+    this.selectedSeller = null;
+    this.analyticsData = null;
   }
 }

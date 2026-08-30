@@ -8,10 +8,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class CategoryService {
@@ -106,5 +103,41 @@ public class CategoryService {
         return categoryRepository.findByPublicId(categoryPublicId)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with public ID: " + categoryPublicId))
                 .getId();
+    }
+
+    @Transactional
+    @CacheEvict(value = "categories", allEntries = true)
+    public Category updateCategory(UUID publicId, Category request) {
+        Category category = categoryRepository.findByPublicId(publicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID: " + publicId));
+        
+        category.setName(request.getName());
+        if (!category.getName().equals(request.getName())) {
+            category.setSlug(generateUniqueSlug(request.getName()));
+        }
+        
+        if (request.getParentCategory() != null && request.getParentCategory().getPublicId() != null) {
+            Category parent = categoryRepository.findByPublicId(request.getParentCategory().getPublicId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Parent Category not found"));
+            
+            // Prevent circular dependency
+            if (parent.getId().equals(category.getId())) {
+                throw new IllegalArgumentException("A category cannot be its own parent.");
+            }
+            category.setParentCategory(parent);
+        } else {
+            category.setParentCategory(null);
+        }
+        
+        return categoryRepository.save(category);
+    }
+
+    @Transactional
+    @CacheEvict(value = "categories", allEntries = true)
+    public void deleteCategory(UUID publicId) {
+        Category category = categoryRepository.findByPublicId(publicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID: " + publicId));
+        // Using SQLDelete (soft delete)
+        categoryRepository.delete(category);
     }
 }

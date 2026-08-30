@@ -1,4 +1,4 @@
-﻿import { Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
@@ -109,5 +109,14 @@ export class AdminService {
 
   reviewSellerSubmission(itemPublicId: string, status: 'APPROVED' | 'REJECTED'): Observable<any> {
     return this.http.patch(`${this.SALE_API}/items/${itemPublicId}/review?status=${status}`, {}, { responseType: 'text' });
+  }
+
+  // ─── Reviews ───
+  getAllReviews(page = 0, size = 20): Observable<any> {
+    return this.http.get(`https://cognitocart-api.onrender.com/api/v1/reviews/admin/all?page=${page}&size=${size}`);
+  }
+
+  deleteReview(reviewPublicId: string): Observable<any> {
+    return this.http.delete(`https://cognitocart-api.onrender.com/api/v1/reviews/admin/${reviewPublicId}`);
   }
 }

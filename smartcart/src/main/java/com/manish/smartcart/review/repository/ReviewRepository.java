@@ -44,4 +44,8 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     // PUBLIC ID LOOKUP
     Optional<Review> findByPublicId(UUID publicId);
+
+    @Query(value = "SELECT r FROM Review r JOIN FETCH r.user JOIN FETCH r.product", 
+           countQuery = "SELECT count(r) FROM Review r")
+    org.springframework.data.domain.Page<Review> findAllWithEagerFetch(org.springframework.data.domain.Pageable pageable);
 }

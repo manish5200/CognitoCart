@@ -142,6 +142,21 @@ public class ReviewController {
         return ResponseEntity.ok(Map.of("message", "Review has been removed by admin."));
     }
 
+    @Operation(
+            summary = "Admin: Get all reviews",
+            description = "ADMIN only. Global feed of all product reviews for moderation purposes."
+    )
+    @ApiResponse(responseCode = "200", description = "Global reviews feed retrieved successfully")
+    @SecurityRequirement(name = "bearerAuth")
+    @GetMapping("/admin/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getAllReviewsForAdmin(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        return ResponseEntity.ok(reviewService.getAllReviewsForAdmin(page, size));
+    }
+
 
     private Long extractUserId(Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
