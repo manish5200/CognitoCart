@@ -50,7 +50,7 @@ import { ToastService } from '../../../services/toast.service';
               <label class="form-label">Category <span class="text-danger">*</span></label>
               <select [(ngModel)]="newProduct.categoryPublicId" class="form-select">
                 <option value="">Select a category...</option>
-                <option *ngFor="let c of categories" [value]="c.publicId">{{c.name}}</option>
+                <option *ngFor="let c of categories" [value]="c.publicId">{{c.displayName || c.name}}</option>
               </select>
             </div>
           </div>
@@ -62,6 +62,10 @@ import { ToastService } from '../../../services/toast.service';
             <div class="form-group">
               <label class="form-label">Base Price (₹) <span class="text-danger">*</span></label>
               <input type="number" [(ngModel)]="newProduct.basePrice" class="form-input" placeholder="0.00" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Stock Quantity <span class="text-danger">*</span></label>
+              <input type="number" [(ngModel)]="newProduct.stockQuantity" class="form-input" placeholder="e.g. 50" min="0" />
             </div>
             <div class="form-group">
               <label class="form-label">Discount %</label>
@@ -237,7 +241,7 @@ export class SellerProductsComponent implements OnInit {
   uploadingFor: any = null;
   imgFile: File | null = null;
   uploading = false;
-  newProduct: any = { name: '', description: '', basePrice: 0, discountPercentage: 0, brand: '', categoryPublicId: '', policyType: 'NON_RETURNABLE', returnWindowDays: 7 };
+  newProduct: any = { name: '', description: '', basePrice: 0, stockQuantity: 0, discountPercentage: 0, brand: '', categoryPublicId: '', policyType: 'NON_RETURNABLE', returnWindowDays: 7 };
 
   constructor(private productService: ProductService, private toast: ToastService) {}
 
@@ -246,7 +250,20 @@ export class SellerProductsComponent implements OnInit {
       next: (res) => { this.products = res.content ?? res ?? []; this.loading = false; },
       error: () => { this.loading = false; }
     });
-    this.productService.getCategories().subscribe({ next: c => this.categories = c, error: () => {} });
+    this.productService.getCategories().subscribe({ 
+      next: c => { this.categories = this.flattenCategories(c); }, 
+      error: () => {} 
+    });
+  }
+
+  flattenCategories(categories: any[], prefix: string = '', flatList: any[] = []): any[] {
+    for (const c of categories) {
+      flatList.push({ ...c, displayName: prefix + c.name });
+      if (c.subCategories && c.subCategories.length > 0) {
+        this.flattenCategories(c.subCategories, prefix + c.name + ' > ', flatList);
+      }
+    }
+    return flatList;
   }
 
   createProduct(): void {
@@ -263,7 +280,7 @@ export class SellerProductsComponent implements OnInit {
       description: this.newProduct.description,
       price: this.newProduct.basePrice,
       discountPrice: this.newProduct.basePrice - (this.newProduct.basePrice * (this.newProduct.discountPercentage / 100)),
-      stockQuantity: 10, // Default for now
+      stockQuantity: this.newProduct.stockQuantity,
       categoryId: category ? category.id : null,
       brand: this.newProduct.brand
     };
@@ -288,7 +305,7 @@ export class SellerProductsComponent implements OnInit {
             this.products.unshift(p);
             this.creating = false;
             this.showForm = false;
-            this.newProduct = { name: '', description: '', basePrice: 0, discountPercentage: 0, brand: '', categoryPublicId: '', policyType: 'NON_RETURNABLE', returnWindowDays: 7 };
+            this.newProduct = { name: '', description: '', basePrice: 0, stockQuantity: 0, discountPercentage: 0, brand: '', categoryPublicId: '', policyType: 'NON_RETURNABLE', returnWindowDays: 7 };
           },
           error: () => {
             this.toast.warning('Product created, but failed to set return policy.');

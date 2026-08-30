@@ -255,6 +255,7 @@ import { debounceTime, Subject } from 'rxjs';
     .plp-count { font-size: 13px; color: var(--text-muted); background: var(--bg-card); border: 1px solid var(--border-subtle); padding: 3px 10px; border-radius: 20px; }
     .plp-ai-badge { font-size: 11px; font-weight: 700; background: rgba(139,92,246,0.12); color: var(--secondary); border: 1px solid rgba(139,92,246,0.3); padding: 3px 10px; border-radius: 20px; }
     .plp-sort-select { background: var(--bg-card); border: 1px solid var(--border-default); color: var(--text-primary); padding: 8px 12px; border-radius: 10px; font-size: 13px; cursor: pointer; }
+    .plp-sort-select option { background: var(--bg-card); color: var(--text-primary); }
     .plp-filter-toggle { background: var(--bg-card); border: 1px solid var(--border-default); color: var(--text-muted); padding: 8px 14px; border-radius: 10px; font-size: 13px; cursor: pointer; transition: var(--transition); display: none; }
     @media (max-width: 900px) { .plp-filter-toggle { display: flex; align-items: center; gap: 6px; } }
 

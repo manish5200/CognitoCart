@@ -41,8 +41,7 @@ public class EmailService {
             mailSender.send(email);
             log.info("Email sent to {}", to);
         } catch (Exception e) {
-            log.error("Failed to send mail", e);
-            throw new Exception("Exception in sending mail to " + to);
+            log.warn("Failed to send email to {} (this is expected if SMTP port is blocked by Render): {}", to, e.getMessage());
         }
     }
 
@@ -80,8 +79,7 @@ public class EmailService {
             log.info("Email with attachment '{}' sent to {}", attachmentName, to);
 
         } catch (Exception e) {
-            log.error("Failed to send mail with attachment to {}", to, e);
-            throw new Exception("Exception sending mail with attachment to " + to);
+            log.warn("Failed to send email with attachment to {} (expected if SMTP blocked): {}", to, e.getMessage());
         }
     }
 }

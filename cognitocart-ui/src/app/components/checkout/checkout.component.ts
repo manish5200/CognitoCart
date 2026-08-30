@@ -6,6 +6,7 @@ import { AddressService } from '../../services/address.service';
 import { OrderService } from '../../services/order.service';
 import { CartService } from '../../services/cart.service';
 import { ToastService } from '../../services/toast.service';
+import { AuthService } from '../../services/auth.service';
 
 declare var Razorpay: any;
 
@@ -195,13 +196,19 @@ declare var Razorpay: any;
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
                   Back
                 </button>
-                <button class="btn btn-primary btn-lg step-btn pulse-glow" (click)="placeOrder()" [disabled]="placingOrder">
-                  <span *ngIf="placingOrder" class="spinner spinner-sm"></span>
-                  <span *ngIf="!placingOrder" style="display:flex; align-items:center; gap:8px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                    Pay ₹{{cart?.totalAmount | number:'1.0-0'}} Securely
-                  </span>
-                </button>
+                <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+                  <div *ngIf="!isVerified" class="verification-banner" style="position:relative; margin-bottom:0; padding:8px 12px; border-radius:8px;">
+                    <span class="verification-text" style="font-size:12px;">Email not verified.</span>
+                    <button class="btn btn-primary btn-sm verify-btn" (click)="verifyEmail()" style="font-size:11px; padding:4px 8px;">Verify Now</button>
+                  </div>
+                  <button class="btn btn-primary btn-lg step-btn pulse-glow" (click)="placeOrder()" [disabled]="placingOrder || !isVerified">
+                    <span *ngIf="placingOrder" class="spinner spinner-sm"></span>
+                    <span *ngIf="!placingOrder" style="display:flex; align-items:center; gap:8px;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                      Pay ₹{{cart?.totalAmount | number:'1.0-0'}} Securely
+                    </span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -405,11 +412,14 @@ export class CheckoutComponent implements OnInit {
   showAddAddress = false;
   savingAddress = false;
   newAddress = { fullName: '', phone: '', addressLine1: '', addressLine2: '', city: '', state: '', pincode: '', country: 'India' };
+  isVerified = true;
+  userEmail = '';
 
   constructor(
     private addressService: AddressService,
     private orderService: OrderService,
     private cartService: CartService,
+    private authService: AuthService,
     private toast: ToastService,
     private router: Router
   ) {}
@@ -421,6 +431,12 @@ export class CheckoutComponent implements OnInit {
       if (def) this.selectedAddressId = def.publicAddressId;
     }, error: () => {} });
     this.cartService.cart$.subscribe(c => this.cart = c);
+    this.authService.currentUser$.subscribe(u => {
+      if (u) {
+        this.isVerified = u.emailVerified !== false; // handle true or undefined
+        this.userEmail = u.email;
+      }
+    });
   }
 
   getSubtotal(): number {
@@ -442,6 +458,8 @@ export class CheckoutComponent implements OnInit {
         this.selectedAddressId = addr.publicAddressId;
         this.newAddress = { fullName: '', phone: '', addressLine1: '', addressLine2: '', city: '', state: '', pincode: '', country: 'India' };
         this.toast.success('Address saved');
+        // Auto-advance to next step
+        this.step = 2;
       },
       error: () => {
         this.savingAddress = false;
@@ -450,8 +468,20 @@ export class CheckoutComponent implements OnInit {
     });
   }
 
+  verifyEmail(): void {
+    if (!this.userEmail) return;
+    this.authService.resendOtp(this.userEmail).subscribe({
+      next: () => {
+        this.toast.success('Verification OTP sent');
+        this.router.navigate(['/verify-email'], { queryParams: { email: this.userEmail, returnUrl: '/checkout' } });
+      },
+      error: (e: any) => this.toast.error(e.error?.message || 'Failed to send OTP')
+    });
+  }
+
   placeOrder(): void {
     if (!this.selectedAddressId) { this.toast.warning('Select delivery address'); this.step = 1; return; }
+    if (!this.isVerified) { this.toast.warning('Verify your email first'); return; }
     this.placingOrder = true;
     this.paymentStatus = 'processing';
 

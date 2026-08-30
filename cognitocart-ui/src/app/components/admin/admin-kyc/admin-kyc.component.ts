@@ -132,43 +132,46 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
             <div *ngIf="!analyticsLoading && analyticsData">
               <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; margin-bottom:20px;">
                 <div class="stat-card" style="background:#fff; padding:16px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-                  <div style="font-size:12px; color:var(--text-muted); font-weight:600; text-transform:uppercase;">Score</div>
-                  <div style="font-size:24px; font-weight:bold; color:var(--brand);">{{ analyticsData.qualityScore }}</div>
+                  <div style="font-size:12px; color:var(--text-muted); font-weight:600; text-transform:uppercase;">Critical Products</div>
+                  <div style="font-size:24px; font-weight:bold; color:var(--danger);">{{ analyticsData.criticalCount || 0 }}</div>
                 </div>
                 <div class="stat-card" style="background:#fff; padding:16px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-                  <div style="font-size:12px; color:var(--text-muted); font-weight:600; text-transform:uppercase;">Rating</div>
-                  <div style="font-size:24px; font-weight:bold; color:var(--warning);">{{ analyticsData.averageRating | number:'1.1-1' }} ★</div>
+                  <div style="font-size:12px; color:var(--text-muted); font-weight:600; text-transform:uppercase;">Warning Products</div>
+                  <div style="font-size:24px; font-weight:bold; color:var(--warning);">{{ analyticsData.warningCount || 0 }}</div>
                 </div>
                 <div class="stat-card" style="background:#fff; padding:16px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-                  <div style="font-size:12px; color:var(--text-muted); font-weight:600; text-transform:uppercase;">Refund Rate</div>
-                  <div style="font-size:24px; font-weight:bold; color:var(--danger);">{{ analyticsData.refundRate }}%</div>
+                  <div style="font-size:12px; color:var(--text-muted); font-weight:600; text-transform:uppercase;">Excellent Products</div>
+                  <div style="font-size:24px; font-weight:bold; color:var(--success);">{{ analyticsData.excellentCount || 0 }}</div>
                 </div>
                 <div class="stat-card" style="background:#fff; padding:16px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-                  <div style="font-size:12px; color:var(--text-muted); font-weight:600; text-transform:uppercase;">Returns</div>
-                  <div style="font-size:24px; font-weight:bold; color:var(--text-primary);">{{ analyticsData.totalReturns }}</div>
+                  <div style="font-size:12px; color:var(--text-muted); font-weight:600; text-transform:uppercase;">Total Evaluated</div>
+                  <div style="font-size:24px; font-weight:bold; color:var(--text-primary);">{{ analyticsData.products?.length || 0 }}</div>
                 </div>
               </div>
               
-              <h4 style="margin:0 0 12px 0; font-size:14px; font-weight:600; color:var(--text-primary);">Critical Products</h4>
-              <div *ngIf="!analyticsData.criticalProducts || analyticsData.criticalProducts.length === 0" style="padding:16px; background:#fff; border-radius:8px; text-align:center; color:var(--text-muted); border:1px dashed var(--border-subtle);">
-                No critical products found. Quality is good.
+              <h4 style="margin:0 0 12px 0; font-size:14px; font-weight:600; color:var(--text-primary);">Product Health Dashboard</h4>
+              <div *ngIf="!analyticsData.products || analyticsData.products.length === 0" style="padding:16px; background:#fff; border-radius:8px; text-align:center; color:var(--text-muted); border:1px dashed var(--border-subtle);">
+                No products found.
               </div>
-              <div *ngIf="analyticsData.criticalProducts?.length > 0" style="background:#fff; border-radius:8px; border:1px solid var(--border-subtle); overflow:hidden;">
+              <div *ngIf="analyticsData.products?.length > 0" style="background:#fff; border-radius:8px; border:1px solid var(--border-subtle); overflow:hidden; max-height: 400px; overflow-y: auto;">
                 <table style="width:100%; border-collapse:collapse;">
-                  <thead style="background:#f3f4f6; border-bottom:1px solid var(--border-subtle);">
+                  <thead style="background:#f3f4f6; border-bottom:1px solid var(--border-subtle); position: sticky; top: 0;">
                     <tr>
                       <th style="padding:12px 16px; text-align:left; font-size:12px; font-weight:600; color:var(--text-muted);">Product</th>
                       <th style="padding:12px 16px; text-align:right; font-size:12px; font-weight:600; color:var(--text-muted);">Returns</th>
                       <th style="padding:12px 16px; text-align:right; font-size:12px; font-weight:600; color:var(--text-muted);">Refund Rate</th>
-                      <th style="padding:12px 16px; text-align:left; font-size:12px; font-weight:600; color:var(--text-muted);">Main Reason</th>
+                      <th style="padding:12px 16px; text-align:left; font-size:12px; font-weight:600; color:var(--text-muted);">Avg Rating</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr *ngFor="let p of analyticsData.criticalProducts" style="border-bottom:1px solid var(--border-subtle);">
-                      <td style="padding:12px 16px; font-size:13px; font-weight:500;">{{ p.productName }}</td>
-                      <td style="padding:12px 16px; text-align:right; font-size:13px;">{{ p.returnCount }}</td>
-                      <td style="padding:12px 16px; text-align:right; font-size:13px; color:var(--danger); font-weight:600;">{{ p.refundRate }}%</td>
-                      <td style="padding:12px 16px; font-size:13px; color:var(--text-secondary);">{{ p.mainReturnReason || 'N/A' }}</td>
+                    <tr *ngFor="let p of analyticsData.products" style="border-bottom:1px solid var(--border-subtle);">
+                      <td style="padding:12px 16px; font-size:13px; font-weight:500;">
+                        {{ p.productName }}
+                        <span [class]="'badge badge-' + (p.qualityScore==='CRITICAL'?'danger':(p.qualityScore==='WARNING'?'warning':(p.qualityScore==='GOOD'?'primary':'success')))" style="margin-left:8px; font-size:10px;">{{ p.qualityScore }}</span>
+                      </td>
+                      <td style="padding:12px 16px; text-align:right; font-size:13px;">{{ p.totalReturns || 0 }}</td>
+                      <td style="padding:12px 16px; text-align:right; font-size:13px; color:var(--danger); font-weight:600;">{{ p.refundRate || 0 }}%</td>
+                      <td style="padding:12px 16px; font-size:13px; color:var(--text-secondary);">{{ p.averageRating | number:'1.1-1' }} ★</td>
                     </tr>
                   </tbody>
                 </table>
