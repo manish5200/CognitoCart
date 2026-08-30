@@ -2,14 +2,16 @@
 
 <div align="center">
 
-> **A battle-hardened Spring Boot 3 REST API engineered for scale, security, and real-world e-commerce complexity.**
-> Covers the complete lifecycle: Auth → Catalog → Cart → Checkout → Payment → Shipment → Returns → Analytics → AI Search
+> **A battle-hardened Full-Stack E-Commerce Platform engineered for scale, security, and real-world complexity.**
+> Features a Spring Boot 3 REST API and a dynamic Angular 17+ Frontend covering the complete lifecycle: Auth → Catalog → Cart → Checkout → Payment → Shipment → Returns → Analytics → AI Search.
 
 [![Java 17](https://img.shields.io/badge/Java-17-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/17/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.1-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![Angular](https://img.shields.io/badge/Angular-DD0031?style=for-the-badge&logo=angular&logoColor=white)](https://angular.dev/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL%20+%20pgvector-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://github.com/pgvector/pgvector)
 [![Redis](https://img.shields.io/badge/Redis-Upstash-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://upstash.com/)
 [![RabbitMQ](https://img.shields.io/badge/RabbitMQ-CloudAMQP-FF6600?style=for-the-badge&logo=rabbitmq&logoColor=white)](https://www.rabbitmq.com/)
+[![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)](https://github.com/features/actions)
 [![Razorpay](https://img.shields.io/badge/Razorpay-Payments-3395FF?style=for-the-badge)](https://razorpay.com/)
 [![Delhivery](https://img.shields.io/badge/Delhivery-Logistics-E3000F?style=for-the-badge)](https://www.delhivery.com/)
 
@@ -21,6 +23,7 @@
 
 - [Architecture Overview](#️-architecture-overview)
 - [Technology Stack](#-technology-stack)
+- [Frontend Experience (Angular)](#-frontend-experience-angular-new)
 - [Module Structure](#-module-structure)
 - [Core Domain Concepts](#-core-domain-concepts)
 - [Security Model](#-security-model--idor-prevention)
@@ -39,6 +42,7 @@
 ```mermaid
 graph TD
     %% Styling
+    classDef frontend fill:#dd0031,stroke:#c3002f,stroke-width:2px,color:#fff;
     classDef gateway fill:#2b3137,stroke:#24292e,stroke-width:2px,color:#fff;
     classDef domain fill:#f1f8ff,stroke:#0366d6,stroke-width:2px,color:#0366d6;
     classDef db fill:#f0fff4,stroke:#28a745,stroke-width:2px,color:#28a745;
@@ -46,7 +50,8 @@ graph TD
     classDef mq fill:#fff5eb,stroke:#e36209,stroke-width:2px,color:#e36209;
     classDef ext fill:#f6f8fa,stroke:#6a737d,stroke-width:2px,color:#24292e,stroke-dasharray: 5 5;
 
-    Clients["📱 External Clients (Web, Mobile, Postman)"] -->|HTTPS / REST| API["🚀 Spring Boot 3.4.1 API Gateway"]
+    Clients["💻 Angular 17 Web App (cognitocart-ui)"] -->|HTTPS / REST| API["🚀 Spring Boot 3.4.1 API Gateway"]
+    class Clients frontend
     class API gateway
     
     subgraph "Core Domain Modules"
@@ -112,8 +117,9 @@ graph TD
 
 | Layer | Technology | Purpose |
 |---|---|---|
-| **Framework** | Spring Boot 3.4.1 | Core API engine |
-| **Language** | Java 17 | Records, Text Blocks, Pattern Matching |
+| **Frontend UI** | Angular 17+ / TypeScript | Interactive Single Page Application (SPA), dynamic routing, form validation |
+| **Backend API** | Spring Boot 3.4.1 / Java 17 | Core API engine (Records, Pattern Matching) |
+| **CI/CD** | GitHub Actions | Automated Maven builds and test execution |
 | **Database** | PostgreSQL 18.2 + pgvector | Relational data + Vector similarity search |
 | **Schema** | Flyway 10.20.1 (35 migrations) | Versioned, auditable DB schema evolution |
 | **Cache** | Redis (Upstash) | Guest carts, rate limit buckets, token blacklist |
@@ -130,6 +136,17 @@ graph TD
 | **Distributed Lock** | ShedLock + PostgreSQL | One-node cron execution guarantee |
 | **Observability** | Micrometer + Prometheus + Actuator | Metrics, health checks, Grafana-ready |
 | **API Docs** | SpringDoc OpenAPI 3 | Interactive Swagger UI |
+
+---
+
+## 💻 Frontend Experience (Angular) [NEW]
+
+CognitoCart is not just an API; it features a rich, responsive **Angular Single Page Application (`cognitocart-ui`)** designed for performance and conversion.
+
+*   **Dynamic Checkout Flow:** Streamlined checkout process with automated email-verification guards. If a user hasn't verified their email, the UI seamlessly prompts them before allowing payment.
+*   **Admin & KYC Dashboard:** Comprehensive analytics remapping. Admins can view seller onboarding statuses, approve KYC requests, and monitor revenue churn.
+*   **Seller Product Management:** Dedicated UI for sellers to manage inventory, track `stockQuantity` at the variant level, and organize category mappings.
+*   **AI Search Integration:** The frontend connects directly to the backend's HuggingFace `pgvector` semantic search, allowing users to search using natural language (e.g., "headphones for noisy cafe").
 
 ---
 
@@ -675,11 +692,12 @@ POST /api/v1/admin/sales/events
 ### Prerequisites
 
 - Java 17+
+- Node.js 18+ & Angular CLI (for UI)
 - PostgreSQL 15+ with `pgvector` extension enabled
 - Redis instance
 - RabbitMQ broker (or CloudAMQP free tier)
 
-### Setup
+### Setup the Backend API
 
 ```bash
 # Clone the repo
@@ -717,6 +735,22 @@ SPRING_MAIL_PASSWORD=yourpassword
 # Run!
 ./mvnw spring-boot:run
 ```
+
+### Setup the Frontend UI
+
+```bash
+# In a new terminal tab
+cd cognitocart/cognitocart-ui
+
+# Install dependencies
+npm install
+
+# Start the Angular development server
+ng serve
+```
+
+Access the UI at `http://localhost:4200`
+Access the API Swagger Docs at `http://localhost:8080/swagger-ui/index.html`
 
 ### Docker Compose (local infra)
 
