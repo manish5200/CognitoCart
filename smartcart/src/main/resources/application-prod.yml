@@ -6,6 +6,8 @@ resend:
   from-email: ${RESEND_FROM_EMAIL:"CognitoCart <onboarding@resend.dev>"}
 
 spring:
+  main:
+    lazy-initialization: true
   # From application.yml
 
 
@@ -35,7 +37,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     open-in-view: false
     show-sql: false
 
