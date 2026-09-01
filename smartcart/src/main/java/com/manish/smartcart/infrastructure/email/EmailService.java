@@ -1,75 +1,99 @@
 package com.manish.smartcart.infrastructure.email;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
+
+import java.util.Base64;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class EmailService {
 
-    // Autoconfigured by spring-boot-starter-mail using spring.mail.* properties
-    private final JavaMailSender mailSender;
+    private final RestClient restClient;
 
-    @Value("${spring.mail.username}")
+    @Value("${brevo.api-key}")
+    private String apiKey;
+
+    @Value("${brevo.from-email}")
     private String fromEmail;
 
+    @Value("${brevo.from-name:CognitoCart}")
+    private String fromName;
+
+    public EmailService(){
+        this.restClient = RestClient.create("https://api.brevo.com");
+    }
+
     /**
-     * Sends an async HTML email via Gmail SMTP (port 587 / TLS).
-     * senderName is used as the display name in the inbox.
+     * Sends async HTML email via Brevo HTTP API.
+     * No SMTP port needed — pure HTTPS on port 443.
      */
     @Async
     public void sendMail(String to, String subject, String body, String senderName) {
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            // false = not multipart (no attachments)
-            MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
 
-            helper.setFrom(fromEmail, senderName);
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(body, true); // true = HTML
+            Map<String, Object> payload = Map.of(
+                    "sender", Map.of("name", senderName, "email", fromEmail),
+                    "to", List.of(Map.of("email", to)),
+                    "subject", subject,
+                    "htmlContent", body
+            );
 
-            mailSender.send(message);
-            log.info("Email sent to {}", to);
-        } catch (MessagingException | java.io.UnsupportedEncodingException e) {
-            // Log and swallow — email failure must never crash the main request
-            log.error("Failed to send email to {}: {}", to, e.getMessage());
+            restClient.post()
+                    .uri("/v3/smtp/email")
+                    .header("api-key", apiKey)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(payload)
+                    .retrieve()
+                    .toBodilessEntity();
+
+            log.info("Email sent to {} via Brevo", to);
+
+        } catch (Exception e) {
+            log.error("Failed to send email to {} via Brevo: {}", to, e.getMessage());
         }
     }
 
     /**
-     * Sends an async HTML email with a PDF attachment via Gmail SMTP.
-     * Used for invoice delivery after order placement.
+     * Sends async HTML email with PDF attachment via Brevo HTTP API.
+     * Attachment must be Base64 encoded per Brevo spec.
      */
     @Async
     public void sendMailWithAttachment(String to, String subject, String body,
                                        String senderName, byte[] attachmentBytes,
                                        String attachmentName) {
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            // true = multipart (required for attachments)
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-            helper.setFrom(fromEmail, senderName);
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(body, true); // true = HTML
+            String base64Content =  Base64.getEncoder().encodeToString(attachmentBytes);
 
-            // Attach raw bytes with filename (e.g., "CognitoCart-Invoice-105.pdf")
-            helper.addAttachment(attachmentName,
-                    new org.springframework.core.io.ByteArrayResource(attachmentBytes));
+            Map<String, Object> payload = Map.of(
+                    "sender", Map.of("name", senderName, "email", fromEmail),
+                    "to", List.of(Map.of("email", to)),
+                    "subject", subject,
+                    "htmlContent", body,
+                    "attachment", List.of(Map.of(
+                            "name", attachmentName,
+                            "content", base64Content
+                    ))
+            );
 
-            mailSender.send(message);
-            log.info("Email with attachment '{}' sent to {}", attachmentName, to);
-        } catch (MessagingException | java.io.UnsupportedEncodingException e) {
+            restClient.post()
+                    .uri("/v3/smtp/email")
+                    .header("api-key", apiKey)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(payload)
+                    .retrieve()
+                    .toBodilessEntity();
+
+            log.info("Email with attachment '{}' sent to {} via Brevo", attachmentName, to);
+
+        } catch (Exception e) {
             log.error("Failed to send email with attachment to {}: {}", to, e.getMessage());
         }
     }
