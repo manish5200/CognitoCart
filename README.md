@@ -18,7 +18,8 @@
 [![Brevo](https://img.shields.io/badge/Brevo-Email%20API-0B996E?style=for-the-badge)](https://brevo.com/)
 [![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)](https://github.com/features/actions)
 
-### 🌐 [Live API → cognitocart-api.onrender.com](https://cognitocart-api.onrender.com/swagger-ui/index.html)
+### 🌐 [Live App → cognitocart.vercel.app](https://cognitocart.vercel.app/)
+### 🔌 [Live API → cognitocart-api.onrender.com](https://cognitocart-api.onrender.com/swagger-ui/index.html)
 
 </div>
 
@@ -48,6 +49,7 @@
 
 | Service | URL |
 |---|---|
+| **Frontend App** | https://cognitocart.vercel.app |
 | **REST API** | https://cognitocart-api.onrender.com |
 | **Swagger UI** | https://cognitocart-api.onrender.com/swagger-ui/index.html |
 | **Health Check** | https://cognitocart-api.onrender.com/actuator/health |
@@ -68,7 +70,7 @@ graph TD
     classDef db fill:#f0fff4,stroke:#28a745,stroke-width:2px,color:#28a745;
     classDef cache fill:#ffeef0,stroke:#d73a49,stroke-width:2px,color:#d73a49;
     classDef mq fill:#fff5eb,stroke:#e36209,stroke-width:2px,color:#e36209;
-    classDef ext fill:#f6f8fa,stroke:#6a737d,stroke-width:2px,color:#24292e,stroke-dasharray: 5 5;
+    classDef ext fill:#f6f8fa,stroke:#6a737d,stroke-width:2px,color:#24292e,stroke-dasharray:5;
 
     Clients["💻 Angular 17 Web App"] -->|HTTPS / REST| API["🚀 Spring Boot 3.4.1 API"]
     class Clients frontend
@@ -1519,5 +1521,8 @@ http://localhost:8080/actuator/prometheus
 **Built with ❤️ by [Manish Chauhan](https://github.com/manish5200)**
 
 *Engineered for scale. Secured by design. Ready for production.*
+
+[![Live App](https://img.shields.io/badge/Live%20App-cognitocart.vercel.app-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://cognitocart.vercel.app/)
+[![Live API](https://img.shields.io/badge/Live%20API-cognitocart--api.onrender.com-46E3B7?style=for-the-badge&logo=render&logoColor=white)](https://cognitocart-api.onrender.com/swagger-ui/index.html)
 
 </div>
