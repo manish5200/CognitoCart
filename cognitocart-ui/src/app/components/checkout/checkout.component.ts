@@ -84,12 +84,6 @@ declare var Razorpay: any;
                   <div class="form-group"><label class="form-label">State</label><input type="text" [(ngModel)]="newAddress.state" class="form-input" placeholder="e.g. Karnataka"></div>
                   <div class="form-group"><label class="form-label">Pincode</label><input type="text" [(ngModel)]="newAddress.pincode" class="form-input" placeholder="6 digits"></div>
                 </div>
-                <div class="form-actions">
-                  <button class="btn btn-ghost" (click)="showAddAddress = false" *ngIf="addresses.length > 0">Cancel</button>
-                  <button class="btn btn-primary" (click)="saveNewAddress()" [disabled]="savingAddress">
-                    <span *ngIf="savingAddress" class="spinner spinner-sm"></span>
-                    {{savingAddress ? 'Saving...' : 'Save Address'}}
-                  </button>
                 </div>
               </div>
 
@@ -113,11 +107,6 @@ declare var Razorpay: any;
                 </div>
               </div>
 
-              <div class="step-footer" *ngIf="!showAddAddress && addresses.length > 0">
-                <button class="btn btn-primary btn-lg step-btn" (click)="step = 2" [disabled]="!selectedAddressId">
-                  Continue to Review
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-                </button>
               </div>
             </div>
           </div>
@@ -157,10 +146,6 @@ declare var Razorpay: any;
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
                   Back to Address
                 </button>
-                <button class="btn btn-primary btn-lg step-btn" (click)="step = 3">
-                  Proceed to Payment
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-                </button>
               </div>
             </div>
           </div>
@@ -196,19 +181,6 @@ declare var Razorpay: any;
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
                   Back
                 </button>
-                <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
-                  <div *ngIf="!isVerified" class="verification-banner" style="position:relative; margin-bottom:0; padding:8px 12px; border-radius:8px;">
-                    <span class="verification-text" style="font-size:12px;">Email not verified.</span>
-                    <button class="btn btn-primary btn-sm verify-btn" (click)="verifyEmail()" style="font-size:11px; padding:4px 8px;">Verify Now</button>
-                  </div>
-                  <button class="btn btn-primary btn-lg step-btn pulse-glow" (click)="placeOrder()" [disabled]="placingOrder || !isVerified">
-                    <span *ngIf="placingOrder" class="spinner spinner-sm"></span>
-                    <span *ngIf="!placingOrder" style="display:flex; align-items:center; gap:8px;">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                      Pay ₹{{cart?.totalAmount | number:'1.0-0'}} Securely
-                    </span>
-                  </button>
-                </div>
               </div>
             </div>
           </div>
@@ -237,6 +209,40 @@ declare var Razorpay: any;
               <div class="summary-row total-row">
                 <span class="label">Total Amount</span>
                 <span class="value total-price">₹{{cart?.totalAmount | number:'1.0-0'}}</span>
+              </div>
+            </div>
+
+            <!-- Dynamic Action Button in Sidebar -->
+            <div class="sidebar-action" style="margin-top: 32px;">
+              <!-- Step 1: Add Address Mode -->
+              <button *ngIf="step === 1 && showAddAddress" class="btn btn-primary btn-lg w-100 pulse-glow" style="width: 100%; border-radius: 12px; padding: 16px; font-weight: 700; font-size: 16px;" (click)="saveNewAddress()" [disabled]="savingAddress">
+                <span *ngIf="savingAddress" class="spinner spinner-sm"></span>
+                {{savingAddress ? 'Saving...' : 'Save Address & Continue'}}
+              </button>
+
+              <!-- Step 1: Address Selected Mode -->
+              <button *ngIf="step === 1 && !showAddAddress && addresses.length > 0" class="btn btn-primary btn-lg w-100 pulse-glow" style="width: 100%; border-radius: 12px; padding: 16px; font-weight: 700; font-size: 16px;" (click)="step = 2" [disabled]="!selectedAddressId">
+                Continue to Review
+              </button>
+
+              <!-- Step 2: Review Mode -->
+              <button *ngIf="step === 2" class="btn btn-primary btn-lg w-100 pulse-glow" style="width: 100%; border-radius: 12px; padding: 16px; font-weight: 700; font-size: 16px;" (click)="step = 3">
+                Proceed to Payment
+              </button>
+
+              <!-- Step 3: Payment Mode -->
+              <div *ngIf="step === 3" style="display:flex; flex-direction:column; gap:12px;">
+                <div *ngIf="!isVerified" class="verification-banner" style="padding:12px; border-radius:8px; text-align:center;">
+                  <span class="verification-text" style="font-size:13px; display:block; margin-bottom:8px;">Email not verified.</span>
+                  <button class="btn btn-primary btn-sm verify-btn" (click)="verifyEmail()" style="width:100%;">Verify Now</button>
+                </div>
+                <button class="btn btn-primary btn-lg w-100 pulse-glow" style="width: 100%; border-radius: 12px; padding: 16px; font-weight: 700; font-size: 16px; display:flex; align-items:center; justify-content:center; gap:8px;" (click)="placeOrder()" [disabled]="placingOrder || !isVerified">
+                  <span *ngIf="placingOrder" class="spinner spinner-sm"></span>
+                  <span *ngIf="!placingOrder" style="display:flex; align-items:center; gap:8px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    Pay ₹{{cart?.totalAmount | number:'1.0-0'}}
+                  </span>
+                </button>
               </div>
             </div>
             
