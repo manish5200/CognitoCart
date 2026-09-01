@@ -5,7 +5,7 @@ import com.manish.smartcart.product.dto.ProductResponse;
 import com.manish.smartcart.product.model.Product;
 import com.manish.smartcart.product.model.ProductInsights;
 import com.manish.smartcart.user.model.SellerProfile;
-import com.manish.smartcart.user.repository.SellerProfileRepository;
+import com.manish.smartcart.seller.repository.SellerProfileRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
