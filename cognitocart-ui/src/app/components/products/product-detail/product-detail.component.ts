@@ -108,6 +108,21 @@ import { AuthService } from '../../../services/auth.service';
               </div>
             </div>
           </div>
+
+          <!-- Vendor Details -->
+          <details class="vendor-details" *ngIf="product.storeName">
+            <summary>Vendor Details</summary>
+            <div class="vd-content">
+              <div class="vd-item">
+                <span class="vd-label">Sold By</span>
+                <span class="vd-value">{{product.storeName}}</span>
+              </div>
+              <div class="vd-item" *ngIf="product.businessAddress">
+                <span class="vd-label">Business Address</span>
+                <span class="vd-value">{{product.businessAddress}}</span>
+              </div>
+            </div>
+          </details>
         </div>
 
         <!-- COLUMN 3: Buy Box -->
@@ -306,6 +321,16 @@ import { AuthService } from '../../../services/auth.service';
     .trust-badge .icon { font-size: 24px; }
     .trust-badge strong { display: block; font-size: 14px; color: #fff; margin-bottom: 2px; }
     .trust-badge span { display: block; font-size: 12px; color: var(--text-muted); }
+
+    .vendor-details { margin-top: 24px; border-top: 1px solid var(--border-default); padding-top: 24px; }
+    .vendor-details summary { font-size: 16px; font-weight: 700; color: var(--text-primary); cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+    .vendor-details summary::-webkit-details-marker { display: none; }
+    .vendor-details summary::after { content: '▾'; font-size: 18px; color: var(--text-muted); transition: 0.3s; }
+    .vendor-details[open] summary::after { transform: rotate(180deg); }
+    .vd-content { padding-top: 16px; display: flex; flex-direction: column; gap: 16px; }
+    .vd-item { display: flex; flex-direction: column; gap: 4px; }
+    .vd-label { font-size: 13px; color: var(--text-muted); }
+    .vd-value { font-size: 14px; color: var(--text-primary); font-weight: 500; }
 
     /* Buy Box */
     .pdp-buybox { position: sticky; top: 100px; }

@@ -4,13 +4,19 @@ import com.manish.smartcart.product.dto.ProductRequest;
 import com.manish.smartcart.product.dto.ProductResponse;
 import com.manish.smartcart.product.model.Product;
 import com.manish.smartcart.product.model.ProductInsights;
+import com.manish.smartcart.user.model.SellerProfile;
+import com.manish.smartcart.user.repository.SellerProfileRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 
 @Component
+@RequiredArgsConstructor
 public class ProductMapper {
+
+    private final SellerProfileRepository sellerProfileRepository;
 
     public ProductResponse toProductResponse(Product product) {
 
@@ -54,6 +60,15 @@ public class ProductMapper {
             productResponse.setAiSummary(insights.getAiSummary());
             productResponse.setInsightLastGenerated(insights.getLastGenerated());
         }
+        
+        // --- Vendor (Seller) Mapping ---
+        if (product.getSellerId() != null) {
+            sellerProfileRepository.findById(product.getSellerId()).ifPresent(seller -> {
+                productResponse.setStoreName(seller.getStoreName());
+                productResponse.setBusinessAddress(seller.getBusinessAddress());
+            });
+        }
+        
         return productResponse;
     }
 

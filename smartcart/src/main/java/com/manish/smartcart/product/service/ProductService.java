@@ -84,11 +84,11 @@ public class ProductService {
         product.setSellerId(currentSellerId);
 
         // 3. Resolve the Category Link (Crucial Fix)
-        if (productRequest.getCategoryId() != null) {
+        if (productRequest.getCategoryPublicId() != null) {
             // Fetch the separate Category entity from its repository
-            Category category = categoryRepository.findById(productRequest.getCategoryId())
+            Category category = categoryRepository.findByPublicId(productRequest.getCategoryPublicId())
                     .orElseThrow(() -> new ResourceNotFoundException(
-                            "Category not found with ID: " + productRequest.getCategoryId()));
+                            "Category not found with Public ID: " + productRequest.getCategoryPublicId()));
 
             // Map the full entity to the Product's @ManyToOne field
             product.setCategory(category);
@@ -195,9 +195,9 @@ public class ProductService {
         if (productRequest.getTags() != null) {
             product.setTags(productRequest.getTags());
         }
-        if (productRequest.getCategoryId() != null) {
-            Category category = categoryRepository.findById(productRequest.getCategoryId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID: " + productRequest.getCategoryId()));
+        if (productRequest.getCategoryPublicId() != null) {
+            Category category = categoryRepository.findByPublicId(productRequest.getCategoryPublicId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Category not found with Public ID: " + productRequest.getCategoryPublicId()));
             product.setCategory(category);
         }
 

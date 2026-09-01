@@ -37,4 +37,8 @@ public class ProductResponse {
     private String aiSummary;               // From ProductInsights
     private LocalDateTime insightLastGenerated;
     private Integer totalSold;
+    
+    // --- Vendor (Seller) Details ---
+    private String storeName;
+    private String businessAddress;
 }
