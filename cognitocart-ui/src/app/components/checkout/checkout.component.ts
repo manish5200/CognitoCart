@@ -193,7 +193,7 @@ declare var Razorpay: any;
                 <span class="label" style="color:var(--text-primary); font-weight: 500;">Items ({{cart?.items?.length || 0}})</span>
                 <span class="value">₹{{(cart?.subtotalAmount || getSubtotal()) | number:'1.0-0'}}</span>
               </div>
-              <div class="summary-row" *ngIf="cart?.discountAmount > 0" class="discount-row">
+              <div class="summary-row discount-row" *ngIf="cart?.discountAmount > 0">
                 <span class="label">Total Discount</span>
                 <span class="value">−₹{{cart?.discountAmount | number:'1.0-0'}}</span>
               </div>
