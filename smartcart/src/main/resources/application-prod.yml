@@ -10,6 +10,21 @@ spring:
     lazy-initialization: true
   # From application.yml
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}          # Your Gmail address
+    password: ${MAIL_PASSWORD}          # 16-char App Password from Google
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true             # Fail fast if TLS unavailable
+          connectiontimeout: 5000      # 5s — important on Render free tier
+          timeout: 5000
+          writetimeout: 5000
 
   # From application-dev.yml
   security:

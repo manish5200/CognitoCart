@@ -1,105 +1,76 @@
 package com.manish.smartcart.infrastructure.email;
 
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.MediaType;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
-
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class EmailService {
 
-    private final RestClient restClient;
+    // Autoconfigured by spring-boot-starter-mail using spring.mail.* properties
+    private final JavaMailSender mailSender;
 
-    @Value("${resend.api-key}")
-    private String apiKey;
-
-    @Value("${resend.from-email}")
+    @Value("${spring.mail.username}")
     private String fromEmail;
 
-    public EmailService() {
-        // Initialize Spring's modern RestClient for the Resend API
-        this.restClient = RestClient.create("https://api.resend.com");
-    }
-
     /**
-     * Sends an HTML email via Resend's REST API.
-     * Bypasses SMTP port blocking entirely.
+     * Sends an async HTML email via Gmail SMTP (port 587 / TLS).
+     * senderName is used as the display name in the inbox.
      */
     @Async
     public void sendMail(String to, String subject, String body, String senderName) {
         try {
-            // Construct the JSON payload requested by Resend
-            Map<String, Object> payload = Map.of(
-                    "from", fromEmail,
-                    "to", List.of(to),
-                    "subject", subject,
-                    "html", body
-            );
+            MimeMessage message = mailSender.createMimeMessage();
+            // false = not multipart (no attachments)
+            MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
 
-            // Execute the POST request
-            restClient.post()
-                    .uri("/emails")
-                    .header("Authorization", "Bearer " + apiKey)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(payload)
-                    .retrieve()
-                    .toBodilessEntity();
+            helper.setFrom(fromEmail, senderName);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(body, true); // true = HTML
 
-            log.info("Email sent to {} via Resend REST API", to);
-        } catch (Exception e) {
-            log.error("Failed to send email to {} via Resend API: {}", to, e.getMessage());
+            mailSender.send(message);
+            log.info("Email sent to {}", to);
+        } catch (MessagingException | java.io.UnsupportedEncodingException e) {
+            // Log and swallow — email failure must never crash the main request
+            log.error("Failed to send email to {}: {}", to, e.getMessage());
         }
     }
 
     /**
-     * Sends an HTML email WITH a PDF attachment via Resend's REST API.
-     * Attachments must be Base64 encoded strings in the JSON payload.
-     *
-     * @param attachmentBytes Raw bytes of the PDF (from InvoiceService)
-     * @param attachmentName  Filename shown in inbox e.g., "CognitoCart-Invoice-105.pdf"
+     * Sends an async HTML email with a PDF attachment via Gmail SMTP.
+     * Used for invoice delivery after order placement.
      */
     @Async
     public void sendMailWithAttachment(String to, String subject, String body,
                                        String senderName, byte[] attachmentBytes,
                                        String attachmentName) {
         try {
-            // Convert binary PDF bytes to a Base64 string for the JSON payload
-            String base64Content = Base64.getEncoder().encodeToString(attachmentBytes);
-            
-            // Build the attachment map
-            Map<String, Object> attachment = Map.of(
-                    "filename", attachmentName,
-                    "content", base64Content
-            );
+            MimeMessage message = mailSender.createMimeMessage();
+            // true = multipart (required for attachments)
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-            // Build the full payload with the attachment array
-            Map<String, Object> payload = Map.of(
-                    "from", fromEmail,
-                    "to", List.of(to),
-                    "subject", subject,
-                    "html", body,
-                    "attachments", List.of(attachment)
-            );
+            helper.setFrom(fromEmail, senderName);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(body, true); // true = HTML
 
-            // Execute the POST request
-            restClient.post()
-                    .uri("/emails")
-                    .header("Authorization", "Bearer " + apiKey)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(payload)
-                    .retrieve()
-                    .toBodilessEntity();
+            // Attach raw bytes with filename (e.g., "CognitoCart-Invoice-105.pdf")
+            helper.addAttachment(attachmentName,
+                    new org.springframework.core.io.ByteArrayResource(attachmentBytes));
 
-            log.info("Email with attachment '{}' sent to {} via Resend REST API", attachmentName, to);
-        } catch (Exception e) {
-            log.error("Failed to send email with attachment to {} via Resend API: {}", to, e.getMessage());
+            mailSender.send(message);
+            log.info("Email with attachment '{}' sent to {}", attachmentName, to);
+        } catch (MessagingException | java.io.UnsupportedEncodingException e) {
+            log.error("Failed to send email with attachment to {}: {}", to, e.getMessage());
         }
     }
 }
