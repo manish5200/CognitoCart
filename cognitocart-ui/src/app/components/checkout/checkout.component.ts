@@ -84,7 +84,6 @@ declare var Razorpay: any;
                   <div class="form-group"><label class="form-label">State</label><input type="text" [(ngModel)]="newAddress.state" class="form-input" placeholder="e.g. Karnataka"></div>
                   <div class="form-group"><label class="form-label">Pincode</label><input type="text" [(ngModel)]="newAddress.pincode" class="form-input" placeholder="6 digits"></div>
                 </div>
-                </div>
               </div>
 
               <div class="address-grid" *ngIf="!showAddAddress && addresses.length > 0">
@@ -107,7 +106,6 @@ declare var Razorpay: any;
                 </div>
               </div>
 
-              </div>
             </div>
           </div>
 
