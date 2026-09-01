@@ -71,6 +71,15 @@ public class ProductService {
 
         Product product = productMapper.toProduct(productRequest);
 
+        // --- DRAFT STATE LOGIC ---
+        // If the seller marks this as a draft, we hide it from the storefront immediately.
+        // Otherwise, we make it available as usual.
+        if (Boolean.TRUE.equals(productRequest.getIsDraft())) {
+            product.setIsAvailable(false); // Hidden from customers
+        } else {
+            product.setIsAvailable(true);  // Visible to customers
+        }
+        
         // 2. Assign the seller ID from the authenticated user
         product.setSellerId(currentSellerId);
 

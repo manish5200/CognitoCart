@@ -42,4 +42,7 @@ public class ProductRequest {
     private Set<String> tags;
 
     private List<String> imageUrls;
+
+    // NEW FIELD: Tells the backend if this is a draft. Defaults to false for backward compatibility.
+    private Boolean isDraft = false;
 }
