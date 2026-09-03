@@ -3,7 +3,7 @@ package com.manish.smartcart.order.model;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.manish.smartcart.shared.model.BaseEntity;
 import com.manish.smartcart.product.model.ProductVariant;
-import com.manish.smartcart.shared.enums.PolicyType;
+import com.manish.smartcart.shared.enums.product.PolicyType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import lombok.*;

@@ -1,10 +1,9 @@
 package com.manish.smartcart.cart.dto;
 
-import com.manish.smartcart.shared.enums.PolicyType;
+import com.manish.smartcart.shared.enums.product.PolicyType;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 
 @Setter

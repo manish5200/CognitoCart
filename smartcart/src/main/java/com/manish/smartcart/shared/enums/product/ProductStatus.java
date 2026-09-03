@@ -1,4 +1,4 @@
-package com.manish.smartcart.shared.enums;
+package com.manish.smartcart.shared.enums.product;
 
 public enum ProductStatus {
     ACTIVE,

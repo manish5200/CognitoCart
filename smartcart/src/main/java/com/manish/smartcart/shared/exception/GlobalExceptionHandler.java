@@ -86,6 +86,19 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "SYSTEM_ERROR", "An unexpected internal error occurred on the server.", null);
     }
 
+    // Add this inside GlobalExceptionHandler.java:
+    // 10. PRODUCT STATE CONFLICTS (HTTP 409)
+    /**
+     * Intercepts invalid product state machine transitions.
+     * Returns a 409 Conflict so the frontend UI can explicitly warn the seller
+     * that their action is blocked due to current product status (e.g., REJECTED).
+     */
+    @ExceptionHandler(ProductStateTransitionException.class)
+    public ResponseEntity<ErrorResponse> handleProductStateTransition(ProductStateTransitionException ex) {
+        return buildErrorResponse(HttpStatus.CONFLICT, "INVALID_STATE_TRANSITION", ex.getMessage(), null);
+    }
+
+
     private ResponseEntity<ErrorResponse> buildErrorResponse(HttpStatus status, String code, String message, Map<String, String> validationErrors) {
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .status(status.value())

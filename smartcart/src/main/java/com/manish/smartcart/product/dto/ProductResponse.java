@@ -33,7 +33,7 @@ public class ProductResponse {
     private Set<String> tags;
     private Double averageRating;
     private Integer totalReviews;
-    private List<String> imageUrls;
+    private List<ProductMediaResponse> mediaGallery;
     private String aiSummary;               // From ProductInsights
     private LocalDateTime insightLastGenerated;
     private Integer totalSold;

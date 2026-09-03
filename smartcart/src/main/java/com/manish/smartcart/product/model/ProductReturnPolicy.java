@@ -1,6 +1,6 @@
 package com.manish.smartcart.product.model;
 
-import com.manish.smartcart.shared.enums.PolicyType;
+import com.manish.smartcart.shared.enums.product.PolicyType;
 import com.manish.smartcart.shared.model.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

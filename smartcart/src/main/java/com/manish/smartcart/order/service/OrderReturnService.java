@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.manish.smartcart.order.dto.OrderResponse;
 import com.manish.smartcart.order.dto.PolicySnapshot;
 import com.manish.smartcart.shared.enums.OrderStatus;
-import com.manish.smartcart.shared.enums.PolicyType;
+import com.manish.smartcart.shared.enums.product.PolicyType;
 import com.manish.smartcart.shared.enums.ReturnReason;
 import com.manish.smartcart.shared.enums.ReturnType;
 import com.manish.smartcart.shared.exception.BusinessLogicException;

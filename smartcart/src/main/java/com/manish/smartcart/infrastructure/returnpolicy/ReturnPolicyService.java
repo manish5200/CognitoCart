@@ -3,7 +3,7 @@ package com.manish.smartcart.infrastructure.returnpolicy;
 import com.manish.smartcart.order.dto.PolicySnapshot;
 import com.manish.smartcart.product.dto.ReturnPolicyRequest;
 import com.manish.smartcart.product.dto.ReturnPolicyResponse;
-import com.manish.smartcart.shared.enums.PolicyType;
+import com.manish.smartcart.shared.enums.product.PolicyType;
 import com.manish.smartcart.shared.exception.BusinessLogicException;
 import com.manish.smartcart.shared.exception.ResourceNotFoundException;
 import com.manish.smartcart.product.model.Category;

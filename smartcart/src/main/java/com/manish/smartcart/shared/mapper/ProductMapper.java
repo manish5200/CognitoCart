@@ -1,16 +1,19 @@
 package com.manish.smartcart.shared.mapper;
 
+import com.manish.smartcart.product.dto.ProductMediaResponse;
 import com.manish.smartcart.product.dto.ProductRequest;
 import com.manish.smartcart.product.dto.ProductResponse;
 import com.manish.smartcart.product.model.Product;
 import com.manish.smartcart.product.model.ProductInsights;
-import com.manish.smartcart.user.model.SellerProfile;
+import com.manish.smartcart.product.model.embeddable.ProductSEO;
+import com.manish.smartcart.product.model.embeddable.ProductWarranty;
 import com.manish.smartcart.seller.repository.SellerProfileRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -31,18 +34,9 @@ public class ProductMapper {
         productResponse.setDescription(product.getDescription());
         productResponse.setPrice(product.getPrice());
         productResponse.setDiscountPrice(product.getDiscountPrice());
-        // NOTE: sku and stockQuantity live on ProductVariant, not Product.
-        // The product response intentionally omits them at this layer.
-        // Variant-level detail is returned by GET /api/v1/products/{id}/variants
         productResponse.setAverageRating(product.getAverageRating());
         productResponse.setTotalReviews(product.getTotalReviews());
         productResponse.setTotalSold(product.getTotalSold());
-        // Copy into plain Java collections — CRITICAL for Redis serialization.
-        // Hibernate's PersistentSet/PersistentBag is session-bound and cannot be
-        // serialized by Jackson after the Hibernate session is closed.
-        productResponse.setImageUrls(product.getImageUrls() != null
-                ? new ArrayList<>(product.getImageUrls())
-                : new ArrayList<>());
         productResponse.setTags(product.getTags() != null
                 ? new HashSet<>(product.getTags())
                 : new HashSet<>());
@@ -68,26 +62,69 @@ public class ProductMapper {
                 productResponse.setBusinessAddress(seller.getBusinessAddress());
             });
         }
-        
+
+        // --- Media Gallery Mapping (V4.2) ---
+        if (product.getMediaGallery() != null && !product.getMediaGallery().isEmpty()) {
+            List<ProductMediaResponse> mediaResponses = product.getMediaGallery().stream()
+                    .map(media -> ProductMediaResponse.builder()
+                            .mediaPublicId(media.getPublicId()) // STRICT 3-ID RULE ENFORCED
+                            .mediaUrl(media.getMediaUrl())
+                            .mediaType(media.getMediaType())
+                            .isPrimary(media.isPrimary())
+                            .sortOrder(media.getSortOrder())
+                            .altText(media.getAltText())
+                            .build())
+                    .toList();
+            productResponse.setMediaGallery(mediaResponses);
+        } else {
+            productResponse.setMediaGallery(new ArrayList<>());
+        }
+
         return productResponse;
     }
 
     public Product toProduct(ProductRequest productRequest) {
         Product product = new Product();
+
+        // 1. Basic Fields
         product.setProductName(productRequest.getProductName());
         product.setPrice(productRequest.getPrice());
         if(productRequest.getDiscountPrice() != null) {
             product.setDiscountPrice(productRequest.getDiscountPrice());
         }
         product.setDescription(productRequest.getDescription());
-        // NOTE: stockQuantity lives on ProductVariant — NOT set here.
-        // ProductService.createProduct() will create the default variant separately.
-        // Handle Images and Tags safely
-        if (productRequest.getImageUrls() != null)
-            product.setImageUrls(productRequest.getImageUrls());
-        if (productRequest.getTags() != null)
+        if (productRequest.getTags() != null) {
             product.setTags(productRequest.getTags());
+        }
 
+        // 2. NEW V4.2 DOMAIN FIELDS
+        product.setCountryOfOrigin(productRequest.getCountryOfOrigin());
+        product.setCondition(productRequest.getCondition());
+        product.setProductType(productRequest.getProductType());
+
+        // 3. JSONB Attributes Map
+        if (productRequest.getAttributes() != null) {
+            product.setAttributes(productRequest.getAttributes());
+        }
+
+        // 4. EMBEDDABLE: WARRANTY
+        if (productRequest.getWarranty() != null) {
+            ProductWarranty warranty = new ProductWarranty();
+            warranty.setWarrantyType(productRequest.getWarranty().getWarrantyType());
+            warranty.setWarrantyDuration(productRequest.getWarranty().getWarrantyDuration());
+            warranty.setWarrantyDurationUnit(productRequest.getWarranty().getWarrantyDurationUnit());
+            product.setWarranty(warranty);
+        }
+
+        // 5. EMBEDDABLE: SEO
+        if (productRequest.getSeo() != null) {
+            ProductSEO seo = new ProductSEO();
+            seo.setSeoTitle(productRequest.getSeo().getSeoTitle());
+            seo.setMetaDescription(productRequest.getSeo().getMetaDescription());
+            product.setSeo(seo);
+        }
+
+        // NOTE: Variants and Media are managed by ProductService.createProduct()
         return product;
     }
 }

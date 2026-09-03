@@ -1,6 +1,6 @@
 package com.manish.smartcart.product.dto;
 
-import com.manish.smartcart.shared.enums.PolicyType;
+import com.manish.smartcart.shared.enums.product.PolicyType;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 

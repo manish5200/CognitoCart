@@ -1,6 +1,6 @@
 package com.manish.smartcart.order.dto;
 
-import com.manish.smartcart.shared.enums.PolicyType;
+import com.manish.smartcart.shared.enums.product.PolicyType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

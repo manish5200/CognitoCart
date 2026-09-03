@@ -5,9 +5,9 @@ import com.manish.smartcart.cart.model.Cart;
 import com.manish.smartcart.cart.model.CartItem;
 import com.manish.smartcart.infrastructure.returnpolicy.ReturnPolicyService;
 import com.manish.smartcart.order.dto.PolicySnapshot;
+import com.manish.smartcart.shared.enums.product.PolicyType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -30,7 +30,7 @@ public class CartMapper {
             java.util.UUID variantPublicId = null;
             java.util.UUID productPublicId = null;
             
-            com.manish.smartcart.shared.enums.PolicyType policyType = null;
+            PolicyType policyType = null;
             Integer returnWindowDays = null;
 
             if (item.getVariant() != null) {
@@ -38,8 +38,8 @@ public class CartMapper {
                 variantInfo = item.getVariant().getDisplayLabel();
                 if (item.getVariant().getVariantImageUrl() != null) {
                     imageUrl = item.getVariant().getVariantImageUrl();
-                } else if (item.getVariant().getProduct() != null && item.getVariant().getProduct().getImageUrls() != null && !item.getVariant().getProduct().getImageUrls().isEmpty()) {
-                    imageUrl = item.getVariant().getProduct().getImageUrls().get(0);
+                } else if (item.getVariant().getProduct() != null && item.getVariant().getProduct().getPrimaryImageUrl() != null) {
+                    imageUrl = item.getVariant().getProduct().getPrimaryImageUrl();
                 }
                 
                 if (item.getVariant().getProduct() != null) {
@@ -53,7 +53,6 @@ public class CartMapper {
                     }
                 }
             }
-
             CartResponse.ItemDTO newItem = new CartResponse.ItemDTO(
                     productName,
                     item.getPriceAtAdding(),

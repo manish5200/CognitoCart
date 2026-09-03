@@ -2,6 +2,12 @@ package com.manish.smartcart.product.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.manish.smartcart.product.model.embeddable.ProductSEO;
+import com.manish.smartcart.product.model.embeddable.ProductWarranty;
+import com.manish.smartcart.shared.enums.product.Condition;
+import com.manish.smartcart.shared.enums.product.LifecycleStatus;
+import com.manish.smartcart.shared.enums.product.ProductApprovalStatus;
+import com.manish.smartcart.shared.enums.product.ProductType;
 import com.manish.smartcart.shared.model.BaseEntity;
 import com.manish.smartcart.review.model.Review;
 import com.manish.smartcart.shared.util.AppConstants;
@@ -11,13 +17,13 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.type.SqlTypes;
+
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * The catalog representation of a product.
@@ -130,11 +136,46 @@ public class Product extends BaseEntity {
     private ProductInsights insights;
 
     // Master image gallery. Shared across all variants unless overridden by a variant swatch.
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "product_images", joinColumns = @JoinColumn(name = "product_id"))
-    @Column(name = "image_url")
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("sortOrder ASC") // Ensures Hibernate always loads them in UI-ready order
     @Builder.Default
-    private List<String> imageUrls = new ArrayList<>();
+    private List<ProductMedia> mediaGallery = new ArrayList<>();
+
+    // ─── CORE DOMAIN FIELDS ───────────────────────────────────────────────────
+    @Column(name = "country_of_origin", length = 2)
+    private String countryOfOrigin; // ISO 3166-1 alpha-2 (e.g., "IN", "US")
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
+    private Condition condition;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "product_type", length = 30)
+    private ProductType productType;
+
+    // ─── STATE MACHINE ────────────────────────────────────────────────────────
+    @Enumerated(EnumType.STRING)
+    @Column(name = "lifecycle_status", nullable = false, length = 30)
+    @Builder.Default
+    private LifecycleStatus lifecycleStatus = LifecycleStatus.DRAFT;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "approval_status", nullable = false, length = 30)
+    @Builder.Default
+    private ProductApprovalStatus approvalStatus = ProductApprovalStatus.NOT_REQUIRED;
+
+    // ─── JSONB & EMBEDDABLE ──────────────────────────────────────────────────
+    // Stores dynamic product-scoped attributes (e.g., Brand, Material) without altering DB schema
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    @Builder.Default
+    private Map<String, String> attributes = new LinkedHashMap<>();
+
+    @Embedded
+    private ProductWarranty warranty;
+
+    @Embedded
+    private ProductSEO seo;
 
     // ─── HELPERS ──────────────────────────────────────────────────────────────
 
@@ -151,5 +192,21 @@ public class Product extends BaseEntity {
         if(this.productCode == null){
             this.productCode = HumanIdGenerator.generate("PRD");
         }
+    }
+
+    /**
+     * Helper to get the primary image URL since we migrated to the ProductMedia gallery.
+     */
+    @Transient
+    @JsonIgnore
+    public String getPrimaryImageUrl() {
+        if (mediaGallery == null || mediaGallery.isEmpty()) {
+            return null;
+        }
+        return mediaGallery.stream()
+                .filter(ProductMedia::isPrimary)
+                .findFirst()
+                .map(ProductMedia::getMediaUrl)
+                .orElse(mediaGallery.get(0).getMediaUrl());
     }
 }

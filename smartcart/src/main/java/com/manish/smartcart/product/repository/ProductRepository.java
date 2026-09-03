@@ -23,6 +23,10 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
 
        Optional<Product> findBySlug(String slug);
 
+       @Query("SELECT p FROM Product p WHERE p.approvalStatus = :status")
+       Page<Product> findByApprovalStatus(@Param("status") com.manish.smartcart.shared.enums.product.ProductApprovalStatus status, Pageable pageable);
+
+
        /**
         * Fetches a product row with a PESSIMISTIC_WRITE lock (SELECT ... FOR UPDATE).
         * Used exclusively during checkout to prevent double-selling when two customers
@@ -195,5 +199,12 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
 
        // HUMAN ID LOOKUP: Used by catalog deep links and seller dashboard
        Optional<Product> findByProductCode(String productCode);
+
+       /**
+        * Highly efficient boolean check for Slug Concurrency loops.
+        * Used to verify if a slug (e.g., "iphone-15") is taken before we attempt to insert it,
+        * so we can auto-increment to "iphone-15-2".
+        */
+       boolean existsBySlug(String slug);
 }
 

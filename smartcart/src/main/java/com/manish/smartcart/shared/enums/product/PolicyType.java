@@ -1,4 +1,4 @@
-package com.manish.smartcart.shared.enums;
+package com.manish.smartcart.shared.enums.product;
 
 /**
  * Defines what kind of post-purchase action is allowed for a product/category.

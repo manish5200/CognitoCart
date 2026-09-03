@@ -276,7 +276,7 @@ public class OrderService {
             orderItem.setSkuSnapshot(variant.getSku());
             orderItem.setImageUrlSnapshot(
                     variant.getVariantImageUrl() != null ? variant.getVariantImageUrl()
-                            : (product.getImageUrls() != null && !product.getImageUrls().isEmpty() ? product.getImageUrls().get(0) : null));
+                            : product.getPrimaryImageUrl());
 
             orderItems.add(orderItem);
             computedTotal = computedTotal.add(lineTotal);

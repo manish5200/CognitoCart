@@ -42,4 +42,8 @@ public class ProductVariantRequest {
 
     @Builder.Default
     private Integer sortOrder = 0;
+
+    // Used for "Strike-through" pricing display, separate from the actual selling price
+    @Min(value = 0, message = "Compare at price must be positive")
+    private BigDecimal compareAtPrice;
 }

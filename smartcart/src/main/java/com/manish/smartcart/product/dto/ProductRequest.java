@@ -1,5 +1,8 @@
 package com.manish.smartcart.product.dto;
 
+import com.manish.smartcart.shared.enums.product.Condition;
+import com.manish.smartcart.shared.enums.product.ProductType;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -7,6 +10,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -42,8 +46,34 @@ public class ProductRequest {
 
     private Set<String> tags;
 
-    private List<String> imageUrls;
+    // ─── NEW CORE DOMAIN FIELDS ──────────────────────────────
+    @NotNull(message = "Country of origin is required")
+    private String countryOfOrigin;
 
-    // NEW FIELD: Tells the backend if this is a draft. Defaults to false for backward compatibility.
+    @NotNull(message = "Condition is required")
+    private Condition condition;
+
+    @NotNull(message = "Product type is required")
+    private ProductType productType;
+
+    // ─── NEW EMBEDDABLE & JSONB ─────────────────────────────
+
+    private Map<String, String> attributes;
+
+    private ProductWarrantyRequest warranty;
+
+    private ProductSEORequest seo;
+
+    // ─── NEW RELATIONSHIPS ───────────────────────────────────
+
+    @Valid
+    private List<ProductMediaRequest> mediaGallery;
+
+    // All inventory and SKUs are now strictly managed inside Variants
+    @Valid
+    private List<ProductVariantRequest> variants;
+
+    // Tells the backend if this is a draft. Defaults to false.
+    @Builder.Default
     private Boolean isDraft = false;
 }

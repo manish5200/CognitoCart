@@ -4,7 +4,7 @@ import com.manish.smartcart.shared.enums.OrderStatus;
 import com.manish.smartcart.shared.enums.PaymentStatus;
 import com.manish.smartcart.shared.enums.ReturnReason;
 import com.manish.smartcart.shared.enums.ReturnType;
-import com.manish.smartcart.shared.enums.PolicyType;
+import com.manish.smartcart.shared.enums.product.PolicyType;
 import lombok.*;
 
 import java.math.BigDecimal;
