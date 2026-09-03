@@ -181,8 +181,8 @@ import { SellerIdentityComponent } from '../../shared/seller-identity/seller-ide
                 <span class="kpi-title">Gross Revenue</span>
                 <div class="kpi-trend positive"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" /></svg> +12%</div>
               </div>
-              <div class="kpi-value">₹{{(stats?.totalRevenue || 0) | number:'1.0-0'}}</div>
-              <div class="kpi-subtext">₹{{(stats?.pendingRevenue || 0) | number:'1.0-0'}} pending clearance</div>
+              <div class="kpi-value">\u20B9{{(stats?.totalRevenue || 0) | number:'1.0-0'}}</div>
+              <div class="kpi-subtext">\u20B9{{(stats?.pendingRevenue || 0) | number:'1.0-0'}} pending clearance</div>
             </div>
 
             <div class="cc-kpi-card">
@@ -225,7 +225,7 @@ import { SellerIdentityComponent } from '../../shared/seller-identity/seller-ide
                       <td class="rank-col"><span class="rank-badge" [class.top-rank]="i < 3">#{{i+1}}</span></td>
                       <td class="font-medium text-white">{{p.productName || p.name}}</td>
                       <td class="text-right">{{p.unitsSold || 0}}</td>
-                      <td class="text-right font-bold text-indigo">₹{{(p.revenue || 0) | number:'1.0-0'}}</td>
+                      <td class="text-right font-bold text-indigo">\u20B9{{(p.revenue || 0) | number:'1.0-0'}}</td>
                     </tr>
                   </tbody>
                 </table>

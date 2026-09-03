@@ -59,17 +59,17 @@ declare var Razorpay: any;
                     Not eligible for any post-purchase action (non-returnable as per seller's policy at time of purchase).
                   </div>
                 </div>
-                <div style="font-weight:700; color:var(--primary); font-size:16px;">₹{{item.price * item.quantity | number:'1.0-0'}}</div>
+                <div style="font-weight:700; color:var(--primary); font-size:16px;">\u20B9{{item.price * item.quantity | number:'1.0-0'}}</div>
               </div>
 
               <!-- Totals -->
               <div style="margin-top:20px;">
                 <div class="summary-row" *ngIf="order.discountAmount > 0" style="color:var(--success);">
-                  <span>Discount</span><span>−₹{{order.discountAmount | number:'1.0-0'}}</span>
+                  <span>Discount</span><span>−\u20B9{{order.discountAmount | number:'1.0-0'}}</span>
                 </div>
                 <div class="summary-row" style="font-size:1.1rem; font-weight:700; color:var(--text-primary); border-top:1px solid var(--border-default); padding-top:16px; margin-top:8px;">
                   <span>Total</span>
-                  <span style="color:var(--primary); font-size:1.4rem; font-family:var(--font-head);">₹{{order.totalAmount | number:'1.0-0'}}</span>
+                  <span style="color:var(--primary); font-size:1.4rem; font-family:var(--font-head);">\u20B9{{order.totalAmount | number:'1.0-0'}}</span>
                 </div>
               </div>
             </div>
@@ -178,7 +178,7 @@ declare var Razorpay: any;
                 <button *ngIf="order.status === 'PAYMENT_PENDING'"
                   class="btn btn-primary btn-full" (click)="retryPayment()" [disabled]="placingOrder">
                   <span *ngIf="placingOrder" class="spinner spinner-sm"></span>
-                  {{placingOrder ? 'Processing...' : '💳 Pay Now (₹' + (order.totalAmount | number:'1.0-0') + ')'}}
+                  {{placingOrder ? 'Processing...' : '💳 Pay Now (\u20B9' + (order.totalAmount | number:'1.0-0') + ')'}}
                 </button>
                 <button *ngIf="order.status === 'PAYMENT_PENDING' || order.status === 'PENDING' || order.status === 'CONFIRMED'"
                   class="btn btn-danger btn-full" (click)="cancelOrder()">

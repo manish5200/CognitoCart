@@ -31,11 +31,11 @@ import { ToastService } from '../../../services/toast.service';
               <div class="stat-label">Items</div>
             </div>
             <div>
-              <div class="stat-value" style="font-size:1.5rem; color:var(--primary);">₹{{summary.totalValue | number:'1.0-0'}}</div>
+              <div class="stat-value" style="font-size:1.5rem; color:var(--primary);">\u20B9{{summary.totalValue | number:'1.0-0'}}</div>
               <div class="stat-label">Total Value</div>
             </div>
             <div *ngIf="summary.potentialSavings > 0">
-              <div class="stat-value" style="font-size:1.5rem; color:var(--accent);">₹{{summary.potentialSavings | number:'1.0-0'}}</div>
+              <div class="stat-value" style="font-size:1.5rem; color:var(--accent);">\u20B9{{summary.potentialSavings | number:'1.0-0'}}</div>
               <div class="stat-label">Potential Savings</div>
             </div>
           </div>
@@ -51,7 +51,7 @@ import { ToastService } from '../../../services/toast.service';
             </div>
             <div class="product-info">
               <div class="product-name">{{item.productName}}</div>
-              <div class="product-price">₹{{item.currentPrice | number:'1.0-0'}}</div>
+              <div class="product-price">\u20B9{{item.currentPrice | number:'1.0-0'}}</div>
             </div>
             <div class="product-card-footer" style="display:flex; gap:8px;">
               <button class="btn btn-primary btn-sm" style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px;" (click)="moveToCart(item)">

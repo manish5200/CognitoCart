@@ -127,7 +127,7 @@ declare var Razorpay: any;
                     <div class="item-meta">{{item.variantInfo || 'Standard'}}</div>
                     <div class="item-qty">Qty: <strong>{{item.quantity}}</strong></div>
                   </div>
-                  <div class="item-price">₹{{item.price * item.quantity | number:'1.0-0'}}</div>
+                  <div class="item-price">\u20B9{{item.price * item.quantity | number:'1.0-0'}}</div>
                 </div>
               </div>
 
@@ -191,11 +191,11 @@ declare var Razorpay: any;
             <div class="summary-content">
               <div class="summary-row">
                 <span class="label" style="color:var(--text-primary); font-weight: 500;">Items ({{cart?.items?.length || 0}})</span>
-                <span class="value">₹{{(cart?.subtotalAmount || getSubtotal()) | number:'1.0-0'}}</span>
+                <span class="value">\u20B9{{(cart?.subtotalAmount || getSubtotal()) | number:'1.0-0'}}</span>
               </div>
               <div class="summary-row discount-row" *ngIf="cart?.discountAmount > 0">
                 <span class="label">Total Discount</span>
-                <span class="value">−₹{{cart?.discountAmount | number:'1.0-0'}}</span>
+                <span class="value">−\u20B9{{cart?.discountAmount | number:'1.0-0'}}</span>
               </div>
               <div class="summary-row">
                 <span class="label">Shipping Fee</span>
@@ -206,7 +206,7 @@ declare var Razorpay: any;
               
               <div class="summary-row total-row">
                 <span class="label">Total Amount</span>
-                <span class="value total-price">₹{{cart?.totalAmount | number:'1.0-0'}}</span>
+                <span class="value total-price">\u20B9{{cart?.totalAmount | number:'1.0-0'}}</span>
               </div>
             </div>
 
@@ -238,7 +238,7 @@ declare var Razorpay: any;
                   <span *ngIf="placingOrder" class="spinner spinner-sm"></span>
                   <span *ngIf="!placingOrder" style="display:flex; align-items:center; gap:8px;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                    Pay ₹{{cart?.totalAmount | number:'1.0-0'}}
+                    Pay \u20B9{{cart?.totalAmount | number:'1.0-0'}}
                   </span>
                 </button>
               </div>

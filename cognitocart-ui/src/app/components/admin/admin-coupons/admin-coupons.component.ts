@@ -42,7 +42,7 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
               <label class="form-label">Discount Type *</label>
               <select [(ngModel)]="newCoupon.discountType" class="form-select">
                 <option value="PERCENTAGE">Percentage (%)</option>
-                <option value="FLAT">Flat Amount (₹)</option>
+                <option value="FLAT">Flat Amount (\u20B9)</option>
               </select>
             </div>
           </div>
@@ -52,11 +52,11 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
               <input type="number" [(ngModel)]="newCoupon.discountValue" class="form-input" placeholder="20" />
             </div>
             <div class="form-group">
-              <label class="form-label">Max Discount (₹)</label>
+              <label class="form-label">Max Discount (\u20B9)</label>
               <input type="number" [(ngModel)]="newCoupon.maxDiscountAmount" class="form-input" placeholder="500" />
             </div>
             <div class="form-group">
-              <label class="form-label">Min Order (₹)</label>
+              <label class="form-label">Min Order (\u20B9)</label>
               <input type="number" [(ngModel)]="newCoupon.minOrderAmount" class="form-input" placeholder="299" />
             </div>
           </div>
@@ -99,10 +99,10 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
               <td style="padding:16px;"><code style="color:var(--primary); font-size:15px; font-weight:700; background:rgba(99,102,241,0.1); padding:4px 8px; border-radius:4px;">{{c.code}}</code></td>
               <td style="padding:16px;"><span class="badge badge-blue" style="padding:4px 10px; font-size:11px;">{{c.discountType}}</span></td>
               <td style="padding:16px; font-weight:600; color:#fff;">
-                {{c.discountType === 'PERCENTAGE' ? c.discountValue + '%' : '₹' + c.discountValue}}
+                {{c.discountType === 'PERCENTAGE' ? c.discountValue + '%' : '\u20B9' + c.discountValue}}
               </td>
-              <td style="padding:16px;">{{c.minOrderAmount ? '₹' + c.minOrderAmount : '—'}}</td>
-              <td style="padding:16px;">{{c.maxDiscountAmount ? '₹' + c.maxDiscountAmount : '—'}}</td>
+              <td style="padding:16px;">{{c.minOrderAmount ? '\u20B9' + c.minOrderAmount : '—'}}</td>
+              <td style="padding:16px;">{{c.maxDiscountAmount ? '\u20B9' + c.maxDiscountAmount : '—'}}</td>
               <td style="padding:16px;">{{c.maxUsage ?? '∞'}} <span *ngIf="c.usedCount !== undefined" style="color:var(--text-dim);">({{c.usedCount}} used)</span></td>
               <td style="padding:16px; color:var(--text-secondary);">{{c.expiresAt ? (c.expiresAt | date:'mediumDate') : '—'}}</td>
               <td style="padding:16px;">

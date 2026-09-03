@@ -79,7 +79,7 @@ import { ToastService } from '../../../services/toast.service';
                 <td class="font-medium text-white">{{o.customerFirstName || '—'}}</td>
                 <td>{{o.orderDate | date:'mediumDate'}}</td>
                 <td>{{o.myItems?.length || '—'}}</td>
-                <td class="text-right"><strong class="text-white">₹{{o.myItemsNetTotal | number:'1.0-0'}}</strong></td>
+                <td class="text-right"><strong class="text-white">\u20B9{{o.myItemsNetTotal | number:'1.0-0'}}</strong></td>
                 <td><span class="badge" [class]="'status-' + o.orderStatus">{{o.orderStatus}}</span></td>
                 <td>
                   <div style="display:flex; gap:6px; justify-content:flex-end;">
@@ -129,10 +129,10 @@ import { ToastService } from '../../../services/toast.service';
                 <div style="font-weight:600; color: var(--text-primary);">{{item.productName}}</div>
                 <div style="color:var(--text-muted); font-size:13px; margin-top: 4px;">Variant: {{item.variantLabel || 'Standard'}} &nbsp;|&nbsp; Qty: {{item.quantity}}</div>
               </div>
-              <div style="font-weight:700; color:var(--primary); font-family: var(--font-mono); font-size: 15px;">₹{{item.lineTotal | number:'1.0-0'}}</div>
+              <div style="font-weight:700; color:var(--primary); font-family: var(--font-mono); font-size: 15px;">\u20B9{{item.lineTotal | number:'1.0-0'}}</div>
             </div>
             <div style="padding-top:20px; font-family: var(--font-head); font-size:1.2rem; font-weight:800; color:var(--text-primary); text-align:right;">
-              Total: <span style="color: var(--primary);">₹{{selectedOrder.myItemsNetTotal | number:'1.0-0'}}</span>
+              Total: <span style="color: var(--primary);">\u20B9{{selectedOrder.myItemsNetTotal | number:'1.0-0'}}</span>
             </div>
           </div>
         </div>

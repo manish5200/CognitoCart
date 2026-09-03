@@ -39,7 +39,7 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
             <div class="kpi-card kpi-card-green fade-up" style="cursor:pointer;" routerLink="/admin/intelligence">
               <div class="kpi-icon kpi-icon-green"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:28px;height:28px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg></div>
               <div class="kpi-content">
-                <div class="kpi-value">₹{{formatNum(data?.totalRevenue || 0)}}</div>
+                <div class="kpi-value">\u20B9{{formatNum(data?.totalRevenue || 0)}}</div>
                 <div class="kpi-label">Platform Revenue</div>
                 <div class="kpi-change kpi-change-up">↑ View Details</div>
               </div>
@@ -90,7 +90,7 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
             <div class="kpi-card kpi-card-blue">
               <div class="kpi-icon kpi-icon-blue"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:28px;height:28px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg></div>
               <div class="kpi-content">
-                <div class="kpi-value">₹{{formatNum(getAov())}}</div>
+                <div class="kpi-value">\u20B9{{formatNum(getAov())}}</div>
                 <div class="kpi-label">Avg Order Value</div>
               </div>
             </div>
@@ -207,7 +207,7 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
                   <td><span class="td-mono">{{o.orderNumber || o.publicId?.slice(0,8)}}</span></td>
                   <td class="td-primary">{{o.customerName || o.customerEmail || '—'}}</td>
                   <td style="color:var(--text-muted); font-size:12px;">{{o.orderDate | date:'MMM d, y'}}</td>
-                  <td><strong style="color:var(--text-primary);">₹{{(o.totalAmount || 0) | number:'1.0-0'}}</strong></td>
+                  <td><strong style="color:var(--text-primary);">\u20B9{{(o.totalAmount || 0) | number:'1.0-0'}}</strong></td>
                   <td>
                     <span class="badge" [class]="o.paymentStatus === 'PAID' ? 'badge-green' : 'badge-amber'">
                       {{o.paymentStatus || 'PENDING'}}

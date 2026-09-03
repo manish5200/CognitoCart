@@ -74,7 +74,7 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
                 <div class="rating-bar" style="flex:1; height:10px;">
                   <div class="rating-bar-fill" [style.width.%]="reason.count * 10" style="background:var(--gradient-ocean);"></div>
                 </div>
-                <span style="width:100px; text-align:right; font-weight:600; color:#fff;">₹{{reason.financialImpact | number:'1.0-0'}}</span>
+                <span style="width:100px; text-align:right; font-weight:600; color:#fff;">\u20B9{{reason.financialImpact | number:'1.0-0'}}</span>
               </div>
             </div>
           </div>
@@ -122,7 +122,7 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
                       <div style="font-size:12px; color:var(--text-dim);">{{c.email}}</div>
                     </td>
                     <td style="padding:16px;">{{c.totalOrders}}</td>
-                    <td style="padding:16px; font-weight:700; color:var(--primary);">₹{{c.totalSpent | number:'1.0-0'}}</td>
+                    <td style="padding:16px; font-weight:700; color:var(--primary);">\u20B9{{c.totalSpent | number:'1.0-0'}}</td>
                   </tr>
                 </tbody>
               </table>
@@ -179,9 +179,9 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
               <tbody>
                 <tr *ngFor="let c of categoryRevenue" style="border-bottom:1px solid rgba(255,255,255,0.04); transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
                   <td style="padding:16px; font-weight:600; color:#fff;">{{c.categoryName}}</td>
-                  <td style="padding:16px; font-weight:700; color:var(--primary);">₹{{c.revenue | number:'1.0-0'}}</td>
+                  <td style="padding:16px; font-weight:700; color:var(--primary);">\u20B9{{c.revenue | number:'1.0-0'}}</td>
                   <td style="padding:16px;">{{c.totalOrders}}</td>
-                  <td style="padding:16px;">₹{{c.averageOrderValue | number:'1.0-0'}}</td>
+                  <td style="padding:16px;">\u20B9{{c.averageOrderValue | number:'1.0-0'}}</td>
                   <td style="padding:16px;">
                     <div style="display:flex; align-items:center; gap:12px;">
                       <div class="rating-bar" style="width:100px; height:8px;">
@@ -215,8 +215,8 @@ export class AdminIntelligenceComponent implements OnInit {
   get biMetrics(): any[] {
     if (!this.biData) return [];
     return [
-      { icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>', label: 'Gross Revenue', value: '₹' + ((this.biData.financialHealth?.grossRevenue ?? 0) | 0).toLocaleString(), color: 'green' },
-      { icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>', label: 'Net Revenue', value: '₹' + ((this.biData.financialHealth?.netRevenue ?? 0) | 0).toLocaleString(), color: 'blue' },
+      { icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>', label: 'Gross Revenue', value: '\u20B9' + ((this.biData.financialHealth?.grossRevenue ?? 0) | 0).toLocaleString(), color: 'green' },
+      { icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>', label: 'Net Revenue', value: '\u20B9' + ((this.biData.financialHealth?.netRevenue ?? 0) | 0).toLocaleString(), color: 'blue' },
       { icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>', label: 'Total Return Requests', value: this.biData.totalReturnRequests ?? 0, color: 'purple' },
       { icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>', label: 'Refund Rate', value: ((this.biData.financialHealth?.refundRatePercentage ?? 0).toFixed(1)) + '%', color: 'yellow' },
     ];

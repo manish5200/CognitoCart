@@ -24,8 +24,8 @@ import { ToastService } from '../../../../../services/toast.service';
             <tr>
               <th>SKU</th>
               <th>Variant Label</th>
-              <th>Price Adj. (₹)</th>
-              <th>Final Price (₹)</th>
+              <th>Price Adj. (\u20B9)</th>
+              <th>Final Price (\u20B9)</th>
               <th>Stock</th>
               <th>Status</th>
               <th>Actions</th>
@@ -36,7 +36,7 @@ import { ToastService } from '../../../../../services/toast.service';
               <td><input type="text" class="cell-input" [(ngModel)]="variant.sku" placeholder="SKU..."></td>
               <td><input type="text" class="cell-input" [(ngModel)]="variant.displayLabel" placeholder="e.g. Red / XL"></td>
               <td><input type="number" class="cell-input" [(ngModel)]="variant.priceAdjustment" placeholder="0"></td>
-              <td style="font-weight:600; color:#fff;">₹{{ (product.basePrice + (variant.priceAdjustment || 0)) | number:'1.0-0' }}</td>
+              <td style="font-weight:600; color:#fff;">\u20B9{{ (product.basePrice + (variant.priceAdjustment || 0)) | number:'1.0-0' }}</td>
               <td>
                 <div style="display:flex; align-items:center; gap:8px;">
                   <input type="number" class="cell-input" style="width:70px;" [(ngModel)]="variant.stockQuantity" placeholder="0">

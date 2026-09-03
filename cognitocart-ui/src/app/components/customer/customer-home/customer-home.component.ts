@@ -25,9 +25,9 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   // Cycling placeholder — rotates every 2.5s to show users what they can search
   placeholderTexts = [
     'Best headphones for gym... 🎧',
-    'Laptop under ₹50,000... 💻',
+    'Laptop under \u20B950,000... 💻',
     'Cozy winter jacket... 🧥',
-    'Gift ideas under ₹500... 🎁',
+    'Gift ideas under \u20B9500... 🎁',
     'Wireless earbuds for calls... 📞',
     'Gaming gear for beginners... 🎮',
   ];

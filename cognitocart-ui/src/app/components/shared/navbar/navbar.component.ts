@@ -116,7 +116,7 @@ import { UserIdentityComponent } from '../../shared/user-identity/user-identity.
                       <div class="mc-var">{{item.variantInfo || item.color || item.size || 'Standard'}}</div>
                       <div class="mc-qty">Qty: {{item.quantity}}</div>
                     </div>
-                    <div class="mc-price">₹{{(item.price * item.quantity) | number:'1.0-0'}}</div>
+                    <div class="mc-price">\u20B9{{(item.price * item.quantity) | number:'1.0-0'}}</div>
                     <button class="mc-remove" (click)="removeCartItem(item)">🗑️</button>
                   </div>
                 </div>
@@ -124,7 +124,7 @@ import { UserIdentityComponent } from '../../shared/user-identity/user-identity.
                 <div *ngIf="cartItems?.length" style="padding:16px; border-top:1px solid var(--border-subtle); background:var(--bg-glass);">
                   <div style="display:flex; justify-content:space-between; margin-bottom:16px; font-weight:700; font-size:16px;">
                     <span>Subtotal</span>
-                    <span style="color:var(--primary);">₹{{cartTotal | number:'1.0-0'}}</span>
+                    <span style="color:var(--primary);">\u20B9{{cartTotal | number:'1.0-0'}}</span>
                   </div>
                   <button class="btn btn-primary btn-block" style="width:100%; margin-bottom:8px;" routerLink="/checkout" (click)="cartOpen = false">Checkout</button>
                   <button class="btn btn-secondary btn-block" style="width:100%;" routerLink="/cart" (click)="cartOpen = false">View Cart</button>

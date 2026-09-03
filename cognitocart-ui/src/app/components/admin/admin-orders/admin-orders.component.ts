@@ -52,7 +52,7 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
                 </td>
                 <td style="padding:16px; font-size:14px; font-weight:500; color:#fff;">{{o.customerName || o.customerEmail || '—'}}</td>
                 <td style="padding:16px; font-size:13px; color:var(--text-secondary);">{{o.orderDate | date:'MMM d, yyyy'}}</td>
-                <td style="padding:16px; font-size:14px;"><strong style="color:var(--text-primary);">₹{{o.totalAmount | number:'1.0-0'}}</strong></td>
+                <td style="padding:16px; font-size:14px;"><strong style="color:var(--text-primary);">\u20B9{{o.totalAmount | number:'1.0-0'}}</strong></td>
                 <td style="padding:16px;">
                   <span class="badge" [class]="o.paymentStatus === 'PAID' ? 'badge-green' : 'badge-amber'" style="padding:4px 10px; font-size:11px;">
                     {{o.paymentStatus || 'PENDING'}}

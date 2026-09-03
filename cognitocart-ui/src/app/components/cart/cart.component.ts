@@ -41,7 +41,7 @@ import { ProductReturnStatusComponent } from '../shared/product-return-status/pr
                   <div class="cart-item-variant">
                     {{item.variantInfo || item.color || item.size || 'Standard'}}
                   </div>
-                  <div class="cart-item-price">₹{{item.price | number:'1.0-0'}}</div>
+                  <div class="cart-item-price">\u20B9{{item.price | number:'1.0-0'}}</div>
                   
                   <div style="margin-top:8px;">
                     <app-product-return-status [isReturnable]="item.policyType !== 'NON_RETURNABLE'"></app-product-return-status>
@@ -56,7 +56,7 @@ import { ProductReturnStatusComponent } from '../shared/product-return-status/pr
                   </div>
 
                   <div class="cart-item-total">
-                    ₹{{item.price * item.quantity | number:'1.0-0'}}
+                    \u20B9{{item.price * item.quantity | number:'1.0-0'}}
                   </div>
 
                   <button class="btn-icon delete-btn" (click)="removeItem(item)" title="Remove">
@@ -89,11 +89,11 @@ import { ProductReturnStatusComponent } from '../shared/product-return-status/pr
 
               <div class="summary-row">
                 <span>Subtotal ({{cart.items.length}} items)</span>
-                <span>₹{{cart.subtotalAmount | number:'1.0-0'}}</span>
+                <span>\u20B9{{cart.subtotalAmount | number:'1.0-0'}}</span>
               </div>
               <div class="summary-row" *ngIf="cart.discountAmount > 0" style="color:var(--success);">
                 <span>Discount</span>
-                <span>−₹{{cart.discountAmount | number:'1.0-0'}}</span>
+                <span>−\u20B9{{cart.discountAmount | number:'1.0-0'}}</span>
               </div>
               <div class="summary-row">
                 <span>Shipping</span>
@@ -104,7 +104,7 @@ import { ProductReturnStatusComponent } from '../shared/product-return-status/pr
 
               <div class="summary-row total">
                 <span>Total</span>
-                <span class="total-price">₹{{cart.totalAmount | number:'1.0-0'}}</span>
+                <span class="total-price">\u20B9{{cart.totalAmount | number:'1.0-0'}}</span>
               </div>
 
               <button class="btn btn-primary btn-full btn-lg" (click)="checkout()" style="margin-top:28px; font-size:16px;">

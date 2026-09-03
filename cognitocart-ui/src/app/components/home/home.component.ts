@@ -41,7 +41,7 @@ import { ProductCardComponent } from '../shared/product-card/product-card.compon
               type="text"
               [(ngModel)]="searchQuery"
               (keyup.enter)="search()"
-              placeholder='Try "Best phone under ₹30,000" or "laptop for programming"'
+              placeholder='Try "Best phone under \u20B930,000" or "laptop for programming"'
             />
             <button class="search-submit" (click)="search()" [disabled]="!searchQuery.trim()">
               Search

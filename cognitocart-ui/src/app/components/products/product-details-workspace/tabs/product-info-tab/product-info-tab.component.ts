@@ -27,7 +27,7 @@ import { FormsModule } from '@angular/forms';
             </div>
 
             <div class="form-group">
-              <label class="form-label">Base Price (₹)</label>
+              <label class="form-label">Base Price (\u20B9)</label>
               <input type="number" class="form-input" [(ngModel)]="product.price" placeholder="0.00">
             </div>
 

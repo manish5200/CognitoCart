@@ -34,7 +34,7 @@ import { ToastService } from '../../../services/toast.service';
               </div>
               <div style="display:flex; align-items:center; gap:12px;">
                 <span class="badge" [class]="'status-' + order.status">{{order.status}}</span>
-                <span style="font-weight:700; color:var(--primary); font-size:1.1rem;">₹{{order.totalAmount | number:'1.0-0'}}</span>
+                <span style="font-weight:700; color:var(--primary); font-size:1.1rem;">\u20B9{{order.totalAmount | number:'1.0-0'}}</span>
               </div>
             </div>
 

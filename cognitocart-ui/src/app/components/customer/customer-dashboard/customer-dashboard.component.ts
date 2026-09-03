@@ -134,7 +134,7 @@ import { ToastService } from '../../../services/toast.service';
             <tr *ngFor="let o of recentOrders">
               <td><span class="td-mono">{{o.orderNumber}}</span></td>
               <td style="color:var(--text-muted); font-size:13px;">{{o.orderDate | date:'mediumDate'}}</td>
-              <td><strong>₹{{o.totalAmount | number:'1.0-0'}}</strong></td>
+              <td><strong>\u20B9{{o.totalAmount | number:'1.0-0'}}</strong></td>
               <td><span class="badge" [class]="'status-' + o.status">{{o.status}}</span></td>
               <td>
                 <a [routerLink]="['/orders', o.orderNumber || o.orderPublicId || o.publicId || o.id]" class="btn btn-ghost btn-sm">View →</a>
