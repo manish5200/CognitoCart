@@ -1,4 +1,4 @@
-﻿import { Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -112,13 +112,12 @@ export class AdminService {
     return this.http.patch(`${this.SALE_API}/items/${itemPublicId}/review?status=${status}`, {}, { responseType: 'text' });
   }
 
-  // â”€â”€â”€ Reviews â”€â”€â”€
+  // ─── Reviews ───
   getAllReviews(page = 0, size = 20): Observable<any> {
-    return this.http.get(`/reviews/admin/all?page=${page}&size=${size}`);
+    return this.http.get(`${environment.apiUrl}/api/v1/reviews/admin/all?page=${page}&size=${size}`);
   }
 
   deleteReview(reviewPublicId: string): Observable<any> {
-    return this.http.delete(`/reviews/admin/${reviewPublicId}`);
+    return this.http.delete(`${environment.apiUrl}/api/v1/reviews/admin/${reviewPublicId}`);
   }
 }
-

@@ -13,7 +13,7 @@ import { ProductReturnStatusComponent } from '../shared/product-return-status/pr
   template: `
     <div class="page">
       <div class="page-header">
-        <h1 class="page-title">🛒 Shopping Cart</h1>
+        <h1 class="page-title">&#128722; Shopping Cart</h1>
         <p class="page-subtitle" *ngIf="cart?.items?.length">{{cart.items.length}} item(s) in your cart</p>
       </div>
 
@@ -50,7 +50,7 @@ import { ProductReturnStatusComponent } from '../shared/product-return-status/pr
 
                 <div class="cart-item-actions">
                   <div class="quantity-control">
-                    <button class="qty-btn" (click)="updateQty(item, item.quantity - 1)">−</button>
+                    <button class="qty-btn" (click)="updateQty(item, item.quantity - 1)">&#8722;</button>
                     <div class="qty-value">{{item.quantity}}</div>
                     <button class="qty-btn" (click)="updateQty(item, item.quantity + 1)">+</button>
                   </div>
@@ -93,7 +93,7 @@ import { ProductReturnStatusComponent } from '../shared/product-return-status/pr
               </div>
               <div class="summary-row" *ngIf="cart.discountAmount > 0" style="color:var(--success);">
                 <span>Discount</span>
-                <span>−\u20B9{{cart.discountAmount | number:'1.0-0'}}</span>
+                <span>&#8722;\u20B9{{cart.discountAmount | number:'1.0-0'}}</span>
               </div>
               <div class="summary-row">
                 <span>Shipping</span>

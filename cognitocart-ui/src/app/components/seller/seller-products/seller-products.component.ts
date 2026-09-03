@@ -117,7 +117,7 @@ import { ToastService } from '../../../services/toast.service';
                   <span class="primary-badge" *ngIf="i === 0">Primary</span>
                   <!-- We would ideally use FileReader to show a local preview here -->
                   <div class="img-placeholder">{{file.name}}</div>
-                  <button class="btn-remove" (click)="removeDraftImage(i)">âœ•</button>
+                  <button class="btn-remove" (click)="removeDraftImage(i)">âœ&#8226;</button>
                 </div>
               </div>
             </div>
@@ -128,7 +128,7 @@ import { ToastService } from '../../../services/toast.service';
             <h2 class="step-header">Pricing</h2>
             <div class="form-row form-row-2">
               <div class="form-group">
-                <label class="form-label">Base Price (MRP) (â‚¹) <span class="text-danger">*</span></label>
+                <label class="form-label">Base Price (MRP) (&#8377;) <span class="text-danger">*</span></label>
                 <input type="number" [(ngModel)]="draft.basePrice" (input)="calculatePrice()" class="form-input" placeholder="0.00" min="0" />
               </div>
               <div class="form-group">
@@ -140,16 +140,16 @@ import { ToastService } from '../../../services/toast.service';
             <div class="pricing-summary-box">
               <div class="pricing-row">
                 <span>Base Price:</span>
-                <span>â‚¹{{draft.basePrice || 0}}</span>
+                <span>&#8377;{{draft.basePrice || 0}}</span>
               </div>
               <div class="pricing-row text-success">
                 <span>Discount Applied:</span>
-                <span>- â‚¹{{discountAmount | number:'1.2-2'}}</span>
+                <span>- &#8377;{{discountAmount | number:'1.2-2'}}</span>
               </div>
               <div class="pricing-divider"></div>
               <div class="pricing-row final">
                 <span>Final Selling Price:</span>
-                <span>â‚¹{{finalPrice | number:'1.2-2'}}</span>
+                <span>&#8377;{{finalPrice | number:'1.2-2'}}</span>
               </div>
             </div>
           </div>
@@ -182,7 +182,7 @@ import { ToastService } from '../../../services/toast.service';
             <div class="variant-card" *ngFor="let v of draft.variants; let i = index">
               <div class="variant-card-header">
                 <h4 style="margin:0; font-size:14px;">Variant #{{i+1}}</h4>
-                <button class="btn-icon text-danger" (click)="removeVariant(i)">âœ•</button>
+                <button class="btn-icon text-danger" (click)="removeVariant(i)">âœ&#8226;</button>
               </div>
               <div class="form-row form-row-3" style="margin-top:16px;">
                 <div class="form-group">
@@ -194,7 +194,7 @@ import { ToastService } from '../../../services/toast.service';
                   <input type="number" [(ngModel)]="v.stock" class="form-input" placeholder="Leave empty for global" />
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Price Modifier (Â± â‚¹)</label>
+                  <label class="form-label">Price Modifier (Â± &#8377;)</label>
                   <input type="number" [(ngModel)]="v.priceModifier" class="form-input" placeholder="e.g. 500" />
                 </div>
               </div>
@@ -282,7 +282,7 @@ import { ToastService } from '../../../services/toast.service';
               </div>
               <div class="review-item">
                 <span class="review-label">Selling Price</span>
-                <span class="review-val" [class.text-danger]="finalPrice <= 0">{{finalPrice > 0 ? 'â‚¹' + finalPrice : 'Invalid!'}}</span>
+                <span class="review-val" [class.text-danger]="finalPrice <= 0">{{finalPrice > 0 ? '&#8377;' + finalPrice : 'Invalid!'}}</span>
               </div>
               <div class="review-item">
                 <span class="review-label">Stock Quantity</span>
@@ -329,8 +329,8 @@ import { ToastService } from '../../../services/toast.service';
             <h4 class="preview-title">{{draft.name || 'Product Title'}}</h4>
             
             <div class="preview-price">
-              <span class="final">â‚¹{{finalPrice | number:'1.0-0'}}</span>
-              <span class="mrp" *ngIf="draft.discountPercentage > 0">â‚¹{{draft.basePrice}}</span>
+              <span class="final">&#8377;{{finalPrice | number:'1.0-0'}}</span>
+              <span class="mrp" *ngIf="draft.discountPercentage > 0">&#8377;{{draft.basePrice}}</span>
               <span class="discount" *ngIf="draft.discountPercentage > 0">{{draft.discountPercentage}}% OFF</span>
             </div>
             
@@ -382,7 +382,7 @@ import { ToastService } from '../../../services/toast.service';
                     </div>
                   </td>
                   <td>
-                    <div style="font-weight:700; color:var(--text-primary); font-size:14px;">â‚¹{{(p.price || p.basePrice) | number:'1.0-0'}}</div>
+                    <div style="font-weight:700; color:var(--text-primary); font-size:14px;">&#8377;{{(p.price || p.basePrice) | number:'1.0-0'}}</div>
                     <div *ngIf="p.discountPercentage > 0" style="font-size:12px; color:var(--success); font-weight:600; margin-top:4px; display:flex; align-items:center; gap:4px;">
                       <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:12px;height:12px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
                       {{p.discountPercentage}}% OFF

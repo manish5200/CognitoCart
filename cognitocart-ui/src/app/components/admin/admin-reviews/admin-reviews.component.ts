@@ -39,12 +39,12 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
                 <div style="font-weight:600; color:var(--text-primary);">{{ review.reviewerName }}</div>
                 <div style="font-size:12px; color:var(--text-muted);">
                   {{ review.createdAt | date:'medium' }}
-                  <span *ngIf="review.verifiedPurchase" class="verified-badge">âœ“ Verified</span>
+                  <span *ngIf="review.verifiedPurchase" class="verified-badge">&#10003; Verified</span>
                 </div>
               </div>
             </div>
             <div class="rating-badge" [class.high]="review.rating >= 4" [class.med]="review.rating === 3" [class.low]="review.rating <= 2">
-              {{ review.rating }} â˜…
+              {{ review.rating }} &#9733;
             </div>
           </div>
           

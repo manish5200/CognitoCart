@@ -82,15 +82,15 @@ import { WishlistService } from '../../../services/wishlist.service';
               <div class="fpc-body">
                 <div class="fpc-name">{{p.productName || p.name}}</div>
                 <div class="fpc-price-row">
-                  <div class="fpc-price-now">â‚¹{{(p.discountPrice || p.price) | number:'1.0-0'}}</div>
-                  <div class="fpc-price-was">â‚¹{{p.price | number:'1.0-0'}}</div>
+                  <div class="fpc-price-now">&#8377;{{(p.discountPrice || p.price) | number:'1.0-0'}}</div>
+                  <div class="fpc-price-was">&#8377;{{p.price | number:'1.0-0'}}</div>
                 </div>
                 <!-- Fake progress bar for flash sales -->
                 <div class="fpc-stock-bar">
                   <div class="fpc-stock-fill" [style.width]="(p.stock > 100 ? 100 : p.stock) + '%'"></div>
                 </div>
                 <div class="fpc-stock-text">Only {{p.stock}} left!</div>
-                <button class="btn btn-primary btn-sm btn-full" style="margin-top:12px;">Grab Deal â†’</button>
+                <button class="btn btn-primary btn-sm btn-full" style="margin-top:12px;">Grab Deal &#8594;</button>
               </div>
             </div>
           </div>

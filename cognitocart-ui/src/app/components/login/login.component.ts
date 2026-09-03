@@ -62,8 +62,8 @@ import { ToastService } from '../../services/toast.service';
                   <a href="#" class="auth-link">Forgot password?</a>
                 </div>
                 <div class="input-wrap">
-                  <span class="input-icon">ðŸ”’</span>
-                  <input type="password" class="form-control" [(ngModel)]="credentials.password" name="password" required placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢">
+                  <span class="input-icon">&#128274;</span>
+                  <input type="password" class="form-control" [(ngModel)]="credentials.password" name="password" required placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;">
                 </div>
               </div>
 

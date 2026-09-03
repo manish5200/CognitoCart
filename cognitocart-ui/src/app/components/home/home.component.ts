@@ -594,7 +594,7 @@ export class HomeComponent implements OnInit {
     if (n.includes('sport') || n.includes('fitness')) return '⚽';
     if (n.includes('beauty') || n.includes('skin') || n.includes('cosmetic')) return '💄';
     if (n.includes('toy') || n.includes('kid') || n.includes('baby')) return '🧸';
-    if (n.includes('food') || n.includes('grocery')) return '🛒';
+    if (n.includes('food') || n.includes('grocery')) return '&#128722;';
     if (n.includes('jewel') || n.includes('gold')) return '💍';
     if (n.includes('festival') || n.includes('gift')) return '🎁';
     return '📦';

@@ -48,7 +48,7 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
                   <span style="font-size:13px; color:var(--text-muted);">Date: {{r.requestedAt | date:'mediumDate'}}</span>
                 </div>
               </div>
-              <span style="font-size:1.2rem; font-weight:700; color:var(--primary);">â‚¹{{r.totalAmount | number:'1.0-0'}}</span>
+              <span style="font-size:1.2rem; font-weight:700; color:var(--primary);">&#8377;{{r.totalAmount | number:'1.0-0'}}</span>
             </div>
 
             <!-- Items -->

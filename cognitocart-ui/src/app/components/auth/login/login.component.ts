@@ -27,7 +27,7 @@ import { GoogleBtnComponent } from '../google-btn.component';
           <span>AI Shopping Assistant</span>
         </div>
         <div class="ai-preview-chat">
-          <div class="chat-bubble user">"Looking for wireless headphones under â‚¹5,000 with strong battery life?"</div>
+          <div class="chat-bubble user">"Looking for wireless headphones under &#8377;5,000 with strong battery life?"</div>
           <div class="chat-bubble ai">AI is ready to help you find the perfect match.</div>
         </div>
       </div>

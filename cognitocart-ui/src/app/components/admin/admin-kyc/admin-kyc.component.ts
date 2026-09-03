@@ -171,7 +171,7 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
                       </td>
                       <td style="padding:12px 16px; text-align:right; font-size:13px;">{{ p.totalReturns || 0 }}</td>
                       <td style="padding:12px 16px; text-align:right; font-size:13px; color:var(--danger); font-weight:600;">{{ p.refundRate || 0 }}%</td>
-                      <td style="padding:12px 16px; font-size:13px; color:var(--text-secondary);">{{ p.averageRating | number:'1.1-1' }} ★</td>
+                      <td style="padding:12px 16px; font-size:13px; color:var(--text-secondary);">{{ p.averageRating | number:'1.1-1' }} &#9733;</td>
                     </tr>
                   </tbody>
                 </table>

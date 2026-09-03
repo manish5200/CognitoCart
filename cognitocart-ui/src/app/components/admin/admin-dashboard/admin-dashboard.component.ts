@@ -120,7 +120,7 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
                   <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:32px;height:32px;margin-bottom:8px;color:var(--purple-400);"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
                   <div style="font-weight:700; font-size:13px; color:var(--text-primary);">KYC Review</div>
                   <span *ngIf="pendingKyc > 0" class="badge badge-amber" style="margin-top:4px; display:inline-block;">{{pendingKyc}} awaiting</span>
-                  <div *ngIf="pendingKyc === 0" style="font-size:11px; color:var(--success); margin-top:4px;">All clear ✓</div>
+                  <div *ngIf="pendingKyc === 0" style="font-size:11px; color:var(--success); margin-top:4px;">All clear &#10003;</div>
                 </div>
               </a>
               <a routerLink="/admin/returns" class="card" style="cursor:pointer; text-decoration:none; transition:var(--transition-slow);" onmouseenter="this.style.transform='translateY(-5px)'; this.style.borderColor='rgba(248,113,113,0.4)'" onmouseleave="this.style.transform='none'; this.style.borderColor='var(--border-default)'">
@@ -128,7 +128,7 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
                   <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:32px;height:32px;margin-bottom:8px;color:var(--red-400);"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" /></svg>
                   <div style="font-weight:700; font-size:13px; color:var(--text-primary);">Return Queue</div>
                   <span *ngIf="pendingReturns > 0" class="badge badge-red" style="margin-top:4px; display:inline-block;">{{pendingReturns}} pending</span>
-                  <div *ngIf="pendingReturns === 0" style="font-size:11px; color:var(--success); margin-top:4px;">Queue empty ✓</div>
+                  <div *ngIf="pendingReturns === 0" style="font-size:11px; color:var(--success); margin-top:4px;">Queue empty &#10003;</div>
                 </div>
               </a>
               <a routerLink="/admin/intelligence" class="card" style="cursor:pointer; text-decoration:none; transition:var(--transition-slow);" onmouseenter="this.style.transform='translateY(-5px)'; this.style.borderColor='rgba(34,211,238,0.4)'" onmouseleave="this.style.transform='none'; this.style.borderColor='var(--border-default)'">

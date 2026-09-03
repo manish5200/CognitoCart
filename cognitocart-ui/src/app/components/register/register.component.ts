@@ -67,7 +67,7 @@ import { ToastService } from '../../services/toast.service';
               <div class="form-group">
                 <label class="form-label">Password</label>
                 <div class="input-wrap">
-                  <span class="input-icon">ðŸ”’</span>
+                  <span class="input-icon">&#128274;</span>
                   <input type="password" class="form-control" [(ngModel)]="user.password" name="password" required placeholder="At least 6 characters">
                 </div>
               </div>

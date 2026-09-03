@@ -132,7 +132,7 @@ declare var Razorpay: any;
               </div>
 
               <div class="delivery-estimate">
-                <div class="est-icon">🚚</div>
+                <div class="est-icon">&#128666;</div>
                 <div class="est-text">
                   <strong>Estimated Delivery</strong>
                   <div>Dispatches within 24 hours. Delivery in 3-5 business days.</div>
@@ -195,7 +195,7 @@ declare var Razorpay: any;
               </div>
               <div class="summary-row discount-row" *ngIf="cart?.discountAmount > 0">
                 <span class="label">Total Discount</span>
-                <span class="value">−\u20B9{{cart?.discountAmount | number:'1.0-0'}}</span>
+                <span class="value">&#8722;\u20B9{{cart?.discountAmount | number:'1.0-0'}}</span>
               </div>
               <div class="summary-row">
                 <span class="label">Shipping Fee</span>

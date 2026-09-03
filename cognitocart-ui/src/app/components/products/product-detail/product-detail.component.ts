@@ -55,9 +55,9 @@ import { AuthService } from '../../../services/auth.service';
           <div class="divider"></div>
           
           <div class="price-display">
-            <span class="current-price">â‚¹{{(product.discountPrice || product.price) | number:'1.0-0'}}</span>
-            <span *ngIf="product.discountPrice && product.discountPrice < product.price" class="original-price">â‚¹{{product.price | number:'1.0-0'}}</span>
-            <span *ngIf="product.discountPrice && product.discountPrice < product.price" class="save-tag">You save â‚¹{{(product.price - product.discountPrice) | number:'1.0-0'}}</span>
+            <span class="current-price">&#8377;{{(product.discountPrice || product.price) | number:'1.0-0'}}</span>
+            <span *ngIf="product.discountPrice && product.discountPrice < product.price" class="original-price">&#8377;{{product.price | number:'1.0-0'}}</span>
+            <span *ngIf="product.discountPrice && product.discountPrice < product.price" class="save-tag">You save &#8377;{{(product.price - product.discountPrice) | number:'1.0-0'}}</span>
           </div>
 
           <p class="product-desc">{{product.description}}</p>
@@ -84,7 +84,7 @@ import { AuthService } from '../../../services/auth.service';
                   {{!v.color && !v.size ? (v.attributeValue || 'Standard') : ''}}
                 </div>
                 <div class="v-price" *ngIf="v.priceAdjustment">
-                  {{v.priceAdjustment > 0 ? '+' : ''}}â‚¹{{v.priceAdjustment}}
+                  {{v.priceAdjustment > 0 ? '+' : ''}}&#8377;{{v.priceAdjustment}}
                 </div>
                 <span class="stock-badge" *ngIf="v.stockQuantity === 0">Out of Stock</span>
               </button>
@@ -101,7 +101,7 @@ import { AuthService } from '../../../services/auth.service';
               </div>
             </div>
             <div class="trust-badge">
-              <span class="icon">âœ…</span>
+              <span class="icon">&#9989;</span>
               <div>
                 <strong>CognitoCart Verified</strong>
                 <span>Quality assured</span>
@@ -159,7 +159,7 @@ import { AuthService } from '../../../services/auth.service';
         <!-- COLUMN 3: Buy Box -->
         <div class="pdp-buybox">
           <div class="buy-card glass-card">
-            <div class="buy-price">â‚¹{{(product.discountPrice || product.price) | number:'1.0-0'}}</div>
+            <div class="buy-price">&#8377;{{(product.discountPrice || product.price) | number:'1.0-0'}}</div>
             
             <div class="stock-status" [class.low]="selectedVariant?.stockQuantity < 10" [class.out]="selectedVariant?.stockQuantity === 0">
               <span class="indicator"></span>
@@ -168,7 +168,7 @@ import { AuthService } from '../../../services/auth.service';
 
             <div class="delivery-info">
               <div class="del-row">
-                <span class="icon">ðŸšš</span>
+                <span class="icon">&#128666;</span>
                 <div>
                   <strong>Free Delivery</strong>
                   <div class="sub">Dispatches within 24 hours</div>
@@ -179,7 +179,7 @@ import { AuthService } from '../../../services/auth.service';
             <div class="qty-wrapper">
               <label>Quantity:</label>
               <div class="quantity-control">
-                <button class="qty-btn" (click)="qty > 1 ? qty = qty - 1 : null" [disabled]="!selectedVariant || selectedVariant.stockQuantity === 0">âˆ’</button>
+                <button class="qty-btn" (click)="qty > 1 ? qty = qty - 1 : null" [disabled]="!selectedVariant || selectedVariant.stockQuantity === 0">&#8722;</button>
                 <div class="qty-value">{{qty}}</div>
                 <button class="qty-btn" (click)="qty = qty + 1" [disabled]="!selectedVariant || selectedVariant.stockQuantity === 0 || qty >= selectedVariant.stockQuantity">+</button>
               </div>
@@ -187,10 +187,10 @@ import { AuthService } from '../../../services/auth.service';
 
             <div class="actions">
               <button class="btn btn-primary btn-block btn-cart" (click)="addToCart()" [disabled]="!selectedVariant || selectedVariant.stockQuantity === 0 || addingToCart">
-                <span class="icon">ðŸ›’</span> {{addingToCart ? 'Adding to Cart...' : 'Add to Cart'}}
+                <span class="icon">&#128722;</span> {{addingToCart ? 'Adding to Cart...' : 'Add to Cart'}}
               </button>
               <button class="btn btn-secondary btn-block btn-wishlist" (click)="toggleWishlist()">
-                <span class="icon">{{wishlisted ? 'â¤ï¸' : 'â™¡'}}</span> {{wishlisted ? 'Saved to Wishlist' : 'Add to Wishlist'}}
+                <span class="icon">{{wishlisted ? 'â¤ï¸' : '&#9825;'}}</span> {{wishlisted ? 'Saved to Wishlist' : 'Add to Wishlist'}}
               </button>
             </div>
 
@@ -277,7 +277,7 @@ import { AuthService } from '../../../services/auth.service';
               </div>
               <div class="review-rating-row">
                 <div class="stars"><span *ngFor="let s of stars(r.rating)">{{s}}</span></div>
-                <span class="verified-badge" *ngIf="r.verifiedPurchase">âœ… Verified Purchase</span>
+                <span class="verified-badge" *ngIf="r.verifiedPurchase">&#9989; Verified Purchase</span>
               </div>
               <p class="review-body">{{r.comment}}</p>
               <div class="review-images" *ngIf="r.mediaGallery?.length">

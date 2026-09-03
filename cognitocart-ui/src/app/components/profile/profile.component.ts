@@ -30,7 +30,7 @@ import { ToastService } from '../../services/toast.service';
           
           <ul class="profile-nav">
             <li [class.active]="activeTab === 'profile'" (click)="activeTab = 'profile'">👤 Personal Info</li>
-            <li [class.active]="activeTab === 'security'" (click)="activeTab = 'security'">🔒 Security</li>
+            <li [class.active]="activeTab === 'security'" (click)="activeTab = 'security'">&#128274; Security</li>
             <li (click)="navigateToOrders()">📦 My Orders</li>
             <li (click)="logout()" style="color:var(--danger); margin-top:24px; border-top:1px solid var(--border-subtle); padding-top:16px;">🚪 Sign Out</li>
           </ul>

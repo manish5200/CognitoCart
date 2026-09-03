@@ -65,7 +65,7 @@ declare var Razorpay: any;
               <!-- Totals -->
               <div style="margin-top:20px;">
                 <div class="summary-row" *ngIf="order.discountAmount > 0" style="color:var(--success);">
-                  <span>Discount</span><span>−\u20B9{{order.discountAmount | number:'1.0-0'}}</span>
+                  <span>Discount</span><span>&#8722;\u20B9{{order.discountAmount | number:'1.0-0'}}</span>
                 </div>
                 <div class="summary-row" style="font-size:1.1rem; font-weight:700; color:var(--text-primary); border-top:1px solid var(--border-default); padding-top:16px; margin-top:8px;">
                   <span>Total</span>
@@ -81,7 +81,7 @@ declare var Razorpay: any;
               <h4 style="margin-bottom:20px;">📅 Order Timeline</h4>
               <div class="timeline">
                 <div *ngFor="let event of timeline" class="timeline-item">
-                  <div class="timeline-dot" [class.success]="true">✓</div>
+                  <div class="timeline-dot" [class.success]="true">&#10003;</div>
                   <div class="timeline-content">
                     <div class="timeline-title">{{event.status || event.event}}</div>
                     <div class="timeline-date">{{event.timestamp | date:'medium'}}</div>
@@ -137,7 +137,7 @@ declare var Razorpay: any;
           </div>
 
           <div *ngIf="returnSubmitted" class="alert alert-success">
-            ✅ Return request submitted! Admin will review within 1-2 business days.
+            &#9989; Return request submitted! Admin will review within 1-2 business days.
           </div>
         </div>
 
@@ -160,7 +160,7 @@ declare var Razorpay: any;
           <!-- Shipping Info -->
           <div class="glass-card fade-up" *ngIf="order.trackingNumber" style="margin-bottom:24px; animation-delay:0.2s;">
             <div class="card-body">
-              <h4 style="margin-bottom:16px;">🚚 Tracking</h4>
+              <h4 style="margin-bottom:16px;">&#128666; Tracking</h4>
               <div style="font-size:14px; color:var(--text-muted);">
                 <div><strong>Courier:</strong> {{order.courier}}</div>
                 <div><strong>Tracking #:</strong> {{order.trackingNumber}}</div>

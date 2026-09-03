@@ -154,10 +154,10 @@ import { ToastService } from '../../../services/toast.service';
                 </td>
                 <td>
                   <div style="display:flex; gap:8px; flex-wrap:wrap; font-size:12px;">
-                    <span *ngIf="p.returnAllowed" style="color:var(--text-muted);">✓ Return</span>
-                    <span *ngIf="p.exchangeAllowed" style="color:var(--text-muted);">✓ Exchange</span>
-                    <span *ngIf="p.replacementAllowed" style="color:var(--text-muted);">✓ Replace</span>
-                    <span *ngIf="p.pickupAvailable" style="color:var(--text-muted);">✓ Pickup</span>
+                    <span *ngIf="p.returnAllowed" style="color:var(--text-muted);">&#10003; Return</span>
+                    <span *ngIf="p.exchangeAllowed" style="color:var(--text-muted);">&#10003; Exchange</span>
+                    <span *ngIf="p.replacementAllowed" style="color:var(--text-muted);">&#10003; Replace</span>
+                    <span *ngIf="p.pickupAvailable" style="color:var(--text-muted);">&#10003; Pickup</span>
                   </div>
                 </td>
               </tr>

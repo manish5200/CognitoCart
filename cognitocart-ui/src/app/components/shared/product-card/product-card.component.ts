@@ -47,7 +47,7 @@ import { RouterModule } from '@angular/router';
         <div class="pc-brand-row">
           <span class="pc-brand">{{product.brand || product.categoryName || 'General'}}</span>
           <div class="pc-rating" *ngIf="product.averageRating">
-            <span class="pc-stars">â˜…</span>
+            <span class="pc-stars">&#9733;</span>
             <span class="pc-rating-val">{{product.averageRating | number:'1.1-1'}}</span>
             <span class="pc-review-count">({{product.totalReviews || 0}})</span>
           </div>
@@ -56,8 +56,8 @@ import { RouterModule } from '@angular/router';
         <h3 class="pc-name">{{product.productName || product.name}}</h3>
         
         <div class="pc-price">
-          <span class="pc-price-now">â‚¹{{(product.discountPrice || product.price) | number:'1.0-0'}}</span>
-          <span *ngIf="product.discountPrice && product.price > product.discountPrice" class="pc-price-was">â‚¹{{product.price | number:'1.0-0'}}</span>
+          <span class="pc-price-now">&#8377;{{(product.discountPrice || product.price) | number:'1.0-0'}}</span>
+          <span *ngIf="product.discountPrice && product.price > product.discountPrice" class="pc-price-was">&#8377;{{product.price | number:'1.0-0'}}</span>
         </div>
       </div>
     </div>

@@ -11,7 +11,7 @@ import { ToastService } from '../../../services/toast.service';
   template: `
     <div class="page" style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:70vh;">
       <div class="card" style="width: 100%; max-width: 600px; padding: 32px; text-align: center;">
-        <h1 style="margin-bottom:8px; font-size:28px;">Track Your Order 🚚</h1>
+        <h1 style="margin-bottom:8px; font-size:28px;">Track Your Order &#128666;</h1>
         <p style="color:var(--text-muted); margin-bottom:32px;">Enter your Order Number or Tracking ID to see the latest updates.</p>
 
         <div style="display:flex; gap:12px; margin-bottom:32px;">

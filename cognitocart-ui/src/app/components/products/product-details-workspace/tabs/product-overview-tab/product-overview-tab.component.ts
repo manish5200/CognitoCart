@@ -32,8 +32,8 @@ import { ProductService } from '../../../../../services/product.service';
             <h1 class="product-title">{{ product.productName || 'Unnamed Product' }}</h1>
             
             <div class="price-container">
-              <span class="current-price">â‚¹{{ (product.discountPrice || product.price || 0) | number:'1.0-2' }}</span>
-              <span class="original-price" *ngIf="product.discountPrice && product.price > product.discountPrice">â‚¹{{ product.price | number:'1.0-2' }}</span>
+              <span class="current-price">&#8377;{{ (product.discountPrice || product.price || 0) | number:'1.0-2' }}</span>
+              <span class="original-price" *ngIf="product.discountPrice && product.price > product.discountPrice">&#8377;{{ product.price | number:'1.0-2' }}</span>
             </div>
             
             <p class="product-desc">{{ product.description || 'No description provided.' }}</p>

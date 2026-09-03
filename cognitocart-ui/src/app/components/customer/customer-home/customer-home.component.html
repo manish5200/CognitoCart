@@ -79,13 +79,13 @@
       <button class="btn btn-ai" (click)="askCognito()">Ask</button>
     </div>
     <div class="ai-suggestions">
-      <span class="suggestion-chip" (click)="askCognito('Best laptop under â‚¹70,000')">Best laptop under â‚¹70,000</span>
+      <span class="suggestion-chip" (click)="askCognito('Best laptop under &#8377;70,000')">Best laptop under &#8377;70,000</span>
       <span class="suggestion-chip" (click)="askCognito('Compare iPhone and Samsung')">Compare iPhone and Samsung</span>
       <span class="suggestion-chip" (click)="askCognito('Gift ideas for Raksha Bandhan')">Gift ideas for Raksha Bandhan</span>
     </div>
     <!-- Search history chips â€” shown only if the user has searched before -->
     <div class="search-history-row" *ngIf="searchHistory.length > 0">
-      <span class="history-label">ðŸ•’ Recent:</span>
+      <span class="history-label">ðŸ&#8226;’ Recent:</span>
       <button *ngFor="let h of searchHistory" class="history-chip" (click)="askCognito(h)">
         {{h}}
       </button>

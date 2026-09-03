@@ -100,7 +100,7 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
       <div class="modal-backdrop" *ngIf="shipmentOrder" (click)="shipmentOrder = null">
         <div class="modal" (click)="$event.stopPropagation()">
           <div class="modal-header">
-            <span class="modal-title">🚚 Attach Shipment — {{shipmentOrder?.orderNumber}}</span>
+            <span class="modal-title">&#128666; Attach Shipment — {{shipmentOrder?.orderNumber}}</span>
             <button class="btn-icon" (click)="shipmentOrder = null">✕</button>
           </div>
           <div class="modal-body">

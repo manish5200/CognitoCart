@@ -49,7 +49,7 @@ import { AuthService } from '../../services/auth.service';
       </div>
 
       <div class="pdp-layout">
-        <!-- â•â•â•â•â•â•â•â•â•â•â• IMAGE GALLERY â•â•â•â•â•â•â•â•â•â•â• -->
+        <!-- â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226; IMAGE GALLERY â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226; -->
         <div class="pdp-gallery">
           <!-- Thumbnail Strip -->
           <div class="pdp-thumbs" *ngIf="product.mediaGallery && product.mediaGallery?.length > 1">
@@ -67,7 +67,7 @@ import { AuthService } from '../../services/auth.service';
           <div class="pdp-main-img-wrap">
             <div class="pdp-badge-wrap">
               <span *ngIf="selectedVariant?.discountPercentage > 0" class="pdp-discount-badge">
-                âˆ’{{selectedVariant.discountPercentage}}% OFF
+                &#8722;{{selectedVariant.discountPercentage}}% OFF
               </span>
               <span *ngIf="product.flashSaleActive" class="pdp-flash-badge">âš¡ FLASH SALE</span>
             </div>
@@ -83,7 +83,7 @@ import { AuthService } from '../../services/auth.service';
           </div>
         </div>
 
-        <!-- â•â•â•â•â•â•â•â•â•â•â• PRODUCT INFO â•â•â•â•â•â•â•â•â•â•â• -->
+        <!-- â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226; PRODUCT INFO â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226; -->
         <div class="pdp-info">
           <!-- Category -->
           <div class="pdp-category" *ngIf="product.categoryName">
@@ -96,16 +96,16 @@ import { AuthService } from '../../services/auth.service';
           <!-- Rating Row -->
           <div class="pdp-meta-row">
             <div class="pdp-stars">
-              <span *ngFor="let s of getStarArray(product.averageRating || 0)" class="star" [class.filled]="s">â˜…</span>
+              <span *ngFor="let s of getStarArray(product.averageRating || 0)" class="star" [class.filled]="s">&#9733;</span>
               <span class="pdp-rating-text">
                 {{(product.averageRating || 0) | number:'1.1-1'}}
                 <span style="color:var(--text-dim);">({{product.totalReviews || 0}} reviews)</span>
               </span>
             </div>
             <div class="pdp-stock-badge" [class.in-stock]="isInStock()" [class.low-stock]="isLowStock()" [class.out-stock]="isOutOfStock()">
-              <span *ngIf="isInStock() && !isLowStock()">âœ“ In Stock</span>
+              <span *ngIf="isInStock() && !isLowStock()">&#10003; In Stock</span>
               <span *ngIf="isLowStock()">âš ï¸ Only {{getAvailableStock()}} left</span>
-              <span *ngIf="isOutOfStock()">âœ• Out of Stock</span>
+              <span *ngIf="isOutOfStock()">âœ&#8226; Out of Stock</span>
             </div>
           </div>
 
@@ -114,11 +114,11 @@ import { AuthService } from '../../services/auth.service';
           <!-- Price -->
           <div class="pdp-price-block">
             <div class="pdp-price-main">
-              â‚¹{{ getPriceDisplay() | number:'1.0-0' }}
+              &#8377;{{ getPriceDisplay() | number:'1.0-0' }}
             </div>
             <div *ngIf="getOriginalPrice() > getPriceDisplay()" class="pdp-price-sub">
-              <span class="pdp-mrp">M.R.P.: â‚¹{{getOriginalPrice() | number:'1.0-0'}}</span>
-              <span class="pdp-save">Save â‚¹{{(getOriginalPrice() - getPriceDisplay()) | number:'1.0-0'}}
+              <span class="pdp-mrp">M.R.P.: &#8377;{{getOriginalPrice() | number:'1.0-0'}}</span>
+              <span class="pdp-save">Save &#8377;{{(getOriginalPrice() - getPriceDisplay()) | number:'1.0-0'}}
                 ({{getDiscountPct()}}% off)</span>
             </div>
             <div class="pdp-tax-note">Inclusive of all taxes</div>
@@ -182,7 +182,7 @@ import { AuthService } from '../../services/auth.service';
                   (click)="selectVariant(v)"
                 >
                   <span style="font-weight:700;">SKU: {{v.sku}}</span>
-                  <span style="font-size:11px; opacity:0.7;">â‚¹{{v.salePrice || v.price | number:'1.0-0'}}</span>
+                  <span style="font-size:11px; opacity:0.7;">&#8377;{{v.salePrice || v.price | number:'1.0-0'}}</span>
                 </button>
               </div>
             </div>
@@ -198,7 +198,7 @@ import { AuthService } from '../../services/auth.service';
           <div class="pdp-qty-row" *ngIf="selectedVariant && isInStock()">
             <div class="pdp-variant-label">Quantity:</div>
             <div class="pdp-qty-control">
-              <button class="pdp-qty-btn" (click)="quantity > 1 ? quantity = quantity - 1 : null">âˆ’</button>
+              <button class="pdp-qty-btn" (click)="quantity > 1 ? quantity = quantity - 1 : null">&#8722;</button>
               <span class="pdp-qty-val">{{quantity}}</span>
               <button class="pdp-qty-btn" (click)="quantity < getAvailableStock() ? quantity = quantity + 1 : null">+</button>
             </div>
@@ -215,7 +215,7 @@ import { AuthService } from '../../services/auth.service';
               (click)="addToCart()"
               [disabled]="addingToCart || !selectedVariant || isOutOfStock()"
             >
-              <span *ngIf="!addingToCart">ðŸ›’ Add to Cart</span>
+              <span *ngIf="!addingToCart">&#128722; Add to Cart</span>
               <span *ngIf="addingToCart" class="pdp-btn-loading">
                 <span class="pdp-spinner"></span> Adding...
               </span>
@@ -233,10 +233,10 @@ import { AuthService } from '../../services/auth.service';
           <!-- Delivery Info -->
           <div class="pdp-delivery-block">
             <div class="pdp-delivery-row">
-              <span class="pdp-delivery-icon">ðŸšš</span>
+              <span class="pdp-delivery-icon">&#128666;</span>
               <div>
                 <div class="pdp-delivery-title">Free Delivery</div>
-                <div class="pdp-delivery-sub">On orders above â‚¹599</div>
+                <div class="pdp-delivery-sub">On orders above &#8377;599</div>
               </div>
             </div>
             <div class="pdp-delivery-row">
@@ -247,7 +247,7 @@ import { AuthService } from '../../services/auth.service';
               </div>
             </div>
             <div class="pdp-delivery-row">
-              <span class="pdp-delivery-icon">ðŸ”’</span>
+              <span class="pdp-delivery-icon">&#128274;</span>
               <div>
                 <div class="pdp-delivery-title">Secure Payment</div>
                 <div class="pdp-delivery-sub">Razorpay encrypted checkout</div>
@@ -575,7 +575,7 @@ export class ProductDetailComponent implements OnInit {
     this.addingToCart = true;
     this.cartService.add(variantPublicId, this.quantity).subscribe({
       next: () => {
-        this.toast.success(`${this.product.productName} added to cart! ðŸ›’`);
+        this.toast.success(`${this.product.productName} added to cart! &#128722;`);
         this.addingToCart = false;
       },
       error: (e: any) => {

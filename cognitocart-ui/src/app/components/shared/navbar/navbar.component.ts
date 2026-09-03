@@ -104,7 +104,7 @@ import { UserIdentityComponent } from '../../shared/user-identity/user-identity.
                 
                 <div style="max-height:350px; overflow-y:auto; padding:8px 0;">
                   <div *ngIf="!cartItems?.length" style="padding:32px 16px; text-align:center;">
-                    <div style="font-size:32px; margin-bottom:8px;">🛒</div>
+                    <div style="font-size:32px; margin-bottom:8px;">&#128722;</div>
                     <div style="color:var(--text-primary); font-weight:600;">Your cart is empty</div>
                     <div style="font-size:13px; color:var(--text-muted); margin-top:4px;">Add some items to get started.</div>
                   </div>
