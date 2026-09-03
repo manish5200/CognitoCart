@@ -1,11 +1,12 @@
 ﻿import { Injectable } from '@angular/core';
+import { environment } from '../../environments/environment';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class SellerService {
-  private readonly API = 'https://cognitocart-api.onrender.com/api/v1/sellers';
-  private readonly SALE_API = 'https://cognitocart-api.onrender.com/api/v1/seller/sales';
+  private readonly API = environment.apiUrl + '/sellers';
+  private readonly SALE_API = environment.apiUrl + '/seller/sales';
 
   constructor(private http: HttpClient) {}
 
@@ -71,3 +72,4 @@ export class SellerService {
     return this.http.post(`${this.SALE_API}/${eventPublicId}/bulk-upload`, form, { responseType: 'text' });
   }
 }
+

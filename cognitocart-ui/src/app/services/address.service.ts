@@ -1,10 +1,11 @@
 ﻿import { Injectable } from '@angular/core';
+import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class AddressService {
-  private readonly API = 'https://cognitocart-api.onrender.com/api/v1/addresses';
+  private readonly API = environment.apiUrl + '/addresses';
 
   constructor(private http: HttpClient) {}
 
@@ -27,3 +28,4 @@ export class AddressService {
     return this.http.patch(`${this.API}/${addressPublicId}/default`, {});
   }
 }
+

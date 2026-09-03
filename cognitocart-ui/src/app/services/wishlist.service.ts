@@ -1,10 +1,11 @@
 ﻿import { Injectable } from '@angular/core';
+import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class WishlistService {
-  private readonly API = 'https://cognitocart-api.onrender.com/api/v1/wishlist';
+  private readonly API = environment.apiUrl + '/wishlist';
 
   constructor(private http: HttpClient) {}
 
@@ -18,3 +19,4 @@ export class WishlistService {
     return this.http.post(`${this.API}/move-to-cart/${productPublicId}?quantity=${quantity}`, {});
   }
 }
+

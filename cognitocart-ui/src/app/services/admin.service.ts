@@ -1,15 +1,16 @@
-import { Injectable } from '@angular/core';
+﻿import { Injectable } from '@angular/core';
+import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class AdminService {
-  private readonly API = 'https://cognitocart-api.onrender.com/api/v1/admin';
-  private readonly SALE_API = 'https://cognitocart-api.onrender.com/api/v1/admin/sales';
+  private readonly API = environment.apiUrl + '/admin';
+  private readonly SALE_API = environment.apiUrl + '/admin/sales';
 
   constructor(private http: HttpClient) {}
 
-  // â”€â”€ Analytics â”€â”€
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Analytics Ã¢â€â‚¬Ã¢â€â‚¬
   getStats(pageNumber = 0, pageSize = 50): Observable<any> {
     return this.http.get(`${this.API}/stats?pageNumber=${pageNumber}&pageSize=${pageSize}`);
   }
@@ -30,7 +31,7 @@ export class AdminService {
     return this.http.get(`${this.API}/analytics/customers?top=${top}&churnAfterDays=${churnAfterDays}`);
   }
 
-  // ðŸ“¦ Orders ðŸ“¦
+  // Ã°Å¸â€œÂ¦ Orders Ã°Å¸â€œÂ¦
   changeOrderStatus(orderPublicId: string, targetStatus: string, comment?: string): Observable<any> {
     return this.http.patch(`${this.API}/orders/${orderPublicId}/status`, {
       orderStatus: targetStatus,
@@ -64,7 +65,7 @@ export class AdminService {
     return this.http.get(`${this.API}/orders/${orderIdentifier}/invoice`, { responseType: 'blob' });
   }
 
-  // â”€â”€ Sellers & KYC â”€â”€
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Sellers & KYC Ã¢â€â‚¬Ã¢â€â‚¬
   getAllSellers(): Observable<any> { return this.http.get(`${this.API}/sellers`); }
 
   getPendingKycSellers(): Observable<any> { return this.http.get(`${this.API}/sellers/kyc/pending`); }
@@ -77,7 +78,7 @@ export class AdminService {
     return this.http.get(`${this.API}/sellers/${sellerPublicId}/analytics`);
   }
 
-  // â”€â”€ Coupons â”€â”€
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Coupons Ã¢â€â‚¬Ã¢â€â‚¬
   getCoupons(): Observable<any> { return this.http.get(`${this.API}/coupons`); }
 
   createCoupon(data: {
@@ -89,14 +90,14 @@ export class AdminService {
     return this.http.patch(`${this.API}/coupons/${couponPublicId}/toggle`, {}, { responseType: 'text' });
   }
 
-  // â”€â”€ Webhooks DLQ â”€â”€
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Webhooks DLQ Ã¢â€â‚¬Ã¢â€â‚¬
   getPendingWebhooks(): Observable<any> { return this.http.get(`${this.API}/webhooks/dlq/pending`); }
 
   replayWebhook(eventPublicId: string): Observable<any> {
     return this.http.post(`${this.API}/webhooks/dlq/${eventPublicId}/replay`, {}, { responseType: 'text' });
   }
 
-  // â”€â”€ Flash Sales â”€â”€
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Flash Sales Ã¢â€â‚¬Ã¢â€â‚¬
   createSaleEvent(data: { eventName: string; description?: string; startTime: string; endTime: string }): Observable<any> {
     return this.http.post(`${this.SALE_API}/events`, data);
   }
@@ -111,12 +112,13 @@ export class AdminService {
     return this.http.patch(`${this.SALE_API}/items/${itemPublicId}/review?status=${status}`, {}, { responseType: 'text' });
   }
 
-  // ─── Reviews ───
+  // â”€â”€â”€ Reviews â”€â”€â”€
   getAllReviews(page = 0, size = 20): Observable<any> {
-    return this.http.get(`https://cognitocart-api.onrender.com/api/v1/reviews/admin/all?page=${page}&size=${size}`);
+    return this.http.get(`/reviews/admin/all?page=${page}&size=${size}`);
   }
 
   deleteReview(reviewPublicId: string): Observable<any> {
-    return this.http.delete(`https://cognitocart-api.onrender.com/api/v1/reviews/admin/${reviewPublicId}`);
+    return this.http.delete(`/reviews/admin/${reviewPublicId}`);
   }
 }
+

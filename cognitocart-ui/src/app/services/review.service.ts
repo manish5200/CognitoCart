@@ -1,10 +1,11 @@
 ﻿import { Injectable } from '@angular/core';
+import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class ReviewService {
-  private readonly API = 'https://cognitocart-api.onrender.com/api/v1/reviews';
+  private readonly API = environment.apiUrl + '/reviews';
 
   constructor(private http: HttpClient) {}
 
@@ -31,3 +32,4 @@ export class ReviewService {
     return this.http.delete(`${this.API}/admin/${reviewPublicId}`);
   }
 }
+

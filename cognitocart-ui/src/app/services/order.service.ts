@@ -1,11 +1,12 @@
 ﻿import { Injectable } from '@angular/core';
+import { environment } from '../../environments/environment';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class OrderService {
-  private readonly API = 'https://cognitocart-api.onrender.com/api/v1/orders';
-  private readonly PAY_API = 'https://cognitocart-api.onrender.com/api/v1/payments';
+  private readonly API = environment.apiUrl + '/orders';
+  private readonly PAY_API = environment.apiUrl + '/payments';
 
   constructor(private http: HttpClient) {}
 
@@ -46,3 +47,4 @@ export class OrderService {
     return this.http.get(`${this.API}/${orderIdentifier}/invoice`, { responseType: 'blob' });
   }
 }
+

@@ -1,4 +1,5 @@
 ﻿import { Injectable } from '@angular/core';
+import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, catchError, of, tap, concatMap, from, toArray } from 'rxjs';
 import { AuthService } from './auth.service';
@@ -6,8 +7,8 @@ import { ToastService } from './toast.service';
 
 @Injectable({ providedIn: 'root' })
 export class CartService {
-  private readonly API = 'https://cognitocart-api.onrender.com/api/v1/cart';
-  private readonly GUEST_API = 'https://cognitocart-api.onrender.com/api/v1/guest-cart';
+  private readonly API = environment.apiUrl + '/cart';
+  private readonly GUEST_API = environment.apiUrl + '/guest-cart';
   private cartSubject = new BehaviorSubject<any>(null);
   public cart$ = this.cartSubject.asObservable();
 
@@ -120,3 +121,4 @@ export class CartService {
     return this.cartSubject.value?.totalAmount ?? 0;
   }
 }
+
