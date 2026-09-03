@@ -1,4 +1,4 @@
-﻿import { Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -31,8 +31,8 @@ import { AuthService } from '../../../services/auth.service';
         <div class="pdp-gallery">
           <div class="image-thumbs" *ngIf="product.mediaGallery?.length > 1">
             <img *ngFor="let media of product.mediaGallery" [src]="media.mediaUrl"
-              [class.active]="img === selectedImage"
-              (click)="selectedImage = img" />
+              [class.active]="media.mediaUrl === selectedImage"
+              (click)="selectedImage = media.mediaUrl" />
           </div>
           <div class="main-image">
             <img [src]="selectedImage || 'https://via.placeholder.com/600x600'" [alt]="product.productName" />
