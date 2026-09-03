@@ -109,6 +109,37 @@ import { AuthService } from '../../../services/auth.service';
             </div>
           </div>
 
+          <!-- Product Specifications -->
+          <details class="vendor-details" *ngIf="product.countryOfOrigin || product.condition || (product.attributes && (product.attributes | keyvalue).length > 0)">
+            <summary>Product Specifications</summary>
+            <div class="vd-content">
+              <div class="vd-item" *ngIf="product.brand">
+                <span class="vd-label">Brand</span>
+                <span class="vd-value">{{product.brand}}</span>
+              </div>
+              <div class="vd-item" *ngIf="product.condition">
+                <span class="vd-label">Condition</span>
+                <span class="vd-value">{{product.condition}}</span>
+              </div>
+              <div class="vd-item" *ngIf="product.countryOfOrigin">
+                <span class="vd-label">Country of Origin</span>
+                <span class="vd-value">{{product.countryOfOrigin}}</span>
+              </div>
+              <div class="vd-item" *ngIf="product.productType">
+                <span class="vd-label">Type</span>
+                <span class="vd-value">{{product.productType}}</span>
+              </div>
+              
+              <!-- Dynamic Attributes -->
+              <ng-container *ngIf="product.attributes">
+                <div class="vd-item" *ngFor="let attr of product.attributes | keyvalue">
+                  <span class="vd-label">{{attr.key}}</span>
+                  <span class="vd-value">{{attr.value}}</span>
+                </div>
+              </ng-container>
+            </div>
+          </details>
+
           <!-- Vendor Details -->
           <details class="vendor-details" *ngIf="product.storeName">
             <summary>Vendor Details</summary>

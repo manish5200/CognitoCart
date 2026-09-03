@@ -29,6 +29,7 @@ export const routes: Routes = [
 
   // Seller
   { path: 'seller', canActivate: [sellerGuard], loadComponent: () => import('./components/seller/seller-dashboard/seller-dashboard.component').then(m => m.SellerDashboardComponent) },
+  { path: 'seller/products/create', canActivate: [sellerGuard], loadComponent: () => import('./components/seller/product-wizard/product-wizard.component').then(m => m.ProductWizardComponent) },
   { path: 'seller/products', canActivate: [sellerGuard], loadComponent: () => import('./components/seller/seller-products/seller-products.component').then(m => m.SellerProductsComponent) },
   { path: 'seller/products/:id', canActivate: [sellerGuard], loadComponent: () => import('./components/products/product-details-workspace/product-details-workspace.component').then(m => m.ProductDetailsWorkspaceComponent) },
   { path: 'seller/orders', canActivate: [sellerGuard], loadComponent: () => import('./components/seller/seller-orders/seller-orders.component').then(m => m.SellerOrdersComponent) },
@@ -38,6 +39,7 @@ export const routes: Routes = [
 
   // Admin
   { path: 'admin', canActivate: [adminGuard], loadComponent: () => import('./components/admin/admin-dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent) },
+  { path: 'admin/moderation', canActivate: [adminGuard], loadComponent: () => import('./components/admin/admin-moderation/admin-moderation.component').then(m => m.AdminModerationComponent) },
   { path: 'admin/categories', canActivate: [adminGuard], loadComponent: () => import('./components/admin/admin-categories/admin-categories.component').then(m => m.AdminCategoriesComponent) },
   { path: 'admin/products/:id', canActivate: [adminGuard], loadComponent: () => import('./components/products/product-details-workspace/product-details-workspace.component').then(m => m.ProductDetailsWorkspaceComponent) },
   { path: 'admin/orders', canActivate: [adminGuard], loadComponent: () => import('./components/admin/admin-orders/admin-orders.component').then(m => m.AdminOrdersComponent) },

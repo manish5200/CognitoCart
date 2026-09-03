@@ -1,0 +1,177 @@
+<div class="wizard-container">
+  <!-- Header: Stepper Progress -->
+  <header class="wizard-header">
+    <div class="stepper">
+      <div 
+        *ngFor="let step of [].constructor(totalSteps); let i = index" 
+        class="step-indicator"
+        [class.active]="currentStep === (i + 1)"
+        [class.completed]="currentStep > (i + 1)">
+        <span class="step-number">{{ i + 1 }}</span>
+      </div>
+    </div>
+    <div class="save-status" *ngIf="draftProductId">
+      <span *ngIf="isSavingDraft" class="loading-spinner">Saving...</span>
+      <span *ngIf="!isSavingDraft" class="saved-badge">Draft Auto-Saved</span>
+    </div>
+  </header>
+
+  <!-- Body: Dynamic Steps with Slide Animations -->
+  <main class="wizard-body">
+    <form [formGroup]="wizardForm" (ngSubmit)="submitProduct()">
+      
+      <!-- STEP 1: Basic Identity -->
+      <div class="step-content" *ngIf="currentStep === 1" formGroupName="step1">
+        <h2>Step 1: Basic Identity</h2>
+        <div class="form-group">
+          <label for="productName">Product Name *</label>
+          <input id="productName" type="text" formControlName="productName" placeholder="e.g. Sony WH-1000XM5">
+          <span class="error" *ngIf="currentStepGroup.get('productName')?.touched && currentStepGroup.get('productName')?.invalid">
+            Product Name is required.
+          </span>
+        </div>
+        <div class="form-group">
+          <label for="description">Description *</label>
+          <textarea id="description" formControlName="description" rows="5" placeholder="Detailed product description..."></textarea>
+          <span class="error" *ngIf="currentStepGroup.get('description')?.touched && currentStepGroup.get('description')?.invalid">
+            Description is required.
+          </span>
+        </div>
+        <div class="form-group">
+          <label for="categoryId">Category *</label>
+          <select id="categoryId" formControlName="categoryId">
+            <option value="">Select Category</option>
+            <option value="1">Electronics</option>
+            <option value="2">Fashion</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- STEP 2: Pricing -->
+      <div class="step-content" *ngIf="currentStep === 2" formGroupName="step2">
+        <h2>Step 2: Pricing Strategy</h2>
+        <div class="form-group">
+          <label for="basePrice">Base Price (₹) *</label>
+          <input id="basePrice" type="number" formControlName="basePrice">
+        </div>
+        <div class="form-group">
+          <label for="discountPrice">Discount Price (₹)</label>
+          <input id="discountPrice" type="number" formControlName="discountPrice">
+        </div>
+      </div>
+
+      <!-- STEP 3: Inventory -->
+      <div class="step-content" *ngIf="currentStep === 3" formGroupName="step3">
+        <h2>Step 3: Inventory</h2>
+        <div class="form-group">
+          <label for="initialStock">Initial Stock *</label>
+          <input id="initialStock" type="number" formControlName="initialStock">
+        </div>
+      </div>
+
+      <!-- STEP 4: Core Attributes -->
+      <div class="step-content" *ngIf="currentStep === 4" formGroupName="step4">
+        <h2>Step 4: Core Attributes</h2>
+        <div class="form-group">
+          <label for="brand">Brand</label>
+          <input id="brand" type="text" formControlName="brand">
+        </div>
+        <div class="form-group">
+          <label for="countryOfOrigin">Country of Origin</label>
+          <input id="countryOfOrigin" type="text" formControlName="countryOfOrigin">
+        </div>
+        <div class="form-group">
+          <label for="condition">Condition *</label>
+          <select id="condition" formControlName="condition">
+            <option value="NEW">New</option>
+            <option value="REFURBISHED">Refurbished</option>
+            <option value="USED">Used</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- STEP 5: Media Pipeline -->
+      <div class="step-content" *ngIf="currentStep === 5" formGroupName="step5">
+        <h2>Step 5: Media Pipeline</h2>
+        <div class="media-upload-area">
+          <div class="upload-box">
+            <p>Drag & Drop Images Here</p>
+            <button type="button" class="btn-secondary">Browse Files</button>
+          </div>
+          <!-- Skeleton Loader for Image Preview -->
+          <div class="image-preview-skeleton skeleton" *ngIf="isSavingDraft"></div>
+        </div>
+      </div>
+
+      <!-- STEP 6: Variant Engine -->
+      <div class="step-content" *ngIf="currentStep === 6" formGroupName="step6">
+        <h2>Step 6: Variant Engine</h2>
+        <p>Add colors, sizes, and specific variant pricing here.</p>
+        <button type="button" class="btn-secondary">+ Add Variant</button>
+      </div>
+
+      <!-- STEP 7: Shipping Details -->
+      <div class="step-content" *ngIf="currentStep === 7" formGroupName="step7">
+        <h2>Step 7: Shipping Details</h2>
+        <div class="form-group">
+          <label for="weightGrams">Weight (Grams)</label>
+          <input id="weightGrams" type="number" formControlName="weightGrams">
+        </div>
+        <div class="form-group-row">
+          <div class="form-group">
+            <label for="lengthCm">Length (cm)</label>
+            <input id="lengthCm" type="number" formControlName="lengthCm">
+          </div>
+          <div class="form-group">
+            <label for="widthCm">Width (cm)</label>
+            <input id="widthCm" type="number" formControlName="widthCm">
+          </div>
+          <div class="form-group">
+            <label for="heightCm">Height (cm)</label>
+            <input id="heightCm" type="number" formControlName="heightCm">
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 8: SEO & Discovery -->
+      <div class="step-content" *ngIf="currentStep === 8" formGroupName="step8">
+        <h2>Step 8: SEO & Discovery</h2>
+        <div class="form-group">
+          <label for="metaKeywords">Meta Keywords</label>
+          <input id="metaKeywords" type="text" formControlName="metaKeywords" placeholder="Comma separated keywords">
+        </div>
+      </div>
+
+      <!-- STEP 9: Policies -->
+      <div class="step-content" *ngIf="currentStep === 9" formGroupName="step9">
+        <h2>Step 9: Policies</h2>
+        <div class="form-group">
+          <label for="returnPolicyId">Return Policy ID</label>
+          <input id="returnPolicyId" type="text" formControlName="returnPolicyId">
+        </div>
+        <div class="form-group">
+          <label for="warrantyDuration">Warranty Duration (Months)</label>
+          <input id="warrantyDuration" type="number" formControlName="warrantyDuration">
+        </div>
+      </div>
+
+      <!-- STEP 10: Review & Submit -->
+      <div class="step-content" *ngIf="currentStep === 10">
+        <h2>Step 10: Final Review</h2>
+        <p>Please review all details before sending to Admin for approval.</p>
+        <div class="review-summary">
+          <p><strong>Name:</strong> {{ wizardForm.get('step1.productName')?.value }}</p>
+          <p><strong>Price:</strong> ₹{{ wizardForm.get('step2.basePrice')?.value }}</p>
+        </div>
+      </div>
+
+      <!-- Footer: Navigation Buttons -->
+      <footer class="wizard-footer">
+        <button type="button" class="btn-secondary" (click)="previousStep()" [disabled]="currentStep === 1">Back</button>
+        <button type="button" class="btn-primary" (click)="nextStep()" *ngIf="currentStep < totalSteps">Next</button>
+        <button type="submit" class="btn-success" *ngIf="currentStep === totalSteps">Submit for Review</button>
+      </footer>
+
+    </form>
+  </main>
+</div>

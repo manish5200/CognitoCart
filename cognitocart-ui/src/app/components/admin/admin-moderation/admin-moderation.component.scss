@@ -1,0 +1,155 @@
+.moderation-dashboard {
+  padding: 2rem;
+  font-family: 'Inter', sans-serif;
+  color: #1e293b;
+}
+
+.dashboard-header {
+  margin-bottom: 2rem;
+  h1 { margin: 0 0 0.5rem 0; font-size: 2rem; }
+  p { margin: 0; color: #64748b; }
+}
+
+.data-table-container {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  
+  th {
+    background: #f8fafc;
+    text-align: left;
+    padding: 1rem 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #475569;
+    border-bottom: 2px solid #e2e8f0;
+  }
+  
+  td {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: middle;
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #94a3b8;
+  }
+}
+
+.text-muted { color: #94a3b8; }
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+  
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+  
+  &.btn-success { background: #10b981; color: white; &:hover:not(:disabled) { background: #059669; } }
+  &.btn-danger { background: #ef4444; color: white; &:hover:not(:disabled) { background: #dc2626; } }
+  &.btn-secondary { background: #e2e8f0; color: #334155; &:hover:not(:disabled) { background: #cbd5e1; } }
+  &.btn-outline { background: transparent; border: 1px solid #cbd5e1; color: #334155; &:hover { background: #f1f5f9; } }
+}
+
+/* Modals & Drawers */
+.modal-overlay, .drawer-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(15, 23, 42, 0.6);
+  z-index: 1000;
+  display: flex;
+}
+
+.modal-overlay { align-items: center; justify-content: center; }
+.drawer-overlay { justify-content: flex-end; }
+
+.modal-content {
+  background: white;
+  width: 90%;
+  max-width: 500px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+  
+  textarea {
+    width: 100%;
+    padding: 1rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    resize: vertical;
+    font-family: inherit;
+    &:focus { outline: none; border-color: #ef4444; }
+  }
+}
+
+.drawer-content {
+  background: white;
+  width: 400px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header, .drawer-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+  h2 { margin: 0; font-size: 1.25rem; }
+  .close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b; }
+}
+
+.modal-body, .drawer-body { padding: 1.5rem; flex: 1; overflow-y: auto; }
+.modal-footer { padding: 1.5rem; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 1rem; background: #f8fafc; }
+
+/* History Feed */
+.history-item {
+  padding-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px dashed #e2e8f0;
+  
+  &:last-child { border-bottom: none; }
+}
+.history-meta { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
+.badge {
+  padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 700;
+  &.admin { background: #6366f1; color: white; }
+  &.seller { background: #f59e0b; color: white; }
+  &.system { background: #94a3b8; color: white; }
+}
+.date { font-size: 0.875rem; color: #64748b; }
+.history-action { margin-bottom: 0.5rem; color: #1e293b; }
+.status-change { font-size: 0.875rem; color: #64748b; }
+.history-reason { background: #f8fafc; padding: 1rem; border-radius: 6px; border-left: 4px solid #cbd5e1; font-style: italic; color: #475569; margin: 0; }
+
+/* Animations */
+.slide-down { animation: slideDown 0.3s ease-out; }
+.slide-left { animation: slideLeft 0.3s ease-out; }
+
+@keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes slideLeft { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
+.spinner {
+  width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6;
+  border-radius: 50%; animation: spin 1s linear infinite; margin: 2rem auto;
+}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }

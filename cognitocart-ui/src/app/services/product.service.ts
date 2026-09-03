@@ -64,6 +64,19 @@ export class ProductService {
     return this.http.post(`${this.API}/admin/reindex`, {});
   }
 
+  // --- Admin Moderation ---
+  getPendingProducts(page = 0, size = 20): Observable<any> {
+    return this.http.get(`${this.API}/admin/pending?page=${page}&size=${size}`);
+  }
+
+  getModerationHistory(productPublicId: string): Observable<any> {
+    return this.http.get(`${this.API}/admin/${productPublicId}/moderation-history`);
+  }
+
+  moderateProduct(productPublicId: string, payload: { status: string; reason?: string }): Observable<any> {
+    return this.http.post(`${this.API}/admin/${productPublicId}/moderate?status=${payload.status}&reason=${encodeURIComponent(payload.reason || '')}`, {});
+  }
+
   getReturnPolicy(productPublicId: string): Observable<any> {
     return this.http.get(`${this.API}/${productPublicId}/return-policy`);
   }

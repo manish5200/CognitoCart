@@ -1,0 +1,89 @@
+<div class="moderation-dashboard">
+  <header class="dashboard-header">
+    <h1>Moderation Queue</h1>
+    <p>Review products submitted by sellers before they go live on the storefront.</p>
+  </header>
+
+  <div class="loading-state" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p>Loading pending products...</p>
+  </div>
+
+  <div class="data-table-container" *ngIf="!isLoading">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Product Name</th>
+          <th>Seller ID</th>
+          <th>Submitted Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="pendingProducts.length === 0">
+          <td colspan="4" class="empty-state">No products pending review. 🎉</td>
+        </tr>
+        <tr *ngFor="let product of pendingProducts">
+          <td>
+            <strong>{{ product.productName }}</strong>
+            <br>
+            <small class="text-muted">{{ product.publicId }}</small>
+          </td>
+          <td>{{ product.sellerId }}</td>
+          <td>{{ product.createdAt | date:'mediumDate' }}</td>
+          <td class="action-buttons">
+            <button class="btn btn-success" (click)="approveProduct(product)">Approve</button>
+            <button class="btn btn-danger" (click)="openRejectModal(product)">Reject</button>
+            <button class="btn btn-outline" (click)="openHistory(product)">History</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Rejection Modal Overlay -->
+<div class="modal-overlay" *ngIf="showRejectModal">
+  <div class="modal-content slide-down">
+    <div class="modal-header">
+      <h2>Reject Product</h2>
+      <button class="close-btn" (click)="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p>Please provide a detailed reason for rejecting <strong>{{ selectedProduct?.productName }}</strong>. This feedback will be sent to the seller.</p>
+      <textarea 
+        [(ngModel)]="rejectReason" 
+        rows="5" 
+        placeholder="e.g. The primary image contains inappropriate content..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeModal()">Cancel</button>
+      <button class="btn btn-danger" [disabled]="!rejectReason.trim()" (click)="submitRejection()">Confirm Rejection</button>
+    </div>
+  </div>
+</div>
+
+<!-- History Drawer Overlay -->
+<div class="drawer-overlay" *ngIf="showHistoryDrawer" (click)="closeHistory()">
+  <div class="drawer-content slide-left" (click)="$event.stopPropagation()">
+    <div class="drawer-header">
+      <h2>Moderation Audit Log</h2>
+      <button class="close-btn" (click)="closeHistory()">&times;</button>
+    </div>
+    <div class="drawer-body">
+      <div class="history-item" *ngFor="let entry of mockHistory">
+        <div class="history-meta">
+          <span class="badge" [ngClass]="entry.actorType.toLowerCase()">{{ entry.actorType }}</span>
+          <span class="date">{{ entry.createdAt | date:'short' }}</span>
+        </div>
+        <div class="history-action">
+          <strong>{{ entry.action }}</strong> 
+          <span class="status-change">({{ entry.approvalStatusFrom || 'NONE' }} &rarr; {{ entry.approvalStatusTo }})</span>
+        </div>
+        <div class="history-reason">
+          <p>"{{ entry.reason }}"</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
