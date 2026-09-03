@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../services/admin.service';
@@ -39,12 +39,12 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
                 <div style="font-weight:600; color:var(--text-primary);">{{ review.reviewerName }}</div>
                 <div style="font-size:12px; color:var(--text-muted);">
                   {{ review.createdAt | date:'medium' }}
-                  <span *ngIf="review.verifiedPurchase" class="verified-badge">✓ Verified</span>
+                  <span *ngIf="review.verifiedPurchase" class="verified-badge">âœ“ Verified</span>
                 </div>
               </div>
             </div>
             <div class="rating-badge" [class.high]="review.rating >= 4" [class.med]="review.rating === 3" [class.low]="review.rating <= 2">
-              {{ review.rating }} ★
+              {{ review.rating }} â˜…
             </div>
           </div>
           
@@ -53,8 +53,8 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
               Product: <span style="color:var(--brand);">{{ review.productName }}</span>
             </div>
             <p>{{ review.comment }}</p>
-            <div *ngIf="review.imageUrls && review.imageUrls.length > 0" class="review-images">
-              <img *ngFor="let img of review.imageUrls" [src]="img" alt="Review Image" />
+            <div *ngIf="review.mediaGallery && review.mediaGallery?.length > 0" class="review-images">
+              <img *ngFor="let media of review.mediaGallery" [src]="media.mediaUrl" alt="Review Image" />
             </div>
           </div>
 
@@ -152,3 +152,4 @@ export class AdminReviewsComponent implements OnInit {
     }
   }
 }
+

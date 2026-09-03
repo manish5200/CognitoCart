@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -117,7 +117,7 @@ import { ToastService } from '../../../services/toast.service';
                   <span class="primary-badge" *ngIf="i === 0">Primary</span>
                   <!-- We would ideally use FileReader to show a local preview here -->
                   <div class="img-placeholder">{{file.name}}</div>
-                  <button class="btn-remove" (click)="removeDraftImage(i)">✕</button>
+                  <button class="btn-remove" (click)="removeDraftImage(i)">âœ•</button>
                 </div>
               </div>
             </div>
@@ -128,7 +128,7 @@ import { ToastService } from '../../../services/toast.service';
             <h2 class="step-header">Pricing</h2>
             <div class="form-row form-row-2">
               <div class="form-group">
-                <label class="form-label">Base Price (MRP) (₹) <span class="text-danger">*</span></label>
+                <label class="form-label">Base Price (MRP) (â‚¹) <span class="text-danger">*</span></label>
                 <input type="number" [(ngModel)]="draft.basePrice" (input)="calculatePrice()" class="form-input" placeholder="0.00" min="0" />
               </div>
               <div class="form-group">
@@ -140,16 +140,16 @@ import { ToastService } from '../../../services/toast.service';
             <div class="pricing-summary-box">
               <div class="pricing-row">
                 <span>Base Price:</span>
-                <span>₹{{draft.basePrice || 0}}</span>
+                <span>â‚¹{{draft.basePrice || 0}}</span>
               </div>
               <div class="pricing-row text-success">
                 <span>Discount Applied:</span>
-                <span>- ₹{{discountAmount | number:'1.2-2'}}</span>
+                <span>- â‚¹{{discountAmount | number:'1.2-2'}}</span>
               </div>
               <div class="pricing-divider"></div>
               <div class="pricing-row final">
                 <span>Final Selling Price:</span>
-                <span>₹{{finalPrice | number:'1.2-2'}}</span>
+                <span>â‚¹{{finalPrice | number:'1.2-2'}}</span>
               </div>
             </div>
           </div>
@@ -182,7 +182,7 @@ import { ToastService } from '../../../services/toast.service';
             <div class="variant-card" *ngFor="let v of draft.variants; let i = index">
               <div class="variant-card-header">
                 <h4 style="margin:0; font-size:14px;">Variant #{{i+1}}</h4>
-                <button class="btn-icon text-danger" (click)="removeVariant(i)">✕</button>
+                <button class="btn-icon text-danger" (click)="removeVariant(i)">âœ•</button>
               </div>
               <div class="form-row form-row-3" style="margin-top:16px;">
                 <div class="form-group">
@@ -194,7 +194,7 @@ import { ToastService } from '../../../services/toast.service';
                   <input type="number" [(ngModel)]="v.stock" class="form-input" placeholder="Leave empty for global" />
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Price Modifier (± ₹)</label>
+                  <label class="form-label">Price Modifier (Â± â‚¹)</label>
                   <input type="number" [(ngModel)]="v.priceModifier" class="form-input" placeholder="e.g. 500" />
                 </div>
               </div>
@@ -282,7 +282,7 @@ import { ToastService } from '../../../services/toast.service';
               </div>
               <div class="review-item">
                 <span class="review-label">Selling Price</span>
-                <span class="review-val" [class.text-danger]="finalPrice <= 0">{{finalPrice > 0 ? '₹' + finalPrice : 'Invalid!'}}</span>
+                <span class="review-val" [class.text-danger]="finalPrice <= 0">{{finalPrice > 0 ? 'â‚¹' + finalPrice : 'Invalid!'}}</span>
               </div>
               <div class="review-item">
                 <span class="review-label">Stock Quantity</span>
@@ -329,8 +329,8 @@ import { ToastService } from '../../../services/toast.service';
             <h4 class="preview-title">{{draft.name || 'Product Title'}}</h4>
             
             <div class="preview-price">
-              <span class="final">₹{{finalPrice | number:'1.0-0'}}</span>
-              <span class="mrp" *ngIf="draft.discountPercentage > 0">₹{{draft.basePrice}}</span>
+              <span class="final">â‚¹{{finalPrice | number:'1.0-0'}}</span>
+              <span class="mrp" *ngIf="draft.discountPercentage > 0">â‚¹{{draft.basePrice}}</span>
               <span class="discount" *ngIf="draft.discountPercentage > 0">{{draft.discountPercentage}}% OFF</span>
             </div>
             
@@ -371,7 +371,7 @@ import { ToastService } from '../../../services/toast.service';
                 <tr *ngFor="let p of products" [routerLink]="['/seller/products', p.slug || p.publicId || p.productPublicId]" style="cursor: pointer;">
                   <td>
                     <div style="display:flex; align-items:center; gap: 16px;">
-                      <img [src]="p.imageUrls?.[0] || 'assets/placeholder-product.png'" style="width:48px; height:48px; object-fit:cover; border-radius:8px; border:1px solid var(--border-default); background: var(--glass-sm);" onerror="this.src='https://placehold.co/100x100/1e293b/a5b4fc?text=Img'" />
+                      <img [src]="p.mediaGallery?.[0]?.mediaUrl || 'assets/placeholder-product.png'" style="width:48px; height:48px; object-fit:cover; border-radius:8px; border:1px solid var(--border-default); background: var(--glass-sm);" onerror="this.src='https://placehold.co/100x100/1e293b/a5b4fc?text=Img'" />
                       <div>
                         <div style="font-weight:600; color:var(--text-primary); font-size:14px; margin-bottom:4px;">{{p.productName || p.name}}</div>
                         <div style="display:flex; gap:8px; align-items:center;">
@@ -382,7 +382,7 @@ import { ToastService } from '../../../services/toast.service';
                     </div>
                   </td>
                   <td>
-                    <div style="font-weight:700; color:var(--text-primary); font-size:14px;">₹{{(p.price || p.basePrice) | number:'1.0-0'}}</div>
+                    <div style="font-weight:700; color:var(--text-primary); font-size:14px;">â‚¹{{(p.price || p.basePrice) | number:'1.0-0'}}</div>
                     <div *ngIf="p.discountPercentage > 0" style="font-size:12px; color:var(--success); font-weight:600; margin-top:4px; display:flex; align-items:center; gap:4px;">
                       <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:12px;height:12px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
                       {{p.discountPercentage}}% OFF
@@ -1016,3 +1016,4 @@ export class SellerProductsComponent implements OnInit {
     });
   }
 }
+

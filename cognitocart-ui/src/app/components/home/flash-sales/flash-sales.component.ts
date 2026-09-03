@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { SaleService } from '../../../services/sale.service';
@@ -18,7 +18,7 @@ import { WishlistService } from '../../../services/wishlist.service';
         <div class="hero-bg" style="background: radial-gradient(circle at center, rgba(239,68,68,0.2) 0%, transparent 60%);"></div>
         <div class="flash-hero-inner">
           <div class="live-badge"><span class="live-dot"></span> LIVE NOW</div>
-          <h1 class="flash-title">⚡ <span class="gradient-text-fire">Flash Sales</span></h1>
+          <h1 class="flash-title">âš¡ <span class="gradient-text-fire">Flash Sales</span></h1>
           <p class="flash-subtitle">Grab the biggest discounts of the season before time runs out!</p>
         </div>
       </section>
@@ -26,7 +26,7 @@ import { WishlistService } from '../../../services/wishlist.service';
       <div class="loading-center" *ngIf="loading"><div class="spinner"></div></div>
 
       <div *ngIf="!loading && sales.length === 0" class="empty-state" style="min-height:40vh;">
-        <div class="empty-icon">⏳</div>
+        <div class="empty-icon">â³</div>
         <div class="empty-title">No Active Flash Sales</div>
         <div class="empty-subtitle">Check back later for exciting new deals!</div>
         <a routerLink="/products" class="btn btn-primary">Browse All Products</a>
@@ -64,33 +64,33 @@ import { WishlistService } from '../../../services/wishlist.service';
           <div class="loading-center" *ngIf="loadingProducts"><div class="spinner"></div></div>
           
           <div *ngIf="!loadingProducts && products.length === 0" class="empty-state" style="min-height:200px;">
-            <div class="empty-icon">🛍️</div>
+            <div class="empty-icon">ðŸ›ï¸</div>
             <div class="empty-title">No products in this sale</div>
           </div>
 
           <div *ngIf="!loadingProducts && products.length > 0" class="flash-product-grid">
             <div *ngFor="let p of products" class="fpc" [routerLink]="['/product', p.slug || p.productPublicId || p.publicId]">
               <div class="fpc-img-wrap">
-                <img [src]="p.imageUrls?.[0] || 'https://via.placeholder.com/400'" [alt]="p.productName || p.name" class="fpc-img"/>
+                <img [src]="p.mediaGallery?.[0]?.mediaUrl || 'https://via.placeholder.com/400'" [alt]="p.productName || p.name" class="fpc-img"/>
                 <div class="fpc-badge-discount">-{{p.discountPercentage || 0}}%</div>
                 <button
                   *ngIf="auth.isCustomer()"
                   class="fpc-wishlist"
                   (click)="$event.stopPropagation(); $event.preventDefault(); toggleWishlist(p)"
-                >{{ p.isWishlisted ? '❤️' : '🤍' }}</button>
+                >{{ p.isWishlisted ? 'â¤ï¸' : 'ðŸ¤' }}</button>
               </div>
               <div class="fpc-body">
                 <div class="fpc-name">{{p.productName || p.name}}</div>
                 <div class="fpc-price-row">
-                  <div class="fpc-price-now">₹{{(p.discountPrice || p.price) | number:'1.0-0'}}</div>
-                  <div class="fpc-price-was">₹{{p.price | number:'1.0-0'}}</div>
+                  <div class="fpc-price-now">â‚¹{{(p.discountPrice || p.price) | number:'1.0-0'}}</div>
+                  <div class="fpc-price-was">â‚¹{{p.price | number:'1.0-0'}}</div>
                 </div>
                 <!-- Fake progress bar for flash sales -->
                 <div class="fpc-stock-bar">
                   <div class="fpc-stock-fill" [style.width]="(p.stock > 100 ? 100 : p.stock) + '%'"></div>
                 </div>
                 <div class="fpc-stock-text">Only {{p.stock}} left!</div>
-                <button class="btn btn-primary btn-sm btn-full" style="margin-top:12px;">Grab Deal →</button>
+                <button class="btn btn-primary btn-sm btn-full" style="margin-top:12px;">Grab Deal â†’</button>
               </div>
             </div>
           </div>
@@ -231,9 +231,10 @@ export class FlashSalesComponent implements OnInit {
     this.wishlistService.toggle(id).subscribe({
       next: () => {
         product.isWishlisted = !product.isWishlisted;
-        this.toast.success(product.isWishlisted ? 'Added to wishlist ❤️' : 'Removed from wishlist');
+        this.toast.success(product.isWishlisted ? 'Added to wishlist â¤ï¸' : 'Removed from wishlist');
       },
       error: () => this.toast.error('Failed to update wishlist')
     });
   }
 }
+

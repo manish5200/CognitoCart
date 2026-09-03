@@ -1,4 +1,4 @@
-<div class="page">
+﻿<div class="page">
   <!-- Dynamic Hero Section -->
   <div class="hero-section" *ngIf="!loadingOrder && !loadingCart">
     <div class="hero-content">
@@ -52,10 +52,10 @@
       </div>
       <div class="cart-preview">
         <div class="cart-item-preview" *ngFor="let item of cartItems.slice(0, 3)">
-          <div class="item-img" *ngIf="item.variant?.product?.imageUrls?.length">
-            <img [src]="item.variant.product.imageUrls[0]" [alt]="item.variant.product.name">
+          <div class="item-img" *ngIf="item.variant?.product?.mediaGallery?.length">
+            <img [src]="item.variant.product.mediaGallery[0]?.mediaUrl" [alt]="item.variant.product.name">
           </div>
-          <div class="item-img-placeholder" *ngIf="!item.variant?.product?.imageUrls?.length"></div>
+          <div class="item-img-placeholder" *ngIf="!item.variant?.product?.mediaGallery?.length"></div>
         </div>
         <div class="more-items" *ngIf="cartItems.length > 3">
           +{{ cartItems.length - 3 }} more
@@ -73,19 +73,19 @@
       <svg class="ai-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
     </div>
     <div class="ai-search-box">
-      <!-- [placeholder] is dynamic — cycles through examples every 2.5s -->
+      <!-- [placeholder] is dynamic â€” cycles through examples every 2.5s -->
       <input type="text" [(ngModel)]="aiQuery" (keyup.enter)="askCognito()"
         [placeholder]="currentPlaceholder" />
       <button class="btn btn-ai" (click)="askCognito()">Ask</button>
     </div>
     <div class="ai-suggestions">
-      <span class="suggestion-chip" (click)="askCognito('Best laptop under ₹70,000')">Best laptop under ₹70,000</span>
+      <span class="suggestion-chip" (click)="askCognito('Best laptop under â‚¹70,000')">Best laptop under â‚¹70,000</span>
       <span class="suggestion-chip" (click)="askCognito('Compare iPhone and Samsung')">Compare iPhone and Samsung</span>
       <span class="suggestion-chip" (click)="askCognito('Gift ideas for Raksha Bandhan')">Gift ideas for Raksha Bandhan</span>
     </div>
-    <!-- Search history chips — shown only if the user has searched before -->
+    <!-- Search history chips â€” shown only if the user has searched before -->
     <div class="search-history-row" *ngIf="searchHistory.length > 0">
-      <span class="history-label">🕒 Recent:</span>
+      <span class="history-label">ðŸ•’ Recent:</span>
       <button *ngFor="let h of searchHistory" class="history-chip" (click)="askCognito(h)">
         {{h}}
       </button>
@@ -154,3 +154,4 @@
   </div>
 
 </div>
+

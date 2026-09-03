@@ -1,4 +1,4 @@
-import { Component, Input, ViewChild, ElementRef } from '@angular/core';
+﻿import { Component, Input, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ProductService } from '../../../../../services/product.service';
 import { ToastService } from '../../../../../services/toast.service';
@@ -25,9 +25,9 @@ import { ToastService } from '../../../../../services/toast.service';
         <p style="color:var(--text-muted); font-size:13px; margin:0;">Supports JPG, PNG, WEBP. Max 5MB per file.</p>
       </div>
 
-      <div class="media-grid" *ngIf="product?.imageUrls?.length">
-        <div class="media-card" *ngFor="let img of product.imageUrls; let i = index">
-          <img [src]="img" alt="Product Image">
+      <div class="media-grid" *ngIf="product?.mediaGallery?.length">
+        <div class="media-card" *ngFor="let media of product.mediaGallery; let i = index">
+          <img [src]="media.mediaUrl" alt="Product Image">
           <div class="media-actions">
             <button class="icon-btn" title="Set as Primary" *ngIf="i !== 0"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></button>
             <button class="icon-btn danger" title="Delete" (click)="deleteImage(img)"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
@@ -36,7 +36,7 @@ import { ToastService } from '../../../../../services/toast.service';
         </div>
       </div>
       
-      <div *ngIf="!product?.imageUrls?.length" style="padding:40px; text-align:center; color:var(--text-muted);">
+      <div *ngIf="!product?.mediaGallery?.length" style="padding:40px; text-align:center; color:var(--text-muted);">
         No media uploaded yet.
       </div>
     </div>
@@ -137,8 +137,8 @@ export class ProductMediaTabComponent {
     this.productService.uploadImage(this.product.productPublicId, file).subscribe({
       next: (res) => {
         this.uploading = false;
-        if (!this.product.imageUrls) this.product.imageUrls = [];
-        this.product.imageUrls.push(res.imageUrl);
+        if (!this.product.mediaGallery) this.product.mediaGallery = [];
+        this.product.mediaGallery.push({ mediaUrl: res.imageUrl, isPrimary: false, sortOrder: 99 });
         this.toast.success('Image uploaded successfully');
         if(this.fileInput) this.fileInput.nativeElement.value = '';
       },
@@ -168,7 +168,7 @@ export class ProductMediaTabComponent {
 
     this.productService.deleteImage(this.product.productPublicId, publicId).subscribe({
       next: () => {
-        this.product.imageUrls = this.product.imageUrls.filter((url: string) => url !== imageUrl);
+        this.product.mediaGallery = this.product.mediaGallery.filter((m: any) => m.mediaUrl !== imageUrl);
         this.toast.success('Image deleted successfully');
       },
       error: (e) => {
@@ -177,3 +177,4 @@ export class ProductMediaTabComponent {
     });
   }
 }
+

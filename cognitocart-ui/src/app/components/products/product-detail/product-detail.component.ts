@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -18,9 +18,9 @@ import { AuthService } from '../../../services/auth.service';
       <!-- Breadcrumb -->
       <div class="breadcrumb" style="margin-bottom:24px;">
         <a routerLink="/" style="color:var(--text-muted); text-decoration:none; font-size:13px;">Home</a>
-        <span class="sep" style="margin:0 8px; color:var(--border);">›</span>
+        <span class="sep" style="margin:0 8px; color:var(--border);">â€º</span>
         <a routerLink="/products" style="color:var(--text-muted); text-decoration:none; font-size:13px;">Products</a>
-        <span class="sep" style="margin:0 8px; color:var(--border);">›</span>
+        <span class="sep" style="margin:0 8px; color:var(--border);">â€º</span>
         <span class="current" style="color:var(--text-primary); font-size:13px; font-weight:600;">{{product.productName}}</span>
       </div>
 
@@ -29,8 +29,8 @@ import { AuthService } from '../../../services/auth.service';
         
         <!-- COLUMN 1: Gallery -->
         <div class="pdp-gallery">
-          <div class="image-thumbs" *ngIf="product.imageUrls?.length > 1">
-            <img *ngFor="let img of product.imageUrls" [src]="img"
+          <div class="image-thumbs" *ngIf="product.mediaGallery?.length > 1">
+            <img *ngFor="let media of product.mediaGallery" [src]="media.mediaUrl"
               [class.active]="img === selectedImage"
               (click)="selectedImage = img" />
           </div>
@@ -55,9 +55,9 @@ import { AuthService } from '../../../services/auth.service';
           <div class="divider"></div>
           
           <div class="price-display">
-            <span class="current-price">₹{{(product.discountPrice || product.price) | number:'1.0-0'}}</span>
-            <span *ngIf="product.discountPrice && product.discountPrice < product.price" class="original-price">₹{{product.price | number:'1.0-0'}}</span>
-            <span *ngIf="product.discountPrice && product.discountPrice < product.price" class="save-tag">You save ₹{{(product.price - product.discountPrice) | number:'1.0-0'}}</span>
+            <span class="current-price">â‚¹{{(product.discountPrice || product.price) | number:'1.0-0'}}</span>
+            <span *ngIf="product.discountPrice && product.discountPrice < product.price" class="original-price">â‚¹{{product.price | number:'1.0-0'}}</span>
+            <span *ngIf="product.discountPrice && product.discountPrice < product.price" class="save-tag">You save â‚¹{{(product.price - product.discountPrice) | number:'1.0-0'}}</span>
           </div>
 
           <p class="product-desc">{{product.description}}</p>
@@ -68,7 +68,7 @@ import { AuthService } from '../../../services/auth.service';
               <span class="variant-label">Select Variant</span>
               <span class="variant-selected" *ngIf="selectedVariant">
                 {{selectedVariant.color ? selectedVariant.color : ''}} 
-                {{selectedVariant.size ? (selectedVariant.color ? '· ' : '') + selectedVariant.size : ''}}
+                {{selectedVariant.size ? (selectedVariant.color ? 'Â· ' : '') + selectedVariant.size : ''}}
                 {{!selectedVariant.color && !selectedVariant.size ? (selectedVariant.attributeValue || 'Standard') : ''}}
               </span>
             </div>
@@ -80,11 +80,11 @@ import { AuthService } from '../../../services/auth.service';
                 (click)="selectVariant(v)">
                 <div class="v-title">
                   {{v.color ? v.color : ''}} 
-                  {{v.size ? (v.color ? '· ' : '') + v.size : ''}}
+                  {{v.size ? (v.color ? 'Â· ' : '') + v.size : ''}}
                   {{!v.color && !v.size ? (v.attributeValue || 'Standard') : ''}}
                 </div>
                 <div class="v-price" *ngIf="v.priceAdjustment">
-                  {{v.priceAdjustment > 0 ? '+' : ''}}₹{{v.priceAdjustment}}
+                  {{v.priceAdjustment > 0 ? '+' : ''}}â‚¹{{v.priceAdjustment}}
                 </div>
                 <span class="stock-badge" *ngIf="v.stockQuantity === 0">Out of Stock</span>
               </button>
@@ -94,14 +94,14 @@ import { AuthService } from '../../../services/auth.service';
           <!-- Trust Badges -->
           <div class="trust-badges">
             <div class="trust-badge">
-              <span class="icon">🛡️</span>
+              <span class="icon">ðŸ›¡ï¸</span>
               <div>
                 <strong>Secure Transaction</strong>
                 <span>SSL encrypted</span>
               </div>
             </div>
             <div class="trust-badge">
-              <span class="icon">✅</span>
+              <span class="icon">âœ…</span>
               <div>
                 <strong>CognitoCart Verified</strong>
                 <span>Quality assured</span>
@@ -159,7 +159,7 @@ import { AuthService } from '../../../services/auth.service';
         <!-- COLUMN 3: Buy Box -->
         <div class="pdp-buybox">
           <div class="buy-card glass-card">
-            <div class="buy-price">₹{{(product.discountPrice || product.price) | number:'1.0-0'}}</div>
+            <div class="buy-price">â‚¹{{(product.discountPrice || product.price) | number:'1.0-0'}}</div>
             
             <div class="stock-status" [class.low]="selectedVariant?.stockQuantity < 10" [class.out]="selectedVariant?.stockQuantity === 0">
               <span class="indicator"></span>
@@ -168,7 +168,7 @@ import { AuthService } from '../../../services/auth.service';
 
             <div class="delivery-info">
               <div class="del-row">
-                <span class="icon">🚚</span>
+                <span class="icon">ðŸšš</span>
                 <div>
                   <strong>Free Delivery</strong>
                   <div class="sub">Dispatches within 24 hours</div>
@@ -179,7 +179,7 @@ import { AuthService } from '../../../services/auth.service';
             <div class="qty-wrapper">
               <label>Quantity:</label>
               <div class="quantity-control">
-                <button class="qty-btn" (click)="qty > 1 ? qty = qty - 1 : null" [disabled]="!selectedVariant || selectedVariant.stockQuantity === 0">−</button>
+                <button class="qty-btn" (click)="qty > 1 ? qty = qty - 1 : null" [disabled]="!selectedVariant || selectedVariant.stockQuantity === 0">âˆ’</button>
                 <div class="qty-value">{{qty}}</div>
                 <button class="qty-btn" (click)="qty = qty + 1" [disabled]="!selectedVariant || selectedVariant.stockQuantity === 0 || qty >= selectedVariant.stockQuantity">+</button>
               </div>
@@ -187,22 +187,22 @@ import { AuthService } from '../../../services/auth.service';
 
             <div class="actions">
               <button class="btn btn-primary btn-block btn-cart" (click)="addToCart()" [disabled]="!selectedVariant || selectedVariant.stockQuantity === 0 || addingToCart">
-                <span class="icon">🛒</span> {{addingToCart ? 'Adding to Cart...' : 'Add to Cart'}}
+                <span class="icon">ðŸ›’</span> {{addingToCart ? 'Adding to Cart...' : 'Add to Cart'}}
               </button>
               <button class="btn btn-secondary btn-block btn-wishlist" (click)="toggleWishlist()">
-                <span class="icon">{{wishlisted ? '❤️' : '♡'}}</span> {{wishlisted ? 'Saved to Wishlist' : 'Add to Wishlist'}}
+                <span class="icon">{{wishlisted ? 'â¤ï¸' : 'â™¡'}}</span> {{wishlisted ? 'Saved to Wishlist' : 'Add to Wishlist'}}
               </button>
             </div>
 
             <div class="rp-box" *ngIf="returnPolicy">
               <div class="rp-title">
-                <span class="icon">↩️</span> {{returnPolicy.policyType}}
+                <span class="icon">â†©ï¸</span> {{returnPolicy.policyType}}
               </div>
               <div class="rp-desc">{{returnPolicy.windowDays}} days return window. {{returnPolicy.description}}</div>
             </div>
             <div class="rp-box" *ngIf="!returnPolicy">
               <div class="rp-title" style="color:var(--text-muted);">
-                <span class="icon">🚫</span> Non-Returnable
+                <span class="icon">ðŸš«</span> Non-Returnable
               </div>
             </div>
           </div>
@@ -252,7 +252,7 @@ import { AuthService } from '../../../services/auth.service';
                 <span *ngFor="let s of [1,2,3,4,5]" (click)="newReview.rating = s"
                   style="font-size:32px; cursor:pointer; transition:0.2s;"
                   [style.opacity]="s <= newReview.rating ? 1 : 0.2"
-                  [style.transform]="s <= newReview.rating ? 'scale(1.1)' : 'scale(1)'">⭐</span>
+                  [style.transform]="s <= newReview.rating ? 'scale(1.1)' : 'scale(1)'">â­</span>
               </div>
               <textarea [(ngModel)]="newReview.comment" class="form-textarea" placeholder="What did you like or dislike?" rows="4"></textarea>
               <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:16px;">
@@ -262,7 +262,7 @@ import { AuthService } from '../../../services/auth.service';
             </div>
             
             <div *ngIf="reviews.length === 0" class="empty-state glass-card">
-              <div class="empty-icon">💬</div>
+              <div class="empty-icon">ðŸ’¬</div>
               <div class="empty-title">No reviews yet</div>
               <div class="empty-subtitle">Be the first to review this product!</div>
             </div>
@@ -277,11 +277,11 @@ import { AuthService } from '../../../services/auth.service';
               </div>
               <div class="review-rating-row">
                 <div class="stars"><span *ngFor="let s of stars(r.rating)">{{s}}</span></div>
-                <span class="verified-badge" *ngIf="r.verifiedPurchase">✅ Verified Purchase</span>
+                <span class="verified-badge" *ngIf="r.verifiedPurchase">âœ… Verified Purchase</span>
               </div>
               <p class="review-body">{{r.comment}}</p>
-              <div class="review-images" *ngIf="r.imageUrls?.length">
-                <img *ngFor="let img of r.imageUrls" [src]="img" />
+              <div class="review-images" *ngIf="r.mediaGallery?.length">
+                <img *ngFor="let media of r.mediaGallery" [src]="media.mediaUrl" />
               </div>
             </div>
           </div>
@@ -298,7 +298,7 @@ import { AuthService } from '../../../services/auth.service';
     <!-- Error State -->
     <div class="page" *ngIf="!loading && !product">
       <div class="empty-state glass-card" style="margin-top:40px;">
-        <div class="empty-icon" style="font-size:64px;">📦</div>
+        <div class="empty-icon" style="font-size:64px;">ðŸ“¦</div>
         <div class="empty-title" style="font-size:24px;">Product Not Found</div>
         <div class="empty-subtitle" style="margin-bottom:24px;">The product you are looking for does not exist or has been removed.</div>
         <a routerLink="/products" class="btn btn-primary btn-lg">Back to Products</a>
@@ -356,7 +356,7 @@ import { AuthService } from '../../../services/auth.service';
     .vendor-details { margin-top: 24px; border-top: 1px solid var(--border-default); padding-top: 24px; }
     .vendor-details summary { font-size: 16px; font-weight: 700; color: var(--text-primary); cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; }
     .vendor-details summary::-webkit-details-marker { display: none; }
-    .vendor-details summary::after { content: '▾'; font-size: 18px; color: var(--text-muted); transition: 0.3s; }
+    .vendor-details summary::after { content: 'â–¾'; font-size: 18px; color: var(--text-muted); transition: 0.3s; }
     .vendor-details[open] summary::after { transform: rotate(180deg); }
     .vd-content { padding-top: 16px; display: flex; flex-direction: column; gap: 16px; }
     .vd-item { display: flex; flex-direction: column; gap: 4px; }
@@ -490,7 +490,7 @@ export class ProductDetailComponent implements OnInit {
     this.productService.getBySlug(slug).subscribe({
       next: (p) => {
         this.product = p;
-        this.selectedImage = p.imageUrls?.[0] || '';
+        this.selectedImage = p.mediaGallery?.[0]?.mediaUrl || '';
         if (p.variants?.length) this.selectedVariant = p.variants[0];
         this.loading = false;
         const pubId = p.productPublicId || p.publicId;
@@ -534,7 +534,7 @@ export class ProductDetailComponent implements OnInit {
 
   stars(rating: number): string[] {
     if (!rating) return [];
-    return Array(5).fill('').map((_, i) => i < Math.round(rating) ? '⭐' : '☆');
+    return Array(5).fill('').map((_, i) => i < Math.round(rating) ? 'â­' : 'â˜†');
   }
 
   getDiscountPercent(): number {
@@ -552,7 +552,7 @@ export class ProductDetailComponent implements OnInit {
     // Pass product details for guest cart
     const productDetails = {
       productName: this.product.productName,
-      productImageUrl: this.product.imageUrls?.[0],
+      productImageUrl: this.product.mediaGallery?.[0]?.mediaUrl,
       price: this.selectedVariant.priceAdjustment ? (this.product.discountPrice || this.product.price) + this.selectedVariant.priceAdjustment : (this.product.discountPrice || this.product.price),
       variantInfo: this.selectedVariant.color || this.selectedVariant.size || this.selectedVariant.attributeValue || 'Standard'
     };
@@ -586,3 +586,4 @@ export class ProductDetailComponent implements OnInit {
 
   get isCustomer(): boolean { return this.auth.isCustomer(); }
 }
+

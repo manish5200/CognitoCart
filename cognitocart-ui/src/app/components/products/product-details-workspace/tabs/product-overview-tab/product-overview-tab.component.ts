@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnChanges } from '@angular/core';
+﻿import { Component, Input, OnInit, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ProductReturnStatusComponent } from '../../../../shared/product-return-status/product-return-status.component';
 import { ProductService } from '../../../../../services/product.service';
@@ -14,8 +14,8 @@ import { ProductService } from '../../../../../services/product.service';
         <!-- Hero Section with Glassmorphism -->
         <div class="hero-card">
           <div class="hero-image-container">
-            <img *ngIf="product.imageUrls && product.imageUrls.length > 0" [src]="product.imageUrls[0]" alt="Product Cover" class="hero-image">
-            <div *ngIf="!product.imageUrls || product.imageUrls.length === 0" class="hero-placeholder">
+            <img *ngIf="product.mediaGallery && product.mediaGallery?.length > 0" [src]="product.mediaGallery[0]?.mediaUrl" alt="Product Cover" class="hero-image">
+            <div *ngIf="!product.mediaGallery || product.mediaGallery?.length === 0" class="hero-placeholder">
               <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
             </div>
           </div>
@@ -32,8 +32,8 @@ import { ProductService } from '../../../../../services/product.service';
             <h1 class="product-title">{{ product.productName || 'Unnamed Product' }}</h1>
             
             <div class="price-container">
-              <span class="current-price">₹{{ (product.discountPrice || product.price || 0) | number:'1.0-2' }}</span>
-              <span class="original-price" *ngIf="product.discountPrice && product.price > product.discountPrice">₹{{ product.price | number:'1.0-2' }}</span>
+              <span class="current-price">â‚¹{{ (product.discountPrice || product.price || 0) | number:'1.0-2' }}</span>
+              <span class="original-price" *ngIf="product.discountPrice && product.price > product.discountPrice">â‚¹{{ product.price | number:'1.0-2' }}</span>
             </div>
             
             <p class="product-desc">{{ product.description || 'No description provided.' }}</p>
@@ -289,3 +289,4 @@ export class ProductOverviewTabComponent implements OnInit, OnChanges {
     }
   }
 }
+

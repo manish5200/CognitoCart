@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../services/admin.service';
@@ -44,18 +44,18 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
                   <span class="badge" [class]="getTypeBadge(r.status || r.requestType)">
                     {{r.status || r.requestType}}
                   </span>
-                  <span style="font-size:13px; color:var(--text-muted);">Customer: {{r.customerName || '—'}}</span>
+                  <span style="font-size:13px; color:var(--text-muted);">Customer: {{r.customerName || 'â€”'}}</span>
                   <span style="font-size:13px; color:var(--text-muted);">Date: {{r.requestedAt | date:'mediumDate'}}</span>
                 </div>
               </div>
-              <span style="font-size:1.2rem; font-weight:700; color:var(--primary);">₹{{r.totalAmount | number:'1.0-0'}}</span>
+              <span style="font-size:1.2rem; font-weight:700; color:var(--primary);">â‚¹{{r.totalAmount | number:'1.0-0'}}</span>
             </div>
 
             <!-- Items -->
             <div *ngIf="r.items?.length" style="margin:16px 0; padding:12px; background:rgba(255,255,255,0.02); border-radius:var(--radius);">
               <div *ngFor="let item of r.items" style="font-size:13px; color:var(--text-muted); display:flex; align-items:center; gap:6px;">
                 <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" /></svg>
-                {{item.productName}} × {{item.quantity}}
+                {{item.productName}} Ã— {{item.quantity}}
               </div>
             </div>
 
@@ -68,8 +68,8 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
             </div>
 
             <!-- Return Images -->
-            <div *ngIf="r.imageUrls?.length" style="display:flex; gap:8px; margin-bottom:16px;">
-              <img *ngFor="let img of r.imageUrls" [src]="img" style="width:72px; height:72px; object-fit:cover; border-radius:8px; border:1px solid var(--border);" />
+            <div *ngIf="r.mediaGallery?.length" style="display:flex; gap:8px; margin-bottom:16px;">
+              <img *ngFor="let media of r.mediaGallery" [src]="media.mediaUrl" style="width:72px; height:72px; object-fit:cover; border-radius:8px; border:1px solid var(--border);" />
             </div>
 
             <!-- Actions -->
@@ -176,3 +176,4 @@ export class AdminReturnsComponent implements OnInit {
 
   private remove(r: any): void { this.returns = this.returns.filter(x => x !== r); }
 }
+

@@ -185,6 +185,9 @@ import { UserIdentityComponent } from '../../shared/user-identity/user-identity.
             <svg class="sidebar-link-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg> <span class="sidebar-text">Seller KYC</span>
             <span *ngIf="pendingKycCount > 0" class="sidebar-link-badge sidebar-text">{{pendingKycCount}}</span>
           </a>
+          <a routerLink="/admin/moderation" routerLinkActive="active" class="sidebar-link">
+            <span class="sidebar-link-icon">📋</span> <span class="sidebar-text">Product Moderation</span>
+          </a>
           <a routerLink="/admin/categories" routerLinkActive="active" class="sidebar-link">
             <svg class="sidebar-link-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg> <span class="sidebar-text">Categories</span>
           </a>

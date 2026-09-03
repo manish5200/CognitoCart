@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule, Router } from '@angular/router';
 import { ProductService } from '../../services/product.service';
@@ -31,7 +31,7 @@ import { AuthService } from '../../services/auth.service';
 
     <!-- Not Found -->
     <div *ngIf="!loading && !product" class="empty-state" style="min-height:60vh;">
-      <div class="empty-icon">🔍</div>
+      <div class="empty-icon">ðŸ”</div>
       <div class="empty-title">Product not found</div>
       <div class="empty-subtitle">It may have been removed or the link is incorrect.</div>
       <a routerLink="/products" class="btn btn-primary">Browse Products</a>
@@ -42,24 +42,24 @@ import { AuthService } from '../../services/auth.service';
       <!-- Breadcrumb -->
       <div class="pdp-breadcrumb">
         <a routerLink="/" style="color:var(--text-muted); text-decoration:none;">Home</a>
-        <span style="color:var(--border-default);">›</span>
+        <span style="color:var(--border-default);">â€º</span>
         <a routerLink="/products" style="color:var(--text-muted); text-decoration:none;">Products</a>
-        <span style="color:var(--border-default);">›</span>
+        <span style="color:var(--border-default);">â€º</span>
         <span style="color:var(--text-primary);">{{product.productName}}</span>
       </div>
 
       <div class="pdp-layout">
-        <!-- ═══════════ IMAGE GALLERY ═══════════ -->
+        <!-- â•â•â•â•â•â•â•â•â•â•â• IMAGE GALLERY â•â•â•â•â•â•â•â•â•â•â• -->
         <div class="pdp-gallery">
           <!-- Thumbnail Strip -->
-          <div class="pdp-thumbs" *ngIf="product.imageUrls && product.imageUrls.length > 1">
+          <div class="pdp-thumbs" *ngIf="product.mediaGallery && product.mediaGallery?.length > 1">
             <div
-              *ngFor="let img of product.imageUrls"
+              *ngFor="let media of product.mediaGallery"
               class="pdp-thumb"
               [class.active]="selectedImage === img"
               (click)="selectedImage = img"
             >
-              <img [src]="img" [alt]="product.productName" />
+              <img [src]="media.mediaUrl" [alt]="product.productName" />
             </div>
           </div>
 
@@ -67,9 +67,9 @@ import { AuthService } from '../../services/auth.service';
           <div class="pdp-main-img-wrap">
             <div class="pdp-badge-wrap">
               <span *ngIf="selectedVariant?.discountPercentage > 0" class="pdp-discount-badge">
-                −{{selectedVariant.discountPercentage}}% OFF
+                âˆ’{{selectedVariant.discountPercentage}}% OFF
               </span>
-              <span *ngIf="product.flashSaleActive" class="pdp-flash-badge">⚡ FLASH SALE</span>
+              <span *ngIf="product.flashSaleActive" class="pdp-flash-badge">âš¡ FLASH SALE</span>
             </div>
             <img [src]="selectedImage" [alt]="product.productName" class="pdp-main-img" />
             <button
@@ -78,12 +78,12 @@ import { AuthService } from '../../services/auth.service';
               [class.active]="isWishlisted"
               [title]="isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'"
             >
-              {{ isWishlisted ? '❤️' : '🤍' }}
+              {{ isWishlisted ? 'â¤ï¸' : 'ðŸ¤' }}
             </button>
           </div>
         </div>
 
-        <!-- ═══════════ PRODUCT INFO ═══════════ -->
+        <!-- â•â•â•â•â•â•â•â•â•â•â• PRODUCT INFO â•â•â•â•â•â•â•â•â•â•â• -->
         <div class="pdp-info">
           <!-- Category -->
           <div class="pdp-category" *ngIf="product.categoryName">
@@ -96,16 +96,16 @@ import { AuthService } from '../../services/auth.service';
           <!-- Rating Row -->
           <div class="pdp-meta-row">
             <div class="pdp-stars">
-              <span *ngFor="let s of getStarArray(product.averageRating || 0)" class="star" [class.filled]="s">★</span>
+              <span *ngFor="let s of getStarArray(product.averageRating || 0)" class="star" [class.filled]="s">â˜…</span>
               <span class="pdp-rating-text">
                 {{(product.averageRating || 0) | number:'1.1-1'}}
                 <span style="color:var(--text-dim);">({{product.totalReviews || 0}} reviews)</span>
               </span>
             </div>
             <div class="pdp-stock-badge" [class.in-stock]="isInStock()" [class.low-stock]="isLowStock()" [class.out-stock]="isOutOfStock()">
-              <span *ngIf="isInStock() && !isLowStock()">✓ In Stock</span>
-              <span *ngIf="isLowStock()">⚠️ Only {{getAvailableStock()}} left</span>
-              <span *ngIf="isOutOfStock()">✕ Out of Stock</span>
+              <span *ngIf="isInStock() && !isLowStock()">âœ“ In Stock</span>
+              <span *ngIf="isLowStock()">âš ï¸ Only {{getAvailableStock()}} left</span>
+              <span *ngIf="isOutOfStock()">âœ• Out of Stock</span>
             </div>
           </div>
 
@@ -114,11 +114,11 @@ import { AuthService } from '../../services/auth.service';
           <!-- Price -->
           <div class="pdp-price-block">
             <div class="pdp-price-main">
-              ₹{{ getPriceDisplay() | number:'1.0-0' }}
+              â‚¹{{ getPriceDisplay() | number:'1.0-0' }}
             </div>
             <div *ngIf="getOriginalPrice() > getPriceDisplay()" class="pdp-price-sub">
-              <span class="pdp-mrp">M.R.P.: ₹{{getOriginalPrice() | number:'1.0-0'}}</span>
-              <span class="pdp-save">Save ₹{{(getOriginalPrice() - getPriceDisplay()) | number:'1.0-0'}}
+              <span class="pdp-mrp">M.R.P.: â‚¹{{getOriginalPrice() | number:'1.0-0'}}</span>
+              <span class="pdp-save">Save â‚¹{{(getOriginalPrice() - getPriceDisplay()) | number:'1.0-0'}}
                 ({{getDiscountPct()}}% off)</span>
             </div>
             <div class="pdp-tax-note">Inclusive of all taxes</div>
@@ -182,7 +182,7 @@ import { AuthService } from '../../services/auth.service';
                   (click)="selectVariant(v)"
                 >
                   <span style="font-weight:700;">SKU: {{v.sku}}</span>
-                  <span style="font-size:11px; opacity:0.7;">₹{{v.salePrice || v.price | number:'1.0-0'}}</span>
+                  <span style="font-size:11px; opacity:0.7;">â‚¹{{v.salePrice || v.price | number:'1.0-0'}}</span>
                 </button>
               </div>
             </div>
@@ -191,14 +191,14 @@ import { AuthService } from '../../services/auth.service';
 
           <!-- No variants yet -->
           <div *ngIf="!loadingVariants && variants.length === 0" class="pdp-no-variants">
-            ℹ️ No variants available for this product yet.
+            â„¹ï¸ No variants available for this product yet.
           </div>
 
           <!-- Quantity -->
           <div class="pdp-qty-row" *ngIf="selectedVariant && isInStock()">
             <div class="pdp-variant-label">Quantity:</div>
             <div class="pdp-qty-control">
-              <button class="pdp-qty-btn" (click)="quantity > 1 ? quantity = quantity - 1 : null">−</button>
+              <button class="pdp-qty-btn" (click)="quantity > 1 ? quantity = quantity - 1 : null">âˆ’</button>
               <span class="pdp-qty-val">{{quantity}}</span>
               <button class="pdp-qty-btn" (click)="quantity < getAvailableStock() ? quantity = quantity + 1 : null">+</button>
             </div>
@@ -207,7 +207,7 @@ import { AuthService } from '../../services/auth.service';
           <!-- Action Buttons -->
           <div class="pdp-actions">
             <div *ngIf="!selectedVariant && variants.length > 0" class="pdp-select-hint">
-              👆 Please select a variant above before adding to cart
+              ðŸ‘† Please select a variant above before adding to cart
             </div>
 
             <button
@@ -215,7 +215,7 @@ import { AuthService } from '../../services/auth.service';
               (click)="addToCart()"
               [disabled]="addingToCart || !selectedVariant || isOutOfStock()"
             >
-              <span *ngIf="!addingToCart">🛒 Add to Cart</span>
+              <span *ngIf="!addingToCart">ðŸ›’ Add to Cart</span>
               <span *ngIf="addingToCart" class="pdp-btn-loading">
                 <span class="pdp-spinner"></span> Adding...
               </span>
@@ -226,28 +226,28 @@ import { AuthService } from '../../services/auth.service';
               (click)="addToWishlist()"
               [disabled]="addingToWishlist"
             >
-              {{ isWishlisted ? '❤️ Wishlisted' : '🤍 Wishlist' }}
+              {{ isWishlisted ? 'â¤ï¸ Wishlisted' : 'ðŸ¤ Wishlist' }}
             </button>
           </div>
 
           <!-- Delivery Info -->
           <div class="pdp-delivery-block">
             <div class="pdp-delivery-row">
-              <span class="pdp-delivery-icon">🚚</span>
+              <span class="pdp-delivery-icon">ðŸšš</span>
               <div>
                 <div class="pdp-delivery-title">Free Delivery</div>
-                <div class="pdp-delivery-sub">On orders above ₹599</div>
+                <div class="pdp-delivery-sub">On orders above â‚¹599</div>
               </div>
             </div>
             <div class="pdp-delivery-row">
-              <span class="pdp-delivery-icon">↩️</span>
+              <span class="pdp-delivery-icon">â†©ï¸</span>
               <div>
                 <div class="pdp-delivery-title">Easy Returns</div>
                 <div class="pdp-delivery-sub">7-day return policy</div>
               </div>
             </div>
             <div class="pdp-delivery-row">
-              <span class="pdp-delivery-icon">🔒</span>
+              <span class="pdp-delivery-icon">ðŸ”’</span>
               <div>
                 <div class="pdp-delivery-title">Secure Payment</div>
                 <div class="pdp-delivery-sub">Razorpay encrypted checkout</div>
@@ -259,7 +259,7 @@ import { AuthService } from '../../services/auth.service';
 
       <!-- Description -->
       <div class="pdp-section" style="margin-top:40px;">
-        <h2 class="pdp-section-title">📋 Product Description</h2>
+        <h2 class="pdp-section-title">ðŸ“‹ Product Description</h2>
         <div class="pdp-description-body">
           <p style="white-space:pre-line; color:var(--text-muted); line-height:1.8;">{{product.description}}</p>
         </div>
@@ -442,7 +442,7 @@ export class ProductDetailComponent implements OnInit {
     this.productService.getBySlug(id).subscribe({
       next: (res: any) => {
         this.product = res;
-        this.selectedImage = res.imageUrls?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop';
+        this.selectedImage = res.mediaGallery?.[0]?.mediaUrl || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop';
         this.loading = false;
         this.loadVariants(id);
       },
@@ -473,7 +473,7 @@ export class ProductDetailComponent implements OnInit {
     this.quantity = 1;
     // If variant has its own image, show it
     if (v.imageUrl) this.selectedImage = v.imageUrl;
-    else if (this.product?.imageUrls?.[0]) this.selectedImage = this.product.imageUrls[0];
+    else if (this.product?.mediaGallery?.[0]?.mediaUrl) this.selectedImage = this.product.mediaGallery[0]?.mediaUrl;
   }
 
   selectByColor(color: string) {
@@ -568,14 +568,14 @@ export class ProductDetailComponent implements OnInit {
     if (!this.selectedVariant) { this.toast.warning('Please select a variant first'); return; }
     if (this.isOutOfStock()) { this.toast.error('This variant is out of stock'); return; }
 
-    // 🔑 ALWAYS send variantPublicId — NEVER productPublicId
+    // ðŸ”‘ ALWAYS send variantPublicId â€” NEVER productPublicId
     const variantPublicId = this.selectedVariant.variantPublicId || this.selectedVariant.publicId;
     if (!variantPublicId) { this.toast.error('Could not identify variant. Please try again.'); return; }
 
     this.addingToCart = true;
     this.cartService.add(variantPublicId, this.quantity).subscribe({
       next: () => {
-        this.toast.success(`${this.product.productName} added to cart! 🛒`);
+        this.toast.success(`${this.product.productName} added to cart! ðŸ›’`);
         this.addingToCart = false;
       },
       error: (e: any) => {
@@ -593,7 +593,7 @@ export class ProductDetailComponent implements OnInit {
     this.wishlistService.toggle(id).subscribe({
       next: () => {
         this.isWishlisted = !this.isWishlisted;
-        this.toast.success(this.isWishlisted ? 'Added to wishlist ❤️' : 'Removed from wishlist');
+        this.toast.success(this.isWishlisted ? 'Added to wishlist â¤ï¸' : 'Removed from wishlist');
         this.addingToWishlist = false;
       },
       error: (e: any) => {
@@ -603,3 +603,4 @@ export class ProductDetailComponent implements OnInit {
     });
   }
 }
+

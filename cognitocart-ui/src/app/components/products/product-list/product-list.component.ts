@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
@@ -15,16 +15,16 @@ import { debounceTime, Subject } from 'rxjs';
   template: `
     <div class="plp-root">
 
-      <!-- ════════════ TOP BAR ════════════ -->
+      <!-- â•â•â•â•â•â•â•â•â•â•â•â• TOP BAR â•â•â•â•â•â•â•â•â•â•â•â• -->
       <div class="plp-topbar">
         <div class="plp-topbar-left">
           <h1 class="plp-heading">
-            <span *ngIf="isAiSearch">🤖 AI Search</span>
+            <span *ngIf="isAiSearch">ðŸ¤– AI Search</span>
             <span *ngIf="!isAiSearch && searchQuery">Results for "{{searchQuery}}"</span>
             <span *ngIf="!isAiSearch && !searchQuery">Browse Products</span>
           </h1>
           <span class="plp-count" *ngIf="!loading">{{total}} products</span>
-          <span *ngIf="isAiSearch" class="plp-ai-badge">✨ HuggingFace AI</span>
+          <span *ngIf="isAiSearch" class="plp-ai-badge">âœ¨ HuggingFace AI</span>
         </div>
         <div class="plp-topbar-right">
           <select [(ngModel)]="sortBy" class="plp-sort-select" (change)="applyFilters()">
@@ -34,18 +34,18 @@ import { debounceTime, Subject } from 'rxjs';
             <option value="averageRating">Best Rated</option>
           </select>
           <button class="plp-filter-toggle" (click)="filtersOpen = !filtersOpen">
-            🎛️ Filters {{filtersOpen ? '▲' : '▼'}}
+            ðŸŽ›ï¸ Filters {{filtersOpen ? 'â–²' : 'â–¼'}}
           </button>
         </div>
       </div>
 
       <div class="plp-layout">
 
-        <!-- ════════════ SIDEBAR FILTERS ════════════ -->
+        <!-- â•â•â•â•â•â•â•â•â•â•â•â• SIDEBAR FILTERS â•â•â•â•â•â•â•â•â•â•â•â• -->
         <aside class="plp-sidebar" [class.open]="filtersOpen">
           <div class="plp-sidebar-inner">
             <div class="plp-filter-hdr">
-              <span>🎛️ Filters</span>
+              <span>ðŸŽ›ï¸ Filters</span>
               <button class="plp-clear-btn" (click)="resetFilters()">Clear All</button>
             </div>
 
@@ -53,7 +53,7 @@ import { debounceTime, Subject } from 'rxjs';
             <div class="plp-filter-section">
               <div class="plp-filter-title">Search</div>
               <div class="plp-search-wrap">
-                <span class="plp-search-icon">🔍</span>
+                <span class="plp-search-icon">ðŸ”</span>
                 <input
                   type="text"
                   [(ngModel)]="searchQuery"
@@ -61,7 +61,7 @@ import { debounceTime, Subject } from 'rxjs';
                   placeholder="Search products..."
                   (ngModelChange)="onSearchChange()"
                 />
-                <button *ngIf="searchQuery" class="plp-search-clear" (click)="searchQuery=''; applyFilters()">✕</button>
+                <button *ngIf="searchQuery" class="plp-search-clear" (click)="searchQuery=''; applyFilters()">âœ•</button>
               </div>
             </div>
 
@@ -87,9 +87,9 @@ import { debounceTime, Subject } from 'rxjs';
             <div class="plp-filter-section">
               <div class="plp-filter-title">Price Range</div>
               <div style="display:flex; gap:8px;">
-                <input type="number" [(ngModel)]="minPrice" class="plp-price-input" placeholder="Min ₹" (change)="applyFilters()" />
-                <span style="color:var(--text-dim); align-self:center;">—</span>
-                <input type="number" [(ngModel)]="maxPrice" class="plp-price-input" placeholder="Max ₹" (change)="applyFilters()" />
+                <input type="number" [(ngModel)]="minPrice" class="plp-price-input" placeholder="Min â‚¹" (change)="applyFilters()" />
+                <span style="color:var(--text-dim); align-self:center;">â€”</span>
+                <input type="number" [(ngModel)]="maxPrice" class="plp-price-input" placeholder="Max â‚¹" (change)="applyFilters()" />
               </div>
             </div>
 
@@ -100,8 +100,8 @@ import { debounceTime, Subject } from 'rxjs';
               <div class="plp-filter-title">Minimum Rating</div>
               <div class="plp-rating-pills">
                 <button class="plp-rating-pill" [class.active]="!minRating" (click)="minRating=null; applyFilters()">All</button>
-                <button class="plp-rating-pill" [class.active]="minRating === 4" (click)="minRating=4; applyFilters()">4★ & up</button>
-                <button class="plp-rating-pill" [class.active]="minRating === 3" (click)="minRating=3; applyFilters()">3★ & up</button>
+                <button class="plp-rating-pill" [class.active]="minRating === 4" (click)="minRating=4; applyFilters()">4â˜… & up</button>
+                <button class="plp-rating-pill" [class.active]="minRating === 3" (click)="minRating=3; applyFilters()">3â˜… & up</button>
               </div>
             </div>
 
@@ -110,19 +110,19 @@ import { debounceTime, Subject } from 'rxjs';
             <!-- AI Semantic Search -->
             <div class="plp-filter-section">
               <div class="plp-filter-title" style="display:flex; align-items:center; gap:6px;">
-                🤖 AI Semantic Search
+                ðŸ¤– AI Semantic Search
                 <span class="plp-ai-chip">NEW</span>
               </div>
-              <p class="plp-ai-desc">Find by meaning — try "earphones for focus" or "cozy winter clothes"</p>
+              <p class="plp-ai-desc">Find by meaning â€” try "earphones for focus" or "cozy winter clothes"</p>
               <div class="plp-ai-wrap">
                 <input type="text" [(ngModel)]="aiQuery" class="plp-search-input" placeholder="Describe what you need..."
                   (keyup.enter)="aiSearch()" />
                 <button class="plp-ai-btn" (click)="aiSearch()" [disabled]="!aiQuery.trim() || loading">
-                  <span *ngIf="!loading">✨</span>
+                  <span *ngIf="!loading">âœ¨</span>
                   <span *ngIf="loading" class="mini-spinner"></span>
                 </button>
               </div>
-              <!-- Quick suggestion chips — one click and search runs -->
+              <!-- Quick suggestion chips â€” one click and search runs -->
               <div class="plp-ai-suggestion-chips">
                 <button *ngFor="let s of aiSuggestions" class="plp-ai-chip-btn"
                   (click)="aiQuery = s; aiSearch()">{{s}}</button>
@@ -133,15 +133,15 @@ import { debounceTime, Subject } from 'rxjs';
           </div>
         </aside>
 
-        <!-- ════════════ PRODUCT GRID ════════════ -->
+        <!-- â•â•â•â•â•â•â•â•â•â•â•â• PRODUCT GRID â•â•â•â•â•â•â•â•â•â•â•â• -->
         <main class="plp-main">
 
-          <!-- AI Result Banner — shown only when AI search is active -->
+          <!-- AI Result Banner â€” shown only when AI search is active -->
           <!-- Shows query, total found, and a clear button -->
           <div class="plp-ai-result-banner" *ngIf="isAiSearch && !loading">
-            <span class="plp-ai-banner-icon">🤖</span>
+            <span class="plp-ai-banner-icon">ðŸ¤–</span>
             <span>AI found <strong>{{total}}</strong> product{{total !== 1 ? 's' : ''}} for: <em>"{{aiQuery}}"</em></span>
-            <button class="plp-ai-banner-clear" (click)="resetFilters()">✕ Clear</button>
+            <button class="plp-ai-banner-clear" (click)="resetFilters()">âœ• Clear</button>
           </div>
 
           <!-- Skeleton -->
@@ -158,7 +158,7 @@ import { debounceTime, Subject } from 'rxjs';
 
           <!-- Empty State -->
           <div *ngIf="!loading && products.length === 0" class="empty-state" style="min-height:400px;">
-            <div class="empty-icon">{{isAiSearch ? '🤖' : '🔍'}}</div>
+            <div class="empty-icon">{{isAiSearch ? 'ðŸ¤–' : 'ðŸ”'}}</div>
             <div class="empty-title">{{isAiSearch ? 'No AI matches found' : 'No products found'}}</div>
             <div class="empty-subtitle">{{isAiSearch ? 'Try rephrasing your query or use a different description' : 'Try a different search query or clear your filters'}}</div>
             <button class="btn btn-primary" (click)="resetFilters()">Clear Filters</button>
@@ -174,26 +174,26 @@ import { debounceTime, Subject } from 'rxjs';
               <!-- Image -->
               <div class="plp-card-img-wrap">
                 <img
-                  [src]="p.imageUrls?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&auto=format&fit=crop'"
+                  [src]="p.mediaGallery?.[0]?.mediaUrl || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&auto=format&fit=crop'"
                   [alt]="p.productName"
                   class="plp-card-img"
                   loading="lazy"
                 />
                 <div class="plp-card-badges">
                   <span *ngIf="p.discountPercentage > 0" class="plp-badge-off">-{{p.discountPercentage}}%</span>
-                  <span *ngIf="p.flashSaleActive" class="plp-badge-flash">⚡ FLASH</span>
+                  <span *ngIf="p.flashSaleActive" class="plp-badge-flash">âš¡ FLASH</span>
                 </div>
-                <!-- AI relevance badge — only shown when in AI search mode -->
-                <!-- e.g. "✨ 94% match" — tells user WHY this product was surfaced -->
+                <!-- AI relevance badge â€” only shown when in AI search mode -->
+                <!-- e.g. "âœ¨ 94% match" â€” tells user WHY this product was surfaced -->
                 <div class="plp-relevance-badge" *ngIf="isAiSearch && p._relevanceLabel">
-                  ✨ {{p._relevanceLabel}} match
+                  âœ¨ {{p._relevanceLabel}} match
                 </div>
                 <button
                   class="plp-wishlist-btn"
                   [class.active]="p._wishlisted"
                   (click)="toggleWishlist($event, p)"
                   title="Toggle wishlist"
-                >{{ p._wishlisted ? '❤️' : '🤍' }}</button>
+                >{{ p._wishlisted ? 'â¤ï¸' : 'ðŸ¤' }}</button>
               </div>
 
               <!-- Info -->
@@ -206,36 +206,36 @@ import { debounceTime, Subject } from 'rxjs';
                   <span class="plp-review-count">({{p.totalReviews || 0}})</span>
                 </div>
                 <div class="plp-card-price">
-                  <span class="plp-price-now">₹{{(p.discountPrice || p.price) | number:'1.0-0'}}</span>
-                  <span *ngIf="p.discountPrice && p.price > p.discountPrice" class="plp-price-was">₹{{p.price | number:'1.0-0'}}</span>
+                  <span class="plp-price-now">â‚¹{{(p.discountPrice || p.price) | number:'1.0-0'}}</span>
+                  <span *ngIf="p.discountPrice && p.price > p.discountPrice" class="plp-price-was">â‚¹{{p.price | number:'1.0-0'}}</span>
                 </div>
               </div>
 
               <!-- CTA Footer -->
               <div class="plp-card-footer">
                 <button class="plp-card-btn" (click)="$event.preventDefault(); $event.stopPropagation(); goToProduct(p)">
-                  View Options →
+                  View Options â†’
                 </button>
                 <button
                   *ngIf="auth.isCustomer()"
                   class="plp-wishlist-footer"
                   (click)="toggleWishlist($event, p)"
                   [title]="p._wishlisted ? 'Remove from wishlist' : 'Add to wishlist'"
-                >{{ p._wishlisted ? '❤️' : '🤍' }}</button>
+                >{{ p._wishlisted ? 'â¤ï¸' : 'ðŸ¤' }}</button>
               </div>
             </div>
           </div>
 
           <!-- Pagination -->
           <div class="plp-pagination" *ngIf="totalPages > 1 && !loading">
-            <button class="plp-page-btn" (click)="changePage(page-1)" [disabled]="page === 0">← Prev</button>
+            <button class="plp-page-btn" (click)="changePage(page-1)" [disabled]="page === 0">â† Prev</button>
             <button
               *ngFor="let pg of pageArray"
               class="plp-page-btn"
               [class.active]="pg === page"
               (click)="changePage(pg)"
             >{{pg + 1}}</button>
-            <button class="plp-page-btn" (click)="changePage(page+1)" [disabled]="page >= totalPages-1">Next →</button>
+            <button class="plp-page-btn" (click)="changePage(page+1)" [disabled]="page >= totalPages-1">Next â†’</button>
           </div>
         </main>
       </div>
@@ -413,7 +413,7 @@ import { debounceTime, Subject } from 'rxjs';
     .mini-spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── AI Suggestion Chips ─────────────────────────────────── */
+    /* â”€â”€ AI Suggestion Chips â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     /* Pre-made search queries so users know what they can type */
     .plp-ai-suggestion-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
     .plp-ai-chip-btn {
@@ -423,7 +423,7 @@ import { debounceTime, Subject } from 'rxjs';
     }
     .plp-ai-chip-btn:hover { background: rgba(99,102,241,0.3); transform: scale(1.04); }
 
-    /* ── AI Result Banner ─────────────────────────────────────── */
+    /* â”€â”€ AI Result Banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     /* The strip shown above the grid when AI mode is active */
     .plp-ai-result-banner {
       display: flex; align-items: center; gap: 10px;
@@ -445,7 +445,7 @@ import { debounceTime, Subject } from 'rxjs';
     .plp-ai-banner-clear:hover { background: rgba(99,102,241,0.35); }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* ── Relevance Score Badge ────────────────────────────────── */
+    /* â”€â”€ Relevance Score Badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     /* Floats on top of the product card image, shows AI confidence */
     .plp-relevance-badge {
       position: absolute; bottom: 8px; left: 8px;
@@ -479,13 +479,13 @@ export class ProductListComponent implements OnInit {
   // Stores the last AI search ranked results (with relevance scores)
   aiResults: any[] = [];
 
-  // Pre-made search suggestions — gives users inspiration on what to type
+  // Pre-made search suggestions â€” gives users inspiration on what to type
   aiSuggestions = [
-    'Best for gaming 🎮',
-    'Under ₹1,000 🎁',
+    'Best for gaming ðŸŽ®',
+    'Under â‚¹1,000 ðŸŽ',
     'Wireless & compact',
-    'Top rated ⭐',
-    'Noise cancelling 🎧',
+    'Top rated â­',
+    'Noise cancelling ðŸŽ§',
   ];
 
   get pageArray(): number[] {
@@ -568,8 +568,8 @@ export class ProductListComponent implements OnInit {
     this.isAiSearch = true;
     this.aiResults = [];
 
-    // Pass current sidebar filters alongside the AI query — hybrid search!
-    // So "wireless headphones under ₹5000" works with both AI + price filter active
+    // Pass current sidebar filters alongside the AI query â€” hybrid search!
+    // So "wireless headphones under â‚¹5000" works with both AI + price filter active
     this.productService.semanticSearch(this.aiQuery, 20, {
       minPrice: this.minPrice ?? undefined,
       maxPrice: this.maxPrice ?? undefined,
@@ -584,7 +584,7 @@ export class ProductListComponent implements OnInit {
           this.aiResults = res.results;
           this.products = res.results.map((r: any) => ({
             ...r.product,
-            _relevanceLabel: r.relevanceLabel,  // e.g. "94%" — shown as badge on card
+            _relevanceLabel: r.relevanceLabel,  // e.g. "94%" â€” shown as badge on card
             _rank: r.rank                        // position 1 = best match
           }));
           this.total = res.totalFound ?? this.products.length;
@@ -596,7 +596,7 @@ export class ProductListComponent implements OnInit {
           this.products = [];
           this.total = 0;
         }
-        this.totalPages = 1;  // AI results are ranked — no pagination
+        this.totalPages = 1;  // AI results are ranked â€” no pagination
         this.loading = false;
       },
       error: () => {
@@ -637,6 +637,7 @@ export class ProductListComponent implements OnInit {
 
   getStars(rating: number): string {
     const full = Math.round(rating);
-    return '★'.repeat(Math.min(full, 5)) + '☆'.repeat(Math.max(5 - full, 0));
+    return 'â˜…'.repeat(Math.min(full, 5)) + 'â˜†'.repeat(Math.max(5 - full, 0));
   }
 }
+
