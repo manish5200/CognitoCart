@@ -28,7 +28,10 @@ import { ProductReturnStatusComponent } from '../../shared/product-return-status
           <app-product-return-status *ngIf="product" [isReturnable]="product.isReturnable" style="margin-left: 12px;"></app-product-return-status>
         </div>
         <div class="actions" *ngIf="product">
-          <button class="btn btn-ghost" *ngIf="product.status === 'DRAFT'">Discard Draft</button>
+          <button class="btn btn-ghost" *ngIf="product.status === 'DRAFT' || product.status === 'REQUIRES_CHANGES'" (click)="submitForReview()" [disabled]="isSubmitting">
+            <span *ngIf="isSubmitting" class="spinner spinner-sm"></span>
+            {{ isSubmitting ? 'Submitting...' : 'Submit for Review' }}
+          </button>
           <a [routerLink]="['/product', product.slug]" target="_blank" class="btn btn-secondary">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
             Preview Live
@@ -193,6 +196,7 @@ export class ProductDetailsWorkspaceComponent implements OnInit {
   activeTab = 'overview';
 
   isSaving = false;
+  isSubmitting = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -233,7 +237,7 @@ export class ProductDetailsWorkspaceComponent implements OnInit {
       description: this.product.description,
       price: this.product.price,
       discountPrice: this.product.discountPrice,
-      categoryId: this.product.categoryId || 1, // Fallback if missing
+      categoryPublicId: this.product.categoryId, // Ensure UUID is correctly mapped
       tags: this.product.tags || [],
       stockQuantity: 0 // Mocked since variants handle actual stock
     };
@@ -247,6 +251,22 @@ export class ProductDetailsWorkspaceComponent implements OnInit {
       error: (e) => {
         this.toast.error(e.error?.message || 'Failed to save product');
         this.isSaving = false;
+      }
+    });
+  }
+
+  submitForReview(): void {
+    if (!this.product || !this.product.productPublicId) return;
+    this.isSubmitting = true;
+    this.productService.submitForReview(this.product.productPublicId).subscribe({
+      next: (res) => {
+        this.toast.success('Product submitted for review successfully');
+        this.product = res; // Should update status to PENDING_REVIEW
+        this.isSubmitting = false;
+      },
+      error: (e) => {
+        this.toast.error(e.error?.message || 'Failed to submit product');
+        this.isSubmitting = false;
       }
     });
   }

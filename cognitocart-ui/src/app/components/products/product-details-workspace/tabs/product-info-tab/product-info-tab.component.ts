@@ -67,11 +67,15 @@ export class ProductInfoTabComponent implements OnInit {
       next: (res) => {
         this.categories = res;
         this.flattenCategories(this.categories);
+      },
+      error: (err) => {
+        console.error('Failed to load categories', err);
       }
     });
   }
 
   flattenCategories(categories: any[], prefix = '') {
+    if (!categories || !Array.isArray(categories)) return;
     for (const cat of categories) {
       this.flatCategories.push({
         publicId: cat.publicId,

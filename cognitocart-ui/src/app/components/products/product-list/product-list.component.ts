@@ -1,4 +1,4 @@
-﻿import { Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
@@ -481,11 +481,11 @@ export class ProductListComponent implements OnInit {
 
   // Pre-made search suggestions &#8212; gives users inspiration on what to type
   aiSuggestions = [
-    'Best for gaming &#127918;',
-    'Under &#8377;1,000 ðŸŽ',
+    'Best for gaming 🎮',
+    'Under ₹1,000 🎁',
     'Wireless & compact',
-    'Top rated â­',
-    'Noise cancelling &#127911;',
+    'Top rated ⭐',
+    'Noise cancelling 🎧',
   ];
 
   get pageArray(): number[] {
