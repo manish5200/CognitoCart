@@ -259,12 +259,12 @@ export class ProductDetailsWorkspaceComponent implements OnInit {
     if (!this.product || !this.product.productPublicId) return;
     this.isSubmitting = true;
     this.productService.submitForReview(this.product.productPublicId).subscribe({
-      next: (res) => {
+      next: (res: any) => {
         this.toast.success('Product submitted for review successfully');
         this.product = res; // Should update status to PENDING_REVIEW
         this.isSubmitting = false;
       },
-      error: (e) => {
+      error: (e: any) => {
         this.toast.error(e.error?.message || 'Failed to submit product');
         this.isSubmitting = false;
       }

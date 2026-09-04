@@ -132,6 +132,10 @@ export class ProductService {
     return this.http.put(`${this.API}/${productPublicId}`, data);
   }
 
+  submitForReview(productPublicId: string): Observable<any> {
+    return this.http.post(`${this.API}/${productPublicId}/submit-for-review`, {});
+  }
+
   uploadImage(productPublicId: string, file: File): Observable<any> {
     const form = new FormData();
     form.append('file', file);
