@@ -74,8 +74,8 @@ export class ProductService {
     return this.http.get(`${this.API}/admin/${productPublicId}/moderation-history`);
   }
 
-  moderateProduct(productPublicId: string, payload: { status: string; reason?: string }): Observable<any> {
-    return this.http.post(`${this.API}/admin/${productPublicId}/moderate?status=${payload.status}&reason=${encodeURIComponent(payload.reason || '')}`, {});
+  moderateProduct(productPublicId: string, payload: { action: string; reason?: string }): Observable<any> {
+    return this.http.post(`${this.API}/admin/${productPublicId}/moderate`, payload);
   }
 
   getReturnPolicy(productPublicId: string): Observable<any> {

@@ -5,11 +5,14 @@ import { FormsModule } from '@angular/forms';
 import { ProductService } from '../../../services/product.service';
 
 interface PendingProduct {
-  publicId: string;
+  productPublicId: string;
   productName: string;
-  sellerId: number;
-  approvalStatus: string;
-  createdAt: Date;
+  storeName?: string;
+  price?: number;
+  discountPrice?: number;
+  createdAt?: Date;
+  insightLastGenerated?: Date;
+  mediaGallery?: any[];
 }
 
 interface ModerationHistory {
@@ -62,10 +65,10 @@ export class AdminModerationComponent implements OnInit {
   }
 
   approveProduct(product: PendingProduct): void {
-    const payload = { status: 'APPROVED', reason: 'Approved by Admin' };
-    this.productService.moderateProduct(product.publicId, payload).subscribe({
+    const payload = { action: 'APPROVED', reason: 'Approved by Admin' };
+    this.productService.moderateProduct(product.productPublicId, payload).subscribe({
       next: () => {
-        this.pendingProducts = this.pendingProducts.filter(p => p.publicId !== product.publicId);
+        this.pendingProducts = this.pendingProducts.filter(p => p.productPublicId !== product.productPublicId);
       },
       error: (err) => console.error('Error approving product', err)
     });
@@ -80,10 +83,10 @@ export class AdminModerationComponent implements OnInit {
   submitRejection(): void {
     if (!this.rejectReason.trim() || !this.selectedProduct) return;
     
-    const payload = { status: 'REQUIRES_CHANGES', reason: this.rejectReason };
-    this.productService.moderateProduct(this.selectedProduct.publicId, payload).subscribe({
+    const payload = { action: 'REQUIRES_CHANGES', reason: this.rejectReason };
+    this.productService.moderateProduct(this.selectedProduct.productPublicId, payload).subscribe({
       next: () => {
-        this.pendingProducts = this.pendingProducts.filter(p => p.publicId !== this.selectedProduct?.publicId);
+        this.pendingProducts = this.pendingProducts.filter(p => p.productPublicId !== this.selectedProduct?.productPublicId);
         this.closeModal();
       },
       error: (err) => console.error('Error rejecting product', err)
@@ -99,7 +102,7 @@ export class AdminModerationComponent implements OnInit {
     this.selectedProduct = product;
     this.showHistoryDrawer = true;
     
-    this.productService.getModerationHistory(product.publicId).subscribe({
+    this.productService.getModerationHistory(product.productPublicId).subscribe({
       next: (res) => {
         this.mockHistory = res;
       },
@@ -110,6 +113,14 @@ export class AdminModerationComponent implements OnInit {
   closeHistory(): void {
     this.showHistoryDrawer = false;
     this.selectedProduct = null;
+  }
+
+  getPrimaryImage(product: PendingProduct): string {
+    if (product.mediaGallery && product.mediaGallery.length > 0) {
+      const primary = product.mediaGallery.find((m: any) => m.isPrimary);
+      return primary ? primary.mediaUrl : product.mediaGallery[0].mediaUrl;
+    }
+    return 'assets/placeholder-image.png'; // Fallback
   }
 }
 

@@ -13,24 +13,40 @@
     <table class="data-table">
       <thead>
         <tr>
-          <th>Product Name</th>
-          <th>Seller ID</th>
+          <th>Product</th>
+          <th>Store & ID</th>
+          <th>Price</th>
           <th>Submitted Date</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngIf="pendingProducts.length === 0">
-          <td colspan="4" class="empty-state">No products pending review. 🎉</td>
+          <td colspan="5" class="empty-state">No products pending review. 🎉</td>
         </tr>
         <tr *ngFor="let product of pendingProducts">
           <td>
-            <strong>{{ product.productName }}</strong>
-            <br>
-            <small class="text-muted">{{ product.publicId }}</small>
+            <div class="product-info-cell">
+              <div class="product-thumbnail">
+                <img [src]="getPrimaryImage(product)" [alt]="product.productName">
+              </div>
+              <div class="product-details">
+                <strong>{{ product.productName }}</strong>
+                <span class="badge pending">PENDING</span>
+              </div>
+            </div>
           </td>
-          <td>{{ product.sellerId }}</td>
-          <td>{{ product.createdAt | date:'mediumDate' }}</td>
+          <td>
+            <strong>{{ product.storeName || 'Unknown Store' }}</strong>
+            <br>
+            <small class="text-muted">{{ product.productPublicId }}</small>
+          </td>
+          <td>
+            <strong class="price">&#8377;{{ product.price | number:'1.2-2' }}</strong>
+            <br>
+            <small class="text-muted" *ngIf="product.discountPrice">Discount: &#8377;{{ product.discountPrice | number:'1.2-2' }}</small>
+          </td>
+          <td>{{ product.createdAt || product.insightLastGenerated | date:'mediumDate' }}</td>
           <td class="action-buttons">
             <button class="btn btn-success" (click)="approveProduct(product)">Approve</button>
             <button class="btn btn-danger" (click)="openRejectModal(product)">Reject</button>

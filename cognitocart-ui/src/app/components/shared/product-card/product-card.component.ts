@@ -1,4 +1,4 @@
-﻿import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 
@@ -14,7 +14,7 @@ import { RouterModule } from '@angular/router';
       <!-- Image -->
       <div class="pc-img-wrap">
         <img
-          [src]="product.mediaGallery?.[0]?.mediaUrl || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&auto=format&fit=crop'"
+          [src]="product.mediaGallery?.[0]?.mediaUrl || getFallbackImage()"
           [alt]="product.productName || product.name"
           class="pc-img main-img"
           loading="lazy"
@@ -252,5 +252,21 @@ export class ProductCardComponent {
   @Input() product: any;
   @Input() showWishlist: boolean = true;
   @Output() toggleWishlist = new EventEmitter<any>();
-}
 
+  getFallbackImage(): string {
+    const cat = (this.product.categoryName || '').toLowerCase();
+    const name = (this.product.productName || this.product.name || 'Product').replace(/\s+/g, '+');
+    
+    // Some basic UI avatars or placehold.co images based on category
+    if (cat.includes('electronic') || cat.includes('laptop') || cat.includes('phone')) {
+      return `https://placehold.co/400x400/1e293b/818cf8?text=Electronics`;
+    }
+    if (cat.includes('fashion') || cat.includes('wear')) {
+      return `https://placehold.co/400x400/1e293b/ec4899?text=Fashion`;
+    }
+    if (cat.includes('home') || cat.includes('decor')) {
+      return `https://placehold.co/400x400/1e293b/10b981?text=Home`;
+    }
+    return `https://placehold.co/400x400/1e293b/6366f1?text=${name}`;
+  }
+}

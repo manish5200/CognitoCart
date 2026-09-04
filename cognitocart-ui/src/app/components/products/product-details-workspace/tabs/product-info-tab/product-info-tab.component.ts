@@ -21,8 +21,8 @@ import { ProductService } from '../../../../../services/product.service';
             
             <div class="form-group">
               <label class="form-label">Category</label>
-              <select class="form-select" [(ngModel)]="product.categoryId" (change)="onCategoryChange($event)">
-                <option [value]="product.categoryId">{{product.categoryName || 'Select Category'}}</option>
+              <select class="form-select" [(ngModel)]="product.categoryPublicId" (change)="onCategoryChange($event)">
+                <option [value]="product.categoryPublicId">{{product.categoryName || 'Select Category'}}</option>
                 <option *ngFor="let cat of flatCategories" [value]="cat.publicId">{{ cat.name }}</option>
               </select>
             </div>
@@ -88,7 +88,7 @@ export class ProductInfoTabComponent implements OnInit {
   }
 
   onCategoryChange(event: any) {
-    const selected = this.flatCategories.find(c => c.publicId === this.product.categoryId);
+    const selected = this.flatCategories.find(c => c.publicId === this.product.categoryPublicId);
     if (selected) {
       this.product.categoryName = selected.name.split(' > ').pop();
     }

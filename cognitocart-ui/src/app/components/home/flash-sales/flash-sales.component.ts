@@ -1,4 +1,4 @@
-﻿import { Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { SaleService } from '../../../services/sale.service';
@@ -71,7 +71,7 @@ import { WishlistService } from '../../../services/wishlist.service';
           <div *ngIf="!loadingProducts && products.length > 0" class="flash-product-grid">
             <div *ngFor="let p of products" class="fpc" [routerLink]="['/product', p.slug || p.productPublicId || p.publicId]">
               <div class="fpc-img-wrap">
-                <img [src]="p.mediaGallery?.[0]?.mediaUrl || 'https://via.placeholder.com/400'" [alt]="p.productName || p.name" class="fpc-img"/>
+                <img [src]="p.mediaGallery?.[0]?.mediaUrl || getFallbackImage(p)" [alt]="p.productName || p.name" class="fpc-img"/>
                 <div class="fpc-badge-discount">-{{p.discountPercentage || 0}}%</div>
                 <button
                   *ngIf="auth.isCustomer()"
@@ -226,15 +226,21 @@ export class FlashSalesComponent implements OnInit {
   }
 
   toggleWishlist(product: any): void {
-    if (!this.auth.isLoggedIn()) return;
-    const id = product.productPublicId || product.publicId;
-    this.wishlistService.toggle(id).subscribe({
-      next: () => {
+    if (!this.auth.isLoggedIn()) { this.toast.warning('Login to wishlist'); return; }
+    this.wishlistService.toggle(product.productPublicId || product.publicId).subscribe({
+      next: (res: any) => {
         product.isWishlisted = !product.isWishlisted;
-        this.toast.success(product.isWishlisted ? 'Added to wishlist â¤ï¸' : 'Removed from wishlist');
-      },
-      error: () => this.toast.error('Failed to update wishlist')
+        this.toast.info(res.Status || 'Wishlist updated');
+      }
     });
   }
-}
 
+  getFallbackImage(product: any): string {
+    const cat = (product.categoryName || '').toLowerCase();
+    const name = (product.productName || product.name || 'Product').replace(/\s+/g, '+');
+    if (cat.includes('electronic') || cat.includes('laptop') || cat.includes('phone')) return `https://placehold.co/400x400/1e293b/818cf8?text=Electronics`;
+    if (cat.includes('fashion') || cat.includes('wear')) return `https://placehold.co/400x400/1e293b/ec4899?text=Fashion`;
+    if (cat.includes('home') || cat.includes('decor')) return `https://placehold.co/400x400/1e293b/10b981?text=Home`;
+    return `https://placehold.co/400x400/1e293b/6366f1?text=${name}`;
+  }
+}

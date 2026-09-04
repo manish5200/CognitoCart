@@ -13,7 +13,7 @@ import { ProductReturnStatusComponent } from '../shared/product-return-status/pr
   template: `
     <div class="page">
       <div class="page-header">
-        <h1 class="page-title">&#128722; Shopping Cart</h1>
+        <h1 class="page-title"><span class="material-icons" style="vertical-align: text-bottom;">shopping_cart</span> Shopping Cart</h1>
         <p class="page-subtitle" *ngIf="cart?.items?.length">{{cart.items.length}} item(s) in your cart</p>
       </div>
 

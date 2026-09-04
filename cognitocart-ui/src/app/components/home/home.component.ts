@@ -109,7 +109,7 @@ import { ProductCardComponent } from '../shared/product-card/product-card.compon
           [class]="'fade-up-delay-'+((i%3)+1)"
           (click)="browseCategory(cat)"
         >
-          <div class="cat-icon-wrap">
+          <div class="cat-icon-wrap material-icons">
             {{getCatIcon(cat.name)}}
           </div>
           <div class="cat-name">{{cat.name}}</div>
@@ -131,7 +131,7 @@ import { ProductCardComponent } from '../shared/product-card/product-card.compon
 
       <!-- Empty State -->
       <div *ngIf="!loadingProducts && products.length === 0" class="empty-state">
-        <div class="empty-icon">🛍️</div>
+        <div class="empty-icon material-icons" style="font-size: 48px; color: #aaa;">shopping_bag</div>
         <div class="empty-title">No products yet</div>
         <div class="empty-subtitle">Check back soon &#8212; sellers are stocking up!</div>
       </div>
@@ -160,7 +160,7 @@ import { ProductCardComponent } from '../shared/product-card/product-card.compon
       <div class="grid-4">
         <div *ngFor="let feat of features; let i=index" class="card fade-up" [class]="'fade-up-delay-'+((i%3)+1)" style="background: var(--bg-glass); border: 1px solid rgba(255,255,255,0.03);">
           <div class="card-body" style="padding:32px 24px;">
-            <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 20px;">
+            <div class="material-icons" style="width: 48px; height: 48px; border-radius: 12px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 20px; color: var(--primary);">
               {{feat.icon}}
             </div>
             <h3 style="font-size:15px; font-weight:700; color:var(--text-primary); margin-bottom:8px;">{{feat.title}}</h3>
@@ -514,10 +514,10 @@ export class HomeComponent implements OnInit {
   heroStats = [];
 
   features = [
-    { icon: '🧠', title: 'Contextual AI Search', desc: 'Describe what you want naturally. Our intelligence engine understands intent, context, and nuance.' },
-    { icon: '&#10024;', title: 'Curated Discovery', desc: 'Experience personalized recommendations that adapt to your unique preferences in real-time.' },
-    { icon: '&#9889;', title: 'Seamless Experience', desc: 'From search to checkout, enjoy a frictionless, high-performance interface designed for speed.' },
-    { icon: '&#128737;️', title: 'Secure Ecosystem', desc: 'Enterprise-grade security ensuring your transactions and data remain private and protected.' },
+    { icon: 'psychology', title: 'Contextual AI Search', desc: 'Describe what you want naturally. Our intelligence engine understands intent, context, and nuance.' },
+    { icon: 'auto_awesome', title: 'Curated Discovery', desc: 'Experience personalized recommendations that adapt to your unique preferences in real-time.' },
+    { icon: 'bolt', title: 'Seamless Experience', desc: 'From search to checkout, enjoy a frictionless, high-performance interface designed for speed.' },
+    { icon: 'security', title: 'Secure Ecosystem', desc: 'Enterprise-grade security ensuring your transactions and data remain private and protected.' },
   ];
 
   constructor(
@@ -580,23 +580,23 @@ export class HomeComponent implements OnInit {
 
   getCatIcon(name: string): string {
     const n = name?.toLowerCase() || '';
-    if (n.includes('electron') || n.includes('gadget')) return '💻';
-    if (n.includes('phone') || n.includes('mobile')) return '📱';
-    if (n.includes('laptop') || n.includes('computer')) return '🖥️';
-    if (n.includes('audio') || n.includes('earphone') || n.includes('headphone')) return '&#127911;';
-    if (n.includes('gaming') || n.includes('game')) return '&#127918;';
-    if (n.includes('fashion') || n.includes('cloth') || n.includes('wear')) return '👗';
-    if (n.includes('shoe') || n.includes('footwear')) return '👟';
-    if (n.includes('watch') || n.includes('accessory')) return '⌚';
-    if (n.includes('home') || n.includes('decor')) return '🏠';
-    if (n.includes('kitchen') || n.includes('cook')) return '🍳';
-    if (n.includes('book') || n.includes('stationery')) return '📚';
-    if (n.includes('sport') || n.includes('fitness')) return '⚽';
-    if (n.includes('beauty') || n.includes('skin') || n.includes('cosmetic')) return '💄';
-    if (n.includes('toy') || n.includes('kid') || n.includes('baby')) return '🧸';
-    if (n.includes('food') || n.includes('grocery')) return '&#128722;';
-    if (n.includes('jewel') || n.includes('gold')) return '💍';
-    if (n.includes('festival') || n.includes('gift')) return '🎁';
-    return '&#128230;';
+    if (n.includes('electron') || n.includes('gadget')) return 'laptop_mac';
+    if (n.includes('phone') || n.includes('mobile')) return 'smartphone';
+    if (n.includes('laptop') || n.includes('computer')) return 'desktop_windows';
+    if (n.includes('audio') || n.includes('earphone') || n.includes('headphone')) return 'headphones';
+    if (n.includes('gaming') || n.includes('game')) return 'sports_esports';
+    if (n.includes('fashion') || n.includes('cloth') || n.includes('wear')) return 'checkroom';
+    if (n.includes('shoe') || n.includes('footwear')) return 'ice_skating';
+    if (n.includes('watch') || n.includes('accessory')) return 'watch';
+    if (n.includes('home') || n.includes('decor')) return 'home';
+    if (n.includes('kitchen') || n.includes('cook')) return 'kitchen';
+    if (n.includes('book') || n.includes('stationery')) return 'menu_book';
+    if (n.includes('sport') || n.includes('fitness')) return 'sports_soccer';
+    if (n.includes('beauty') || n.includes('skin') || n.includes('cosmetic')) return 'face_retouching_natural';
+    if (n.includes('toy') || n.includes('kid') || n.includes('baby')) return 'toys';
+    if (n.includes('food') || n.includes('grocery')) return 'shopping_cart';
+    if (n.includes('jewel') || n.includes('gold')) return 'diamond';
+    if (n.includes('festival') || n.includes('gift')) return 'card_giftcard';
+    return 'category';
   }
 }

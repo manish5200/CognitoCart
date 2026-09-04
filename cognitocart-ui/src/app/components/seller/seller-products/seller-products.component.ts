@@ -1,4 +1,4 @@
-﻿import { Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -930,17 +930,52 @@ export class SellerProductsComponent implements OnInit {
     this.processing = true;
 
     try {
-      // 1. Create Base Product
-      const category = this.categories.find(c => c.publicId === this.draft.categoryPublicId);
+      const variantsList = [];
+      if (this.draft.variants && this.draft.variants.length > 0) {
+        const firstVariant = this.draft.variants[0];
+        const attrs: any = {};
+        if (firstVariant.attributesStr) {
+          firstVariant.attributesStr.split(',').forEach((pair: string) => {
+            const [k, val] = pair.split(':');
+            if (k && val) attrs[k.trim()] = val.trim();
+          });
+        }
+        variantsList.push({
+          sku: firstVariant.sku || ('VAR-' + Math.random().toString(36).substring(7)),
+          stockQuantity: firstVariant.stock !== null ? firstVariant.stock : this.draft.stockQuantity,
+          priceModifier: firstVariant.priceModifier || 0,
+          attributes: attrs,
+          weight: this.draft.weight || 0,
+          lengthCm: this.draft.lengthCm || 0,
+          widthCm: this.draft.widthCm || 0,
+          heightCm: this.draft.heightCm || 0
+        });
+      } else {
+        variantsList.push({
+          sku: this.draft.sku || ('STD-' + Math.random().toString(36).substring(7)),
+          stockQuantity: this.draft.stockQuantity,
+          priceModifier: 0,
+          attributes: { "Type": "Standard" },
+          weight: this.draft.weight || 0,
+          lengthCm: this.draft.lengthCm || 0,
+          widthCm: this.draft.widthCm || 0,
+          heightCm: this.draft.heightCm || 0
+        });
+      }
+
       const productPayload = {
         productName: this.draft.name,
         description: this.draft.description,
         price: this.draft.basePrice,
         discountPrice: this.finalPrice,
         stockQuantity: this.draft.stockQuantity,
-        categoryId: category ? category.id : null,
+        categoryPublicId: this.draft.categoryPublicId || null,
         brand: this.draft.brand,
-        sku: this.draft.sku || undefined
+        countryOfOrigin: 'India',
+        condition: 'NEW',
+        productType: 'PHYSICAL',
+        isDraft: false,
+        variants: variantsList
       };
 
       // We await promises for sequential orchestration
@@ -964,28 +999,31 @@ export class SellerProductsComponent implements OnInit {
         await this.productService.uploadImage(pId, file).toPromise().catch(e => console.warn('Img err', e));
       }
 
-      // 4. Create Variants (if any)
-      for (const v of this.draft.variants) {
-        // Parse "Size:M, Color:Red" into JSON object
-        const attrs: any = {};
-        if (v.attributesStr) {
-          v.attributesStr.split(',').forEach((pair: string) => {
-            const [k, val] = pair.split(':');
-            if (k && val) attrs[k.trim()] = val.trim();
-          });
+      // 4. Create remaining Variants (if any)
+      if (this.draft.variants && this.draft.variants.length > 1) {
+        for (let i = 1; i < this.draft.variants.length; i++) {
+          const v = this.draft.variants[i];
+          // Parse "Size:M, Color:Red" into JSON object
+          const attrs: any = {};
+          if (v.attributesStr) {
+            v.attributesStr.split(',').forEach((pair: string) => {
+              const [k, val] = pair.split(':');
+              if (k && val) attrs[k.trim()] = val.trim();
+            });
+          }
+          
+          const variantPayload = {
+            sku: v.sku || (productRes.productCode + '-' + Math.random().toString(36).substring(7)),
+            attributes: attrs,
+            stockQuantity: v.stock !== null ? v.stock : this.draft.stockQuantity,
+            priceModifier: v.priceModifier || 0,
+            weight: this.draft.weight || 0,
+            lengthCm: this.draft.lengthCm || 0,
+            widthCm: this.draft.widthCm || 0,
+            heightCm: this.draft.heightCm || 0
+          };
+          await this.productService.createVariant(pId, variantPayload).toPromise().catch(e => console.warn('Variant err', e));
         }
-        
-        const variantPayload = {
-          sku: v.sku || (productRes.productCode + '-' + Math.random().toString(36).substring(7)),
-          attributes: attrs,
-          stockQuantity: v.stock !== null ? v.stock : this.draft.stockQuantity,
-          priceModifier: v.priceModifier || 0,
-          weight: this.draft.weight || 0,
-          lengthCm: this.draft.lengthCm || 0,
-          widthCm: this.draft.widthCm || 0,
-          heightCm: this.draft.heightCm || 0
-        };
-        await this.productService.createVariant(pId, variantPayload).toPromise().catch(e => console.warn('Variant err', e));
       }
 
       this.toast.success('Product published successfully!');

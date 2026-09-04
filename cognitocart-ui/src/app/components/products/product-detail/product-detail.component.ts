@@ -35,7 +35,7 @@ import { AuthService } from '../../../services/auth.service';
               (click)="selectedImage = media.mediaUrl" />
           </div>
           <div class="main-image">
-            <img [src]="selectedImage || 'https://via.placeholder.com/600x600'" [alt]="product.productName" />
+            <img [src]="selectedImage || getFallbackImage()" [alt]="product.productName" />
             <div class="img-badge" *ngIf="getDiscountPercent() > 0">-{{getDiscountPercent()}}% OFF</div>
           </div>
         </div>
@@ -46,7 +46,7 @@ import { AuthService } from '../../../services/auth.service';
           <h1 class="product-title">{{product.productName}}</h1>
           
           <div class="rating-summary" (click)="scrollToReviews()">
-            <div class="stars">
+            <div class="stars material-icons">
               <span *ngFor="let s of stars(product.averageRating)">{{s}}</span>
             </div>
             <span class="rating-text">{{product.averageRating | number:'1.1-1'}} ({{product.totalReviews}} reviews)</span>
@@ -534,14 +534,23 @@ export class ProductDetailComponent implements OnInit {
 
   stars(rating: number): string[] {
     if (!rating) return [];
-    return Array(5).fill('').map((_, i) => i < Math.round(rating) ? 'â­' : '&#9734;');
+    return Array(5).fill('').map((_, i) => i < Math.round(rating) ? 'star' : 'star_border');
   }
 
   getDiscountPercent(): number {
-    if (this.product && this.product.price && this.product.discountPrice && this.product.discountPrice < this.product.price) {
-      return Math.round(((this.product.price - this.product.discountPrice) / this.product.price) * 100);
-    }
-    return 0;
+    if (!this.product?.price || !this.product?.discountPrice) return 0;
+    if (this.product.price <= this.product.discountPrice) return 0;
+    return Math.round(((this.product.price - this.product.discountPrice) / this.product.price) * 100);
+  }
+
+  getFallbackImage(): string {
+    if (!this.product) return 'https://placehold.co/600x600/1e293b/6366f1?text=Product';
+    const cat = (this.product.categoryName || '').toLowerCase();
+    const name = (this.product.productName || this.product.name || 'Product').replace(/\s+/g, '+');
+    if (cat.includes('electronic') || cat.includes('laptop') || cat.includes('phone')) return `https://placehold.co/600x600/1e293b/818cf8?text=Electronics`;
+    if (cat.includes('fashion') || cat.includes('wear')) return `https://placehold.co/600x600/1e293b/ec4899?text=Fashion`;
+    if (cat.includes('home') || cat.includes('decor')) return `https://placehold.co/600x600/1e293b/10b981?text=Home`;
+    return `https://placehold.co/600x600/1e293b/6366f1?text=${name}`;
   }
 
   addToCart(): void {

@@ -62,16 +62,15 @@ import { GoogleBtnComponent } from '../google-btn.component';
         <div class="form-row form-row-2">
           <div class="form-group floating">
             <label class="form-label sr-only">Date of Birth</label>
-            <div class="input-icon-wrapper">
-              <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="input-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /></svg>
-              <input type="date" formControlName="dateOfBirth" class="form-input with-icon" />
+            <div>
+              <input type="date" formControlName="dateOfBirth" class="form-input" />
             </div>
           </div>
           
           <div class="form-group floating">
             <label class="form-label sr-only">Gender</label>
-            <div class="input-icon-wrapper">
-              <select formControlName="gender" class="form-select with-icon">
+            <div>
+              <select formControlName="gender" class="form-select">
                 <option value="">Gender (Optional)</option>
                 <option value="MALE">Male</option>
                 <option value="FEMALE">Female</option>

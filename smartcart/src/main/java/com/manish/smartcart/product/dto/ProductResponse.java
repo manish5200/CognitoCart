@@ -29,6 +29,7 @@ public class ProductResponse {
     // Variant-level fields (sku, stockQuantity) intentionally omitted.
     // Use GET /api/v1/products/{productPublicId}/variants to get per-SKU inventory details.
     private Long categoryId;
+    private UUID categoryPublicId;
     private String categoryName;
     private Set<String> tags;
     private Double averageRating;

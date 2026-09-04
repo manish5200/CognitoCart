@@ -45,6 +45,7 @@ public class ProductMapper {
         // We extract the name from the Category entity associated with the product
         if (product.getCategory() != null) {
             productResponse.setCategoryId(product.getCategory().getId());
+            productResponse.setCategoryPublicId(product.getCategory().getPublicId());
             productResponse.setCategoryName(product.getCategory().getName());
         } else {
             productResponse.setCategoryName("Uncategorized");

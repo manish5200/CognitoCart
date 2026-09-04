@@ -19,12 +19,12 @@ import { debounceTime, Subject } from 'rxjs';
       <div class="plp-topbar">
         <div class="plp-topbar-left">
           <h1 class="plp-heading">
-            <span *ngIf="isAiSearch">&#129302; AI Search</span>
+            <span *ngIf="isAiSearch"><span class="material-icons" style="vertical-align: middle;">smart_toy</span> AI Search</span>
             <span *ngIf="!isAiSearch && searchQuery">Results for "{{searchQuery}}"</span>
             <span *ngIf="!isAiSearch && !searchQuery">Browse Products</span>
           </h1>
           <span class="plp-count" *ngIf="!loading">{{total}} products</span>
-          <span *ngIf="isAiSearch" class="plp-ai-badge">&#10024; HuggingFace AI</span>
+          <span *ngIf="isAiSearch" class="plp-ai-badge"><span class="material-icons" style="font-size: 14px; vertical-align: text-bottom;">auto_awesome</span> HuggingFace AI</span>
         </div>
         <div class="plp-topbar-right">
           <select [(ngModel)]="sortBy" class="plp-sort-select" (change)="applyFilters()">
@@ -34,18 +34,18 @@ import { debounceTime, Subject } from 'rxjs';
             <option value="averageRating">Best Rated</option>
           </select>
           <button class="plp-filter-toggle" (click)="filtersOpen = !filtersOpen">
-            &#127899;ï¸ Filters {{filtersOpen ? '&#9650;' : '&#9660;'}}
+            <span class="material-icons" style="vertical-align: middle;">tune</span> Filters <span class="material-icons" style="vertical-align: middle;">{{filtersOpen ? 'expand_less' : 'expand_more'}}</span>
           </button>
         </div>
       </div>
 
       <div class="plp-layout">
 
-        <!-- â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226; SIDEBAR FILTERS â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226; -->
+        <!-- •••••••••••• SIDEBAR FILTERS •••••••••••• -->
         <aside class="plp-sidebar" [class.open]="filtersOpen">
           <div class="plp-sidebar-inner">
             <div class="plp-filter-hdr">
-              <span>&#127899;ï¸ Filters</span>
+              <span style="display: flex; align-items: center; gap: 4px;"><span class="material-icons">tune</span> Filters</span>
               <button class="plp-clear-btn" (click)="resetFilters()">Clear All</button>
             </div>
 
@@ -53,7 +53,7 @@ import { debounceTime, Subject } from 'rxjs';
             <div class="plp-filter-section">
               <div class="plp-filter-title">Search</div>
               <div class="plp-search-wrap">
-                <span class="plp-search-icon">ðŸ”</span>
+                <span class="plp-search-icon material-icons" style="font-size: 18px;">search</span>
                 <input
                   type="text"
                   [(ngModel)]="searchQuery"
@@ -61,7 +61,7 @@ import { debounceTime, Subject } from 'rxjs';
                   placeholder="Search products..."
                   (ngModelChange)="onSearchChange()"
                 />
-                <button *ngIf="searchQuery" class="plp-search-clear" (click)="searchQuery=''; applyFilters()">âœ&#8226;</button>
+                <button *ngIf="searchQuery" class="plp-search-clear material-icons" style="font-size: 16px; display: flex; align-items: center; justify-content: center;" (click)="searchQuery=''; applyFilters()">close</button>
               </div>
             </div>
 
@@ -87,9 +87,9 @@ import { debounceTime, Subject } from 'rxjs';
             <div class="plp-filter-section">
               <div class="plp-filter-title">Price Range</div>
               <div style="display:flex; gap:8px;">
-                <input type="number" [(ngModel)]="minPrice" class="plp-price-input" placeholder="Min &#8377;" (change)="applyFilters()" />
-                <span style="color:var(--text-dim); align-self:center;">&#8212;</span>
-                <input type="number" [(ngModel)]="maxPrice" class="plp-price-input" placeholder="Max &#8377;" (change)="applyFilters()" />
+                <input type="number" [(ngModel)]="minPrice" class="plp-price-input" placeholder="Min ₹" (change)="applyFilters()" />
+                <span style="color:var(--text-dim); align-self:center;">—</span>
+                <input type="number" [(ngModel)]="maxPrice" class="plp-price-input" placeholder="Max ₹" (change)="applyFilters()" />
               </div>
             </div>
 
@@ -100,8 +100,8 @@ import { debounceTime, Subject } from 'rxjs';
               <div class="plp-filter-title">Minimum Rating</div>
               <div class="plp-rating-pills">
                 <button class="plp-rating-pill" [class.active]="!minRating" (click)="minRating=null; applyFilters()">All</button>
-                <button class="plp-rating-pill" [class.active]="minRating === 4" (click)="minRating=4; applyFilters()">4&#9733; & up</button>
-                <button class="plp-rating-pill" [class.active]="minRating === 3" (click)="minRating=3; applyFilters()">3&#9733; & up</button>
+                <button class="plp-rating-pill" [class.active]="minRating === 4" (click)="minRating=4; applyFilters()">4★ & up</button>
+                <button class="plp-rating-pill" [class.active]="minRating === 3" (click)="minRating=3; applyFilters()">3★ & up</button>
               </div>
             </div>
 
@@ -110,19 +110,19 @@ import { debounceTime, Subject } from 'rxjs';
             <!-- AI Semantic Search -->
             <div class="plp-filter-section">
               <div class="plp-filter-title" style="display:flex; align-items:center; gap:6px;">
-                &#129302; AI Semantic Search
+                <span class="material-icons" style="font-size: 16px;">smart_toy</span> AI Semantic Search
                 <span class="plp-ai-chip">NEW</span>
               </div>
-              <p class="plp-ai-desc">Find by meaning &#8212; try "earphones for focus" or "cozy winter clothes"</p>
+              <p class="plp-ai-desc">Find by meaning — try "earphones for focus" or "cozy winter clothes"</p>
               <div class="plp-ai-wrap">
                 <input type="text" [(ngModel)]="aiQuery" class="plp-search-input" placeholder="Describe what you need..."
                   (keyup.enter)="aiSearch()" />
                 <button class="plp-ai-btn" (click)="aiSearch()" [disabled]="!aiQuery.trim() || loading">
-                  <span *ngIf="!loading">&#10024;</span>
+                  <span *ngIf="!loading" class="material-icons" style="color: white; font-size: 18px;">auto_awesome</span>
                   <span *ngIf="loading" class="mini-spinner"></span>
                 </button>
               </div>
-              <!-- Quick suggestion chips &#8212; one click and search runs -->
+              <!-- Quick suggestion chips — one click and search runs -->
               <div class="plp-ai-suggestion-chips">
                 <button *ngFor="let s of aiSuggestions" class="plp-ai-chip-btn"
                   (click)="aiQuery = s; aiSearch()">{{s}}</button>
@@ -133,15 +133,15 @@ import { debounceTime, Subject } from 'rxjs';
           </div>
         </aside>
 
-        <!-- â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226; PRODUCT GRID â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226;â&#8226; -->
+        <!-- •••••••••••• PRODUCT GRID •••••••••••• -->
         <main class="plp-main">
 
-          <!-- AI Result Banner &#8212; shown only when AI search is active -->
+          <!-- AI Result Banner — shown only when AI search is active -->
           <!-- Shows query, total found, and a clear button -->
           <div class="plp-ai-result-banner" *ngIf="isAiSearch && !loading">
-            <span class="plp-ai-banner-icon">&#129302;</span>
+            <span class="plp-ai-banner-icon material-icons">smart_toy</span>
             <span>AI found <strong>{{total}}</strong> product{{total !== 1 ? 's' : ''}} for: <em>"{{aiQuery}}"</em></span>
-            <button class="plp-ai-banner-clear" (click)="resetFilters()">âœ&#8226; Clear</button>
+            <button class="plp-ai-banner-clear" style="display: flex; align-items: center; gap: 4px;" (click)="resetFilters()"><span class="material-icons" style="font-size: 16px;">close</span> Clear</button>
           </div>
 
           <!-- Skeleton -->
@@ -158,7 +158,7 @@ import { debounceTime, Subject } from 'rxjs';
 
           <!-- Empty State -->
           <div *ngIf="!loading && products.length === 0" class="empty-state" style="min-height:400px;">
-            <div class="empty-icon">{{isAiSearch ? '&#129302;' : 'ðŸ”'}}</div>
+            <div class="empty-icon material-icons" style="font-size: 48px; color: #aaa;">{{isAiSearch ? 'smart_toy' : 'search_off'}}</div>
             <div class="empty-title">{{isAiSearch ? 'No AI matches found' : 'No products found'}}</div>
             <div class="empty-subtitle">{{isAiSearch ? 'Try rephrasing your query or use a different description' : 'Try a different search query or clear your filters'}}</div>
             <button class="btn btn-primary" (click)="resetFilters()">Clear Filters</button>
@@ -174,7 +174,7 @@ import { debounceTime, Subject } from 'rxjs';
               <!-- Image -->
               <div class="plp-card-img-wrap">
                 <img
-                  [src]="p.mediaGallery?.[0]?.mediaUrl || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&auto=format&fit=crop'"
+                  [src]="p.mediaGallery?.[0]?.mediaUrl || getFallbackImage(p)"
                   [alt]="p.productName"
                   class="plp-card-img"
                   loading="lazy"
@@ -639,5 +639,13 @@ export class ProductListComponent implements OnInit {
     const full = Math.round(rating);
     return '&#9733;'.repeat(Math.min(full, 5)) + '&#9734;'.repeat(Math.max(5 - full, 0));
   }
-}
 
+  getFallbackImage(product: any): string {
+    const cat = (product.categoryName || '').toLowerCase();
+    const name = (product.productName || product.name || 'Product').replace(/\s+/g, '+');
+    if (cat.includes('electronic') || cat.includes('laptop') || cat.includes('phone')) return `https://placehold.co/400x400/1e293b/818cf8?text=Electronics`;
+    if (cat.includes('fashion') || cat.includes('wear')) return `https://placehold.co/400x400/1e293b/ec4899?text=Fashion`;
+    if (cat.includes('home') || cat.includes('decor')) return `https://placehold.co/400x400/1e293b/10b981?text=Home`;
+    return `https://placehold.co/400x400/1e293b/6366f1?text=${name}`;
+  }
+}

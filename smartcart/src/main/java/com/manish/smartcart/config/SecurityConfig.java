@@ -103,6 +103,7 @@ public class SecurityConfig {
                                         "/api/v1/products/search/semantic",
                                         "/api/v1/reviews/**", // View reviews and rating distribution
                                         "/api/v1/products/*/variants",
+                                        "/api/v1/products/*/return-policy", // View return policy
                                         "/api/v1/public/sales/**" // Live Flash Sale banners — no auth required
                                 ).permitAll()
                                 // ── Actuator: Two-Path Strategy ───────────────────────────────────────

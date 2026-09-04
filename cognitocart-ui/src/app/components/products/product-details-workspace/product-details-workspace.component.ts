@@ -237,7 +237,7 @@ export class ProductDetailsWorkspaceComponent implements OnInit {
       description: this.product.description,
       price: this.product.price,
       discountPrice: this.product.discountPrice,
-      categoryPublicId: this.product.categoryId, // Ensure UUID is correctly mapped
+      categoryPublicId: this.product.categoryPublicId, // Ensure UUID is correctly mapped
       tags: this.product.tags || [],
       stockQuantity: 0 // Mocked since variants handle actual stock
     };
