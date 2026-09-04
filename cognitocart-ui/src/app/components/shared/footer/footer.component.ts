@@ -58,7 +58,7 @@ import { RouterModule } from '@angular/router';
         </div>
       </div>
       <div class="footer-bottom">
-        <p>&copy; 2026 CognitoCart. All rights reserved. Redesigned with ✨</p>
+        <p>&copy; 2026 CognitoCart. All rights reserved. Redesigned with &#10024;</p>
       </div>
     </footer>
   `,

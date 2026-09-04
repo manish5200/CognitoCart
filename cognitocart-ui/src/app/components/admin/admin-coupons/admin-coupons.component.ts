@@ -101,10 +101,10 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
               <td style="padding:16px; font-weight:600; color:#fff;">
                 {{c.discountType === 'PERCENTAGE' ? c.discountValue + '%' : '\u20B9' + c.discountValue}}
               </td>
-              <td style="padding:16px;">{{c.minOrderAmount ? '\u20B9' + c.minOrderAmount : '—'}}</td>
-              <td style="padding:16px;">{{c.maxDiscountAmount ? '\u20B9' + c.maxDiscountAmount : '—'}}</td>
+              <td style="padding:16px;">{{c.minOrderAmount ? '\u20B9' + c.minOrderAmount : '&#8212;'}}</td>
+              <td style="padding:16px;">{{c.maxDiscountAmount ? '\u20B9' + c.maxDiscountAmount : '&#8212;'}}</td>
               <td style="padding:16px;">{{c.maxUsage ?? '∞'}} <span *ngIf="c.usedCount !== undefined" style="color:var(--text-dim);">({{c.usedCount}} used)</span></td>
-              <td style="padding:16px; color:var(--text-secondary);">{{c.expiresAt ? (c.expiresAt | date:'mediumDate') : '—'}}</td>
+              <td style="padding:16px; color:var(--text-secondary);">{{c.expiresAt ? (c.expiresAt | date:'mediumDate') : '&#8212;'}}</td>
               <td style="padding:16px;">
                 <span class="badge" [class]="c.active ? 'badge-green' : 'badge-gray'" style="padding:4px 10px; font-size:11px;">
                   {{c.active ? 'Active' : 'Inactive'}}

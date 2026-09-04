@@ -519,7 +519,7 @@ export class CheckoutComponent implements OnInit {
       const rzp = new Razorpay(options);
       rzp.open();
     } else {
-      // Razorpay not loaded — redirect to orders (dev mode)
+      // Razorpay not loaded &#8212; redirect to orders (dev mode)
       this.toast.warning('Payment gateway not loaded. Order placed in pending state.');
       this.paymentStatus = 'success';
       setTimeout(() => {

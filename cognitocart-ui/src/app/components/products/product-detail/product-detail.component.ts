@@ -18,9 +18,9 @@ import { AuthService } from '../../../services/auth.service';
       <!-- Breadcrumb -->
       <div class="breadcrumb" style="margin-bottom:24px;">
         <a routerLink="/" style="color:var(--text-muted); text-decoration:none; font-size:13px;">Home</a>
-        <span class="sep" style="margin:0 8px; color:var(--border);">â€º</span>
+        <span class="sep" style="margin:0 8px; color:var(--border);">&#8250;</span>
         <a routerLink="/products" style="color:var(--text-muted); text-decoration:none; font-size:13px;">Products</a>
-        <span class="sep" style="margin:0 8px; color:var(--border);">â€º</span>
+        <span class="sep" style="margin:0 8px; color:var(--border);">&#8250;</span>
         <span class="current" style="color:var(--text-primary); font-size:13px; font-weight:600;">{{product.productName}}</span>
       </div>
 
@@ -94,7 +94,7 @@ import { AuthService } from '../../../services/auth.service';
           <!-- Trust Badges -->
           <div class="trust-badges">
             <div class="trust-badge">
-              <span class="icon">ðŸ›¡ï¸</span>
+              <span class="icon">&#128737;ï¸</span>
               <div>
                 <strong>Secure Transaction</strong>
                 <span>SSL encrypted</span>
@@ -196,13 +196,13 @@ import { AuthService } from '../../../services/auth.service';
 
             <div class="rp-box" *ngIf="returnPolicy">
               <div class="rp-title">
-                <span class="icon">â†©ï¸</span> {{returnPolicy.policyType}}
+                <span class="icon">&#8617;ï¸</span> {{returnPolicy.policyType}}
               </div>
               <div class="rp-desc">{{returnPolicy.windowDays}} days return window. {{returnPolicy.description}}</div>
             </div>
             <div class="rp-box" *ngIf="!returnPolicy">
               <div class="rp-title" style="color:var(--text-muted);">
-                <span class="icon">ðŸš«</span> Non-Returnable
+                <span class="icon">&#128683;</span> Non-Returnable
               </div>
             </div>
           </div>
@@ -262,7 +262,7 @@ import { AuthService } from '../../../services/auth.service';
             </div>
             
             <div *ngIf="reviews.length === 0" class="empty-state glass-card">
-              <div class="empty-icon">ðŸ’¬</div>
+              <div class="empty-icon">&#128172;</div>
               <div class="empty-title">No reviews yet</div>
               <div class="empty-subtitle">Be the first to review this product!</div>
             </div>
@@ -298,7 +298,7 @@ import { AuthService } from '../../../services/auth.service';
     <!-- Error State -->
     <div class="page" *ngIf="!loading && !product">
       <div class="empty-state glass-card" style="margin-top:40px;">
-        <div class="empty-icon" style="font-size:64px;">ðŸ“¦</div>
+        <div class="empty-icon" style="font-size:64px;">&#128230;</div>
         <div class="empty-title" style="font-size:24px;">Product Not Found</div>
         <div class="empty-subtitle" style="margin-bottom:24px;">The product you are looking for does not exist or has been removed.</div>
         <a routerLink="/products" class="btn btn-primary btn-lg">Back to Products</a>
@@ -356,7 +356,7 @@ import { AuthService } from '../../../services/auth.service';
     .vendor-details { margin-top: 24px; border-top: 1px solid var(--border-default); padding-top: 24px; }
     .vendor-details summary { font-size: 16px; font-weight: 700; color: var(--text-primary); cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; }
     .vendor-details summary::-webkit-details-marker { display: none; }
-    .vendor-details summary::after { content: 'â–¾'; font-size: 18px; color: var(--text-muted); transition: 0.3s; }
+    .vendor-details summary::after { content: '&#9662;'; font-size: 18px; color: var(--text-muted); transition: 0.3s; }
     .vendor-details[open] summary::after { transform: rotate(180deg); }
     .vd-content { padding-top: 16px; display: flex; flex-direction: column; gap: 16px; }
     .vd-item { display: flex; flex-direction: column; gap: 4px; }
@@ -534,7 +534,7 @@ export class ProductDetailComponent implements OnInit {
 
   stars(rating: number): string[] {
     if (!rating) return [];
-    return Array(5).fill('').map((_, i) => i < Math.round(rating) ? 'â­' : 'â˜†');
+    return Array(5).fill('').map((_, i) => i < Math.round(rating) ? 'â­' : '&#9734;');
   }
 
   getDiscountPercent(): number {

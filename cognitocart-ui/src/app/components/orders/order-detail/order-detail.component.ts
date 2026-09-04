@@ -17,7 +17,7 @@ declare var Razorpay: any;
     <div class="page">
       <div class="breadcrumb">
         <a routerLink="/orders">My Orders</a>
-        <span class="sep">›</span>
+        <span class="sep">&#8250;</span>
         <span class="current">Order Detail</span>
       </div>
 
@@ -96,7 +96,7 @@ declare var Razorpay: any;
           <!-- Return Request -->
           <div *ngIf="order.status === 'DELIVERED' && !returnSubmitted" class="glass-card fade-up" style="animation-delay:0.2s;">
             <div class="card-body" *ngIf="hasReturnableItems()">
-              <h4 style="margin-bottom:16px;">↩️ Request Return / Replacement</h4>
+              <h4 style="margin-bottom:16px;">&#8617;️ Request Return / Replacement</h4>
               <div class="form-group">
                 <label class="form-label">Type</label>
                 <select [(ngModel)]="returnReq.type" class="form-select">
@@ -128,7 +128,7 @@ declare var Razorpay: any;
               </button>
             </div>
             <div class="card-body" *ngIf="!hasReturnableItems()">
-              <h4 style="margin-bottom:16px;">↩️ Request Return / Replacement</h4>
+              <h4 style="margin-bottom:16px;">&#8617;️ Request Return / Replacement</h4>
               <div class="alert alert-warning" style="background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); padding: 16px; border-radius: 8px;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px; vertical-align:text-bottom;"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
                 This order is not eligible for return or replacement because all items in the order are non-returnable.
@@ -164,7 +164,7 @@ declare var Razorpay: any;
               <div style="font-size:14px; color:var(--text-muted);">
                 <div><strong>Courier:</strong> {{order.courier}}</div>
                 <div><strong>Tracking #:</strong> {{order.trackingNumber}}</div>
-                <div *ngIf="order.trackingUrl"><a [href]="order.trackingUrl" target="_blank" class="btn btn-ghost btn-sm" style="margin-top:8px;">Track Package →</a></div>
+                <div *ngIf="order.trackingUrl"><a [href]="order.trackingUrl" target="_blank" class="btn btn-ghost btn-sm" style="margin-top:8px;">Track Package &#8594;</a></div>
               </div>
             </div>
           </div>

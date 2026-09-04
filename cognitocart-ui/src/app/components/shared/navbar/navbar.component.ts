@@ -42,9 +42,9 @@ import { UserIdentityComponent } from '../../shared/user-identity/user-identity.
           class="nav-search-input"
           [(ngModel)]="query"
           (keyup.enter)="search()"
-          placeholder="✨ Ask AI — try 'earphones for gym'..."
+          placeholder="&#10024; Ask AI &#8212; try 'earphones for gym'..."
         />
-        <button class="nav-search-btn" (click)="search()" aria-label="Search">✨</button>
+        <button class="nav-search-btn" (click)="search()" aria-label="Search">&#10024;</button>
       </div>
 
       <!-- Right Actions -->

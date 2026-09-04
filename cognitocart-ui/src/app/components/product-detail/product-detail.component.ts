@@ -42,9 +42,9 @@ import { AuthService } from '../../services/auth.service';
       <!-- Breadcrumb -->
       <div class="pdp-breadcrumb">
         <a routerLink="/" style="color:var(--text-muted); text-decoration:none;">Home</a>
-        <span style="color:var(--border-default);">â€º</span>
+        <span style="color:var(--border-default);">&#8250;</span>
         <a routerLink="/products" style="color:var(--text-muted); text-decoration:none;">Products</a>
-        <span style="color:var(--border-default);">â€º</span>
+        <span style="color:var(--border-default);">&#8250;</span>
         <span style="color:var(--text-primary);">{{product.productName}}</span>
       </div>
 
@@ -69,7 +69,7 @@ import { AuthService } from '../../services/auth.service';
               <span *ngIf="selectedVariant?.discountPercentage > 0" class="pdp-discount-badge">
                 &#8722;{{selectedVariant.discountPercentage}}% OFF
               </span>
-              <span *ngIf="product.flashSaleActive" class="pdp-flash-badge">âš¡ FLASH SALE</span>
+              <span *ngIf="product.flashSaleActive" class="pdp-flash-badge">&#9889; FLASH SALE</span>
             </div>
             <img [src]="selectedImage" [alt]="product.productName" class="pdp-main-img" />
             <button
@@ -191,7 +191,7 @@ import { AuthService } from '../../services/auth.service';
 
           <!-- No variants yet -->
           <div *ngIf="!loadingVariants && variants.length === 0" class="pdp-no-variants">
-            â„¹ï¸ No variants available for this product yet.
+            &#8505;ï¸ No variants available for this product yet.
           </div>
 
           <!-- Quantity -->
@@ -207,7 +207,7 @@ import { AuthService } from '../../services/auth.service';
           <!-- Action Buttons -->
           <div class="pdp-actions">
             <div *ngIf="!selectedVariant && variants.length > 0" class="pdp-select-hint">
-              ðŸ‘† Please select a variant above before adding to cart
+              &#128070; Please select a variant above before adding to cart
             </div>
 
             <button
@@ -240,7 +240,7 @@ import { AuthService } from '../../services/auth.service';
               </div>
             </div>
             <div class="pdp-delivery-row">
-              <span class="pdp-delivery-icon">â†©ï¸</span>
+              <span class="pdp-delivery-icon">&#8617;ï¸</span>
               <div>
                 <div class="pdp-delivery-title">Easy Returns</div>
                 <div class="pdp-delivery-sub">7-day return policy</div>
@@ -259,7 +259,7 @@ import { AuthService } from '../../services/auth.service';
 
       <!-- Description -->
       <div class="pdp-section" style="margin-top:40px;">
-        <h2 class="pdp-section-title">ðŸ“‹ Product Description</h2>
+        <h2 class="pdp-section-title">ðŸ&#8220;‹ Product Description</h2>
         <div class="pdp-description-body">
           <p style="white-space:pre-line; color:var(--text-muted); line-height:1.8;">{{product.description}}</p>
         </div>
@@ -568,7 +568,7 @@ export class ProductDetailComponent implements OnInit {
     if (!this.selectedVariant) { this.toast.warning('Please select a variant first'); return; }
     if (this.isOutOfStock()) { this.toast.error('This variant is out of stock'); return; }
 
-    // ðŸ”‘ ALWAYS send variantPublicId â€” NEVER productPublicId
+    // &#128273; ALWAYS send variantPublicId &#8212; NEVER productPublicId
     const variantPublicId = this.selectedVariant.variantPublicId || this.selectedVariant.publicId;
     if (!variantPublicId) { this.toast.error('Could not identify variant. Please try again.'); return; }
 

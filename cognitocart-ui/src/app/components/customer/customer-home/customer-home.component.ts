@@ -22,14 +22,14 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   userName = '';
   aiQuery = '';
 
-  // Cycling placeholder — rotates every 2.5s to show users what they can search
+  // Cycling placeholder &#8212; rotates every 2.5s to show users what they can search
   placeholderTexts = [
-    'Best headphones for gym... 🎧',
+    'Best headphones for gym... &#127911;',
     'Laptop under \u20B950,000... 💻',
     'Cozy winter jacket... 🧥',
     'Gift ideas under \u20B9500... 🎁',
     'Wireless earbuds for calls... 📞',
-    'Gaming gear for beginners... 🎮',
+    'Gaming gear for beginners... &#127918;',
   ];
   currentPlaceholder = this.placeholderTexts[0];
   private placeholderInterval?: ReturnType<typeof setInterval>;

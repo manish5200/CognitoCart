@@ -153,7 +153,7 @@ import { SellerIdentityComponent } from '../../shared/seller-identity/seller-ide
             <!-- Right: AI Insights -->
             <div class="cc-panel ai-insights">
               <div class="panel-header">
-                <h2><span class="ai-sparkle">✨</span> Cognito Insights</h2>
+                <h2><span class="ai-sparkle">&#10024;</span> Cognito Insights</h2>
               </div>
               <div class="panel-body">
                 <div class="insight-card">

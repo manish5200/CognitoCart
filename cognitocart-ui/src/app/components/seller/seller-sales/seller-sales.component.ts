@@ -43,7 +43,7 @@ import { ProductService } from '../../../services/product.service';
                     <div style="font-weight:700; color:#fff;">{{e.eventName}}</div>
                     <div style="font-size:13px; color:var(--text-muted);">{{e.description}}</div>
                     <div style="font-size:12px; color:var(--text-dim); margin-top:4px;">
-                      {{e.startTime | date:'medium'}} → {{e.endTime | date:'medium'}}
+                      {{e.startTime | date:'medium'}} &#8594; {{e.endTime | date:'medium'}}
                     </div>
                   </div>
                   <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
@@ -124,7 +124,7 @@ import { ProductService } from '../../../services/product.service';
                   <label class="form-label">Variant</label>
                   <select [(ngModel)]="newSubmission.variantPublicId" class="form-select">
                     <option value="">Select variant...</option>
-                    <option *ngFor="let v of myVariants" [value]="v.variantPublicId">{{v.productName}} — {{v.displayLabel || 'Default'}}</option>
+                    <option *ngFor="let v of myVariants" [value]="v.variantPublicId">{{v.productName}} &#8212; {{v.displayLabel || 'Default'}}</option>
                   </select>
                 </div>
                 <div class="form-row form-row-2">
@@ -158,7 +158,7 @@ import { ProductService } from '../../../services/product.service';
                   <div>
                     <div style="font-weight:600; font-size:14px; color:#fff;">{{s.sku || s.variantName || 'Variant'}}</div>
                     <div style="font-size:12px; color:var(--text-muted);">Discount: {{s.discountPercentage}}% | Max: {{s.maxUnits}} units</div>
-                    <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Event: {{s.eventName || '—'}}</div>
+                    <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Event: {{s.eventName || '&#8212;'}}</div>
                   </div>
                   <span class="badge" [class]="getSubmissionBadge(s.approvalStatus)">{{s.approvalStatus}}</span>
                 </div>

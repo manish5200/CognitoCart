@@ -5,7 +5,7 @@ import { ProductService } from '../../../services/product.service';
 import { ToastService } from '../../../services/toast.service';
 import { AdminShellComponent } from '../admin-shell/admin-shell.component';
 
-/** Mirrors the backend CategoryDTO — nested tree structure from API */
+/** Mirrors the backend CategoryDTO &#8212; nested tree structure from API */
 interface CategoryDTO {
   publicId: string;
   name: string;
@@ -66,7 +66,7 @@ interface CategoryDTO {
       </div>
 
       <!-- ── Category Tree ────────────────────────────────────────── -->
-      <!-- API already returns a nested tree — no client-side filtering needed -->
+      <!-- API already returns a nested tree &#8212; no client-side filtering needed -->
       <div class="tree-wrap" *ngIf="!loading && topLevelCategories.length > 0">
         <ng-container *ngTemplateOutlet="treeNode; context:{ $implicit: topLevelCategories, depth: 0 }"></ng-container>
       </div>
@@ -511,7 +511,7 @@ export class AdminCategoriesComponent implements OnInit {
   loading   = false;
   saving    = false;
 
-  /** API returns pre-built nested tree — no client-side filtering needed */
+  /** API returns pre-built nested tree &#8212; no client-side filtering needed */
   topLevelCategories: CategoryDTO[] = [];
 
   /** Flattened cache for O(1) lookups by publicId (e.g., find parent name) */
@@ -537,11 +537,11 @@ export class AdminCategoriesComponent implements OnInit {
     '#f59e0b','#ef4444','#ec4899','#3b82f6'
   ];
   private readonly EMOJIS: Record<string, string> = {
-    electronics:'⚡', fashion:'👗', mobiles:'📱', laptops:'💻',
+    electronics:'&#9889;', fashion:'👗', mobiles:'📱', laptops:'💻',
     'home-kitchen':'🏠', kitchen:'🍳', sports:'⚽', books:'📚',
     toys:'🧸', beauty:'💄', health:'💊', automotive:'🚗',
     jewelry:'💎', food:'🍕', clothing:'👕', shoes:'👟',
-    accessories:'🎒', furniture:'🛋️', gaming:'🎮', music:'🎵'
+    accessories:'🎒', furniture:'🛋️', gaming:'&#127918;', music:'🎵'
   };
 
   constructor(
@@ -551,7 +551,7 @@ export class AdminCategoriesComponent implements OnInit {
 
   ngOnInit(): void { this.loadCategories(); }
 
-  // ── Slug preview (computed in TS — Angular templates don't allow regex) ──
+  // ── Slug preview (computed in TS &#8212; Angular templates don't allow regex) ──
   get slugPreview(): string {
     return this.formName.toLowerCase()
       .replace(/'/g, '')
@@ -564,7 +564,7 @@ export class AdminCategoriesComponent implements OnInit {
     this.loading = true;
     this.productService.getCategories().subscribe({
       next: (tree: CategoryDTO[]) => {
-        // API now returns nested tree directly — assign as-is
+        // API now returns nested tree directly &#8212; assign as-is
         this.topLevelCategories = tree;
         this.flatCategories = this.flatten(tree);
         this.totalCount = this.flatCategories.length;

@@ -15,7 +15,7 @@ export class ToastService {
   private counter = 0;
 
   show(message: string, type: Toast['type'] = 'info', duration = 4000): void {
-    const icons = { success: '&#9989;', error: '❌', info: 'ℹ️', warning: '⚠️' };
+    const icons = { success: '&#9989;', error: '❌', info: '&#8505;️', warning: '⚠️' };
     const toast: Toast = { id: ++this.counter, message, type, icon: icons[type] };
     this.toastsSubject.next([...this.toastsSubject.value, toast]);
     setTimeout(() => this.dismiss(toast.id), duration);

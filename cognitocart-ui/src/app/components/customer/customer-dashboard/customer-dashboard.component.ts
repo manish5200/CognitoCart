@@ -124,7 +124,7 @@ import { ToastService } from '../../../services/toast.service';
       <div class="table-wrapper" *ngIf="recentOrders.length > 0">
         <div class="table-toolbar">
           <span class="table-title">Recent Orders</span>
-          <a routerLink="/orders" class="btn btn-ghost btn-sm">View All →</a>
+          <a routerLink="/orders" class="btn btn-ghost btn-sm">View All &#8594;</a>
         </div>
         <table>
           <thead>
@@ -137,7 +137,7 @@ import { ToastService } from '../../../services/toast.service';
               <td><strong>\u20B9{{o.totalAmount | number:'1.0-0'}}</strong></td>
               <td><span class="badge" [class]="'status-' + o.status">{{o.status}}</span></td>
               <td>
-                <a [routerLink]="['/orders', o.orderNumber || o.orderPublicId || o.publicId || o.id]" class="btn btn-ghost btn-sm">View →</a>
+                <a [routerLink]="['/orders', o.orderNumber || o.orderPublicId || o.publicId || o.id]" class="btn btn-ghost btn-sm">View &#8594;</a>
               </td>
             </tr>
           </tbody>

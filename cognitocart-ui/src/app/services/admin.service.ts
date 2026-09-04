@@ -31,7 +31,7 @@ export class AdminService {
     return this.http.get(`${this.API}/analytics/customers?top=${top}&churnAfterDays=${churnAfterDays}`);
   }
 
-  // Ã°Å¸â€œÂ¦ Orders Ã°Å¸â€œÂ¦
+  // Ã&#176;Å¸&#8220;Â¦ Orders Ã&#176;Å¸&#8220;Â¦
   changeOrderStatus(orderPublicId: string, targetStatus: string, comment?: string): Observable<any> {
     return this.http.patch(`${this.API}/orders/${orderPublicId}/status`, {
       orderStatus: targetStatus,

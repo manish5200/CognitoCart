@@ -44,7 +44,7 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
                   <span class="badge" [class]="getTypeBadge(r.status || r.requestType)">
                     {{r.status || r.requestType}}
                   </span>
-                  <span style="font-size:13px; color:var(--text-muted);">Customer: {{r.customerName || 'â€”'}}</span>
+                  <span style="font-size:13px; color:var(--text-muted);">Customer: {{r.customerName || '&#8212;'}}</span>
                   <span style="font-size:13px; color:var(--text-muted);">Date: {{r.requestedAt | date:'mediumDate'}}</span>
                 </div>
               </div>
@@ -55,7 +55,7 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
             <div *ngIf="r.items?.length" style="margin:16px 0; padding:12px; background:rgba(255,255,255,0.02); border-radius:var(--radius);">
               <div *ngFor="let item of r.items" style="font-size:13px; color:var(--text-muted); display:flex; align-items:center; gap:6px;">
                 <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" /></svg>
-                {{item.productName}} Ã— {{item.quantity}}
+                {{item.productName}} Ã&#8212; {{item.quantity}}
               </div>
             </div>
 

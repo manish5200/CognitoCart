@@ -18,7 +18,7 @@ import { WishlistService } from '../../../services/wishlist.service';
         <div class="hero-bg" style="background: radial-gradient(circle at center, rgba(239,68,68,0.2) 0%, transparent 60%);"></div>
         <div class="flash-hero-inner">
           <div class="live-badge"><span class="live-dot"></span> LIVE NOW</div>
-          <h1 class="flash-title">âš¡ <span class="gradient-text-fire">Flash Sales</span></h1>
+          <h1 class="flash-title">&#9889; <span class="gradient-text-fire">Flash Sales</span></h1>
           <p class="flash-subtitle">Grab the biggest discounts of the season before time runs out!</p>
         </div>
       </section>
@@ -64,7 +64,7 @@ import { WishlistService } from '../../../services/wishlist.service';
           <div class="loading-center" *ngIf="loadingProducts"><div class="spinner"></div></div>
           
           <div *ngIf="!loadingProducts && products.length === 0" class="empty-state" style="min-height:200px;">
-            <div class="empty-icon">ðŸ›ï¸</div>
+            <div class="empty-icon">ðŸ&#8250;ï¸</div>
             <div class="empty-title">No products in this sale</div>
           </div>
 

@@ -66,7 +66,7 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
                 </td>
                 <td style="padding:16px;">{{seller.storeName}}</td>
                 <td style="padding:16px; color:var(--text-secondary);">{{seller.email}}</td>
-                <td style="padding:16px;">{{seller.gstin || '—'}}</td>
+                <td style="padding:16px;">{{seller.gstin || '&#8212;'}}</td>
                 <td style="padding:16px;">
                   <span class="badge" [class]="'kyc-' + seller.kycStatus" style="padding:4px 10px; font-size:11px;">{{seller.kycStatus}}</span>
                 </td>
@@ -255,7 +255,7 @@ export class AdminKycComponent implements OnInit {
   }
 
   reject(seller: any): void {
-    const comment = this.kycComments[seller.sellerPublicId] || 'KYC rejected — documents incomplete';
+    const comment = this.kycComments[seller.sellerPublicId] || 'KYC rejected &#8212; documents incomplete';
     this.adminService.updateKyc(seller.sellerPublicId, 'REJECTED', comment).subscribe({
       next: () => { seller.kycStatus = 'REJECTED'; this.toast.info(`KYC rejected for ${seller.storeName}`); },
       error: (e) => this.toast.error(e.error?.message || 'Failed')

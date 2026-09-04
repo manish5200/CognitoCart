@@ -76,9 +76,9 @@ import { ToastService } from '../../../services/toast.service';
             <tbody>
               <tr *ngFor="let o of orders">
                 <td><code style="color:var(--primary); font-size:13px; background:var(--glass-sm); padding:4px 8px; border-radius:4px;">{{o.orderNumber}}</code></td>
-                <td class="font-medium text-white">{{o.customerFirstName || '—'}}</td>
+                <td class="font-medium text-white">{{o.customerFirstName || '&#8212;'}}</td>
                 <td>{{o.orderDate | date:'mediumDate'}}</td>
-                <td>{{o.myItems?.length || '—'}}</td>
+                <td>{{o.myItems?.length || '&#8212;'}}</td>
                 <td class="text-right"><strong class="text-white">\u20B9{{o.myItemsNetTotal | number:'1.0-0'}}</strong></td>
                 <td><span class="badge" [class]="'status-' + o.orderStatus">{{o.orderStatus}}</span></td>
                 <td>
@@ -108,7 +108,7 @@ import { ToastService } from '../../../services/toast.service';
           <div class="pagination">
             <button class="page-btn" (click)="goPage(page-1)" [disabled]="page === 0">←</button>
             <button *ngFor="let p of pageArr" class="page-btn" [class.active]="p === page" (click)="goPage(p)">{{p+1}}</button>
-            <button class="page-btn" (click)="goPage(page+1)" [disabled]="page >= totalPages-1">→</button>
+            <button class="page-btn" (click)="goPage(page+1)" [disabled]="page >= totalPages-1">&#8594;</button>
           </div>
         </div>
       </div>

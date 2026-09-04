@@ -11,7 +11,7 @@ import { ToastService } from '../../../services/toast.service';
   template: `
     <div class="page">
       <div class="page-header">
-        <h1 class="page-title">📦 My Orders</h1>
+        <h1 class="page-title">&#128230; My Orders</h1>
         <p class="page-subtitle">Track all your orders and manage returns</p>
       </div>
 
@@ -19,7 +19,7 @@ import { ToastService } from '../../../services/toast.service';
 
       <div *ngIf="!loading">
         <div *ngIf="orders.length === 0" class="empty-state fade-up" style="min-height:400px;">
-          <div class="empty-icon" style="font-size:3rem; margin-bottom:16px;">📦</div>
+          <div class="empty-icon" style="font-size:3rem; margin-bottom:16px;">&#128230;</div>
           <div class="empty-title" style="font-family:var(--font-head); font-size:1.8rem; margin-bottom:8px; color:var(--text-primary);">No orders yet</div>
           <div class="empty-subtitle" style="color:var(--text-muted); margin-bottom:24px;">Start shopping to see your orders here</div>
           <a routerLink="/products" class="btn btn-primary btn-lg">Shop Now</a>
@@ -41,7 +41,7 @@ import { ToastService } from '../../../services/toast.service';
             <!-- Order Items preview -->
             <div class="order-items-preview">
               <div *ngFor="let item of order.items?.slice(0, 3)" style="display:flex; align-items:center; gap:10px; font-size:13px; color:var(--text-muted); margin-bottom:4px;">
-                <span>📦</span>
+                <span>&#128230;</span>
                 <span>{{item.productName}} × {{item.quantity}}</span>
                 <span *ngIf="item.isReturnable === false" style="background:rgba(239,68,68,0.1); color:#ef4444; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:600;">Non-Returnable</span>
               </div>
@@ -52,7 +52,7 @@ import { ToastService } from '../../../services/toast.service';
 
             <div class="order-actions">
               <a [routerLink]="['/orders', order.orderNumber || order.orderPublicId || order.publicId || order.id]" class="btn btn-secondary btn-sm">
-                View Details →
+                View Details &#8594;
               </a>
               <button *ngIf="order.status === 'PENDING' || order.status === 'CONFIRMED'"
                 class="btn btn-danger btn-sm" (click)="cancelOrder(order)">
@@ -70,7 +70,7 @@ import { ToastService } from '../../../services/toast.service';
         <div class="pagination" *ngIf="totalPages > 1">
           <button class="page-btn" (click)="loadPage(page-1)" [disabled]="page === 0">←</button>
           <button *ngFor="let p of pageArray" class="page-btn" [class.active]="p === page" (click)="loadPage(p)">{{p+1}}</button>
-          <button class="page-btn" (click)="loadPage(page+1)" [disabled]="page >= totalPages-1">→</button>
+          <button class="page-btn" (click)="loadPage(page+1)" [disabled]="page >= totalPages-1">&#8594;</button>
         </div>
       </div>
     </div>

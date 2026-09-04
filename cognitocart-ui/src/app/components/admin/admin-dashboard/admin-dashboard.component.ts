@@ -49,7 +49,7 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
               <div class="kpi-content">
                 <div class="kpi-value">{{(data?.successfulOrders || 0) + (data?.canceledOrders || 0)}}</div>
                 <div class="kpi-label">Total Orders</div>
-                <div class="kpi-change kpi-change-up">Manage →</div>
+                <div class="kpi-change kpi-change-up">Manage &#8594;</div>
               </div>
             </div>
             <div class="kpi-card kpi-card-purple fade-up fade-up-delay-2">
@@ -188,7 +188,7 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
                 </span>
                 <span class="table-count">Last {{recentOrders.length}}</span>
               </div>
-              <a routerLink="/admin/orders" class="btn btn-ghost btn-sm">View All →</a>
+              <a routerLink="/admin/orders" class="btn btn-ghost btn-sm">View All &#8594;</a>
             </div>
             <table>
               <thead>
@@ -205,7 +205,7 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
               <tbody>
                 <tr *ngFor="let o of recentOrders">
                   <td><span class="td-mono">{{o.orderNumber || o.publicId?.slice(0,8)}}</span></td>
-                  <td class="td-primary">{{o.customerName || o.customerEmail || '—'}}</td>
+                  <td class="td-primary">{{o.customerName || o.customerEmail || '&#8212;'}}</td>
                   <td style="color:var(--text-muted); font-size:12px;">{{o.orderDate | date:'MMM d, y'}}</td>
                   <td><strong style="color:var(--text-primary);">\u20B9{{(o.totalAmount || 0) | number:'1.0-0'}}</strong></td>
                   <td>
@@ -248,7 +248,7 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
               <tbody>
                 <tr *ngFor="let item of data.lowStockAlerts">
                   <td class="td-primary">{{item.productName}}</td>
-                  <td style="color:var(--text-muted);">{{item.sku || '—'}}</td>
+                  <td style="color:var(--text-muted);">{{item.sku || '&#8212;'}}</td>
                   <td><span class="badge badge-red">{{item.stockQuantity}} left</span></td>
                   <td style="color:var(--text-muted);">{{item.status || 'LOW_STOCK'}}</td>
                 </tr>

@@ -20,7 +20,7 @@ import { ProductCardComponent } from '../shared/product-card/product-card.compon
       
       <div class="hero-premium-inner">
         <div class="hero-badge fade-up">
-          <span class="sparkle">✨</span> AI-Powered Product Discovery
+          <span class="sparkle">&#10024;</span> AI-Powered Product Discovery
         </div>
         
         <h1 class="hero-title fade-up fade-up-delay-1">
@@ -65,7 +65,7 @@ import { ProductCardComponent } from '../shared/product-card/product-card.compon
           <span class="live-pulse"></span>
           <span class="gradient-text-fire" style="font-weight: 800;">Live Sales</span>
         </h2>
-        <a routerLink="/flash-sales" class="btn btn-ghost btn-sm">Explore All →</a>
+        <a routerLink="/flash-sales" class="btn btn-ghost btn-sm">Explore All &#8594;</a>
       </div>
       <div class="grid-2" style="gap: 16px;">
         <div *ngFor="let sale of liveSales; let i=index" class="sale-card fade-up" [class]="'fade-up-delay-'+((i%3)+1)">
@@ -121,7 +121,7 @@ import { ProductCardComponent } from '../shared/product-card/product-card.compon
     <section class="container section">
       <div class="section-header">
         <h2 class="section-title">⭐ Featured <span>Products</span></h2>
-        <a routerLink="/products" class="btn btn-ghost btn-sm">View All →</a>
+        <a routerLink="/products" class="btn btn-ghost btn-sm">View All &#8594;</a>
       </div>
 
       <!-- Skeleton Loading -->
@@ -133,7 +133,7 @@ import { ProductCardComponent } from '../shared/product-card/product-card.compon
       <div *ngIf="!loadingProducts && products.length === 0" class="empty-state">
         <div class="empty-icon">🛍️</div>
         <div class="empty-title">No products yet</div>
-        <div class="empty-subtitle">Check back soon — sellers are stocking up!</div>
+        <div class="empty-subtitle">Check back soon &#8212; sellers are stocking up!</div>
       </div>
 
       <!-- Product Grid -->
@@ -185,7 +185,7 @@ import { ProductCardComponent } from '../shared/product-card/product-card.compon
           </div>
           <div style="display:flex; flex-direction:column; gap:16px; flex-shrink:0;">
             <a routerLink="/register/seller" class="btn btn-primary btn-lg" style="padding: 0 32px;">Partner With Us</a>
-            <a routerLink="/login" class="btn btn-ghost btn-sm" style="text-align:center; color: var(--text-muted);">Sign in to Seller Hub →</a>
+            <a routerLink="/login" class="btn btn-ghost btn-sm" style="text-align:center; color: var(--text-muted);">Sign in to Seller Hub &#8594;</a>
           </div>
         </div>
       </div>
@@ -515,9 +515,9 @@ export class HomeComponent implements OnInit {
 
   features = [
     { icon: '🧠', title: 'Contextual AI Search', desc: 'Describe what you want naturally. Our intelligence engine understands intent, context, and nuance.' },
-    { icon: '✨', title: 'Curated Discovery', desc: 'Experience personalized recommendations that adapt to your unique preferences in real-time.' },
-    { icon: '⚡', title: 'Seamless Experience', desc: 'From search to checkout, enjoy a frictionless, high-performance interface designed for speed.' },
-    { icon: '🛡️', title: 'Secure Ecosystem', desc: 'Enterprise-grade security ensuring your transactions and data remain private and protected.' },
+    { icon: '&#10024;', title: 'Curated Discovery', desc: 'Experience personalized recommendations that adapt to your unique preferences in real-time.' },
+    { icon: '&#9889;', title: 'Seamless Experience', desc: 'From search to checkout, enjoy a frictionless, high-performance interface designed for speed.' },
+    { icon: '&#128737;️', title: 'Secure Ecosystem', desc: 'Enterprise-grade security ensuring your transactions and data remain private and protected.' },
   ];
 
   constructor(
@@ -583,8 +583,8 @@ export class HomeComponent implements OnInit {
     if (n.includes('electron') || n.includes('gadget')) return '💻';
     if (n.includes('phone') || n.includes('mobile')) return '📱';
     if (n.includes('laptop') || n.includes('computer')) return '🖥️';
-    if (n.includes('audio') || n.includes('earphone') || n.includes('headphone')) return '🎧';
-    if (n.includes('gaming') || n.includes('game')) return '🎮';
+    if (n.includes('audio') || n.includes('earphone') || n.includes('headphone')) return '&#127911;';
+    if (n.includes('gaming') || n.includes('game')) return '&#127918;';
     if (n.includes('fashion') || n.includes('cloth') || n.includes('wear')) return '👗';
     if (n.includes('shoe') || n.includes('footwear')) return '👟';
     if (n.includes('watch') || n.includes('accessory')) return '⌚';
@@ -597,6 +597,6 @@ export class HomeComponent implements OnInit {
     if (n.includes('food') || n.includes('grocery')) return '&#128722;';
     if (n.includes('jewel') || n.includes('gold')) return '💍';
     if (n.includes('festival') || n.includes('gift')) return '🎁';
-    return '📦';
+    return '&#128230;';
   }
 }

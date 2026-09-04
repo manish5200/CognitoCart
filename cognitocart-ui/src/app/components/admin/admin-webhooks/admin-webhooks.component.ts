@@ -19,7 +19,7 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
             </div>
             Webhook DLQ
           </h1>
-          <p class="page-subtitle">Failed payment events — replay to ensure zero payment loss</p>
+          <p class="page-subtitle">Failed payment events &#8212; replay to ensure zero payment loss</p>
         </div>
         <button class="btn btn-secondary" (click)="load()" style="display:flex; align-items:center; gap:6px;">
           <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:16px;height:16px;"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
@@ -58,10 +58,10 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
               <tr *ngFor="let w of webhooks" style="border-bottom:1px solid rgba(255,255,255,0.04); transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
                 <td style="padding:16px;"><code style="color:var(--primary); font-size:12px; background:rgba(99,102,241,0.1); padding:4px 8px; border-radius:4px;">{{w.publicId || w.razorpayEventId}}</code></td>
                 <td style="padding:16px;"><span class="badge badge-yellow" style="padding:4px 10px; font-size:11px;">{{w.eventType}}</span></td>
-                <td style="padding:16px;"><code style="font-size:12px; background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:4px; color:var(--text-secondary);">{{w.orderPublicId || '—'}}</code></td>
+                <td style="padding:16px;"><code style="font-size:12px; background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:4px; color:var(--text-secondary);">{{w.orderPublicId || '&#8212;'}}</code></td>
                 <td style="padding:16px; color:var(--text-secondary);">{{w.attemptCount || 1}}/3</td>
                 <td style="padding:16px; font-size:13px; color:var(--text-secondary);">{{w.lastAttemptAt | date:'medium'}}</td>
-                <td style="padding:16px; max-width:200px; font-size:12px; color:var(--danger); word-break:break-all;">{{w.lastError || '—'}}</td>
+                <td style="padding:16px; max-width:200px; font-size:12px; color:var(--danger); word-break:break-all;">{{w.lastError || '&#8212;'}}</td>
                 <td style="padding:16px;">
                   <button class="btn btn-primary btn-sm" (click)="replay(w)" [disabled]="w._replaying" style="display:flex; align-items:center; gap:6px;">
                     <svg *ngIf="!w._replaying" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347c-.75.412-1.667-.13-1.667-.986V5.653Z" /></svg>

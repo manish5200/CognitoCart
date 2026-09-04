@@ -23,7 +23,7 @@ import { ProductReturnStatusComponent } from '../../shared/product-return-status
       <div class="workspace-header">
         <div class="breadcrumb">
           <a [routerLink]="isAdmin ? '/admin/products' : '/seller/products'">{{ isAdmin ? 'All Products' : 'My Products' }}</a>
-          <span class="sep">›</span>
+          <span class="sep">&#8250;</span>
           <span class="current">{{ product?.productName || 'Loading...' }}</span>
           <app-product-return-status *ngIf="product" [isReturnable]="product.isReturnable" style="margin-left: 12px;"></app-product-return-status>
         </div>

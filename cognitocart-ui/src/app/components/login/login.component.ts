@@ -51,7 +51,7 @@ import { ToastService } from '../../services/toast.service';
               <div class="form-group">
                 <label class="form-label">Email Address</label>
                 <div class="input-wrap">
-                  <span class="input-icon">âœ‰ï¸</span>
+                  <span class="input-icon">&#9993;ï¸</span>
                   <input type="email" class="form-control" [(ngModel)]="credentials.email" name="email" required placeholder="name@company.com" autofocus>
                 </div>
               </div>

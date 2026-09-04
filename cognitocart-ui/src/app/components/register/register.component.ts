@@ -51,7 +51,7 @@ import { ToastService } from '../../services/toast.service';
               <div class="form-group">
                 <label class="form-label">Full Name</label>
                 <div class="input-wrap">
-                  <span class="input-icon">ðŸ‘¤</span>
+                  <span class="input-icon">&#128100;</span>
                   <input type="text" class="form-control" [(ngModel)]="user.fullName" name="fullName" required placeholder="John Doe" autofocus>
                 </div>
               </div>
@@ -59,7 +59,7 @@ import { ToastService } from '../../services/toast.service';
               <div class="form-group">
                 <label class="form-label">Email Address</label>
                 <div class="input-wrap">
-                  <span class="input-icon">âœ‰ï¸</span>
+                  <span class="input-icon">&#9993;ï¸</span>
                   <input type="email" class="form-control" [(ngModel)]="user.email" name="email" required placeholder="name@company.com">
                 </div>
               </div>

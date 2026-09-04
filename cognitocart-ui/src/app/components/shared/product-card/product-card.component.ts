@@ -28,7 +28,7 @@ import { RouterModule } from '@angular/router';
         />
         <div class="pc-badges">
           <span *ngIf="product.discountPercentage > 0" class="pc-badge pc-badge-discount">-{{product.discountPercentage}}%</span>
-          <span *ngIf="product.flashSaleActive" class="pc-badge pc-badge-flash">âš¡ FLASH</span>
+          <span *ngIf="product.flashSaleActive" class="pc-badge pc-badge-flash">&#9889; FLASH</span>
         </div>
         <button
           *ngIf="showWishlist"

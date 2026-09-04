@@ -50,7 +50,7 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
                 <td style="padding:16px;">
                   <code style="color:var(--primary); font-size:13px; background:rgba(99,102,241,0.1); padding:4px 8px; border-radius:4px; font-weight:600;">{{o.orderNumber || o.publicId?.slice(0,8)}}</code>
                 </td>
-                <td style="padding:16px; font-size:14px; font-weight:500; color:#fff;">{{o.customerName || o.customerEmail || '—'}}</td>
+                <td style="padding:16px; font-size:14px; font-weight:500; color:#fff;">{{o.customerName || o.customerEmail || '&#8212;'}}</td>
                 <td style="padding:16px; font-size:13px; color:var(--text-secondary);">{{o.orderDate | date:'MMM d, yyyy'}}</td>
                 <td style="padding:16px; font-size:14px;"><strong style="color:var(--text-primary);">\u20B9{{o.totalAmount | number:'1.0-0'}}</strong></td>
                 <td style="padding:16px;">
@@ -90,7 +90,7 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
             </div>
             <div style="display:flex; gap:12px;">
               <button class="btn btn-secondary btn-sm" [disabled]="page === 0" (click)="prevPage()">← Previous</button>
-              <button class="btn btn-secondary btn-sm" [disabled]="orders.length < size" (click)="nextPage()">Next →</button>
+              <button class="btn btn-secondary btn-sm" [disabled]="orders.length < size" (click)="nextPage()">Next &#8594;</button>
             </div>
           </div>
         </div>
@@ -100,7 +100,7 @@ import { AdminShellComponent } from '../admin-shell/admin-shell.component';
       <div class="modal-backdrop" *ngIf="shipmentOrder" (click)="shipmentOrder = null">
         <div class="modal" (click)="$event.stopPropagation()">
           <div class="modal-header">
-            <span class="modal-title">&#128666; Attach Shipment — {{shipmentOrder?.orderNumber}}</span>
+            <span class="modal-title">&#128666; Attach Shipment &#8212; {{shipmentOrder?.orderNumber}}</span>
             <button class="btn-icon" (click)="shipmentOrder = null">✕</button>
           </div>
           <div class="modal-body">
@@ -196,7 +196,7 @@ export class AdminOrdersComponent implements OnInit {
       return;
     }
     this.adminService.changeOrderStatus(id, status).subscribe({
-      next: () => { order.status = status; this.toast.success(`Status → ${status}`); event.target.value = ''; },
+      next: () => { order.status = status; this.toast.success(`Status &#8594; ${status}`); event.target.value = ''; },
       error: (e) => { this.toast.error(e.error?.message || 'Update failed'); event.target.value = ''; }
     });
   }
