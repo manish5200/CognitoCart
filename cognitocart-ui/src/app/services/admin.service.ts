@@ -114,10 +114,10 @@ export class AdminService {
 
   // ─── Reviews ───
   getAllReviews(page = 0, size = 20): Observable<any> {
-    return this.http.get(`${environment.apiUrl}/api/v1/reviews/admin/all?page=${page}&size=${size}`);
+    return this.http.get(`${environment.apiUrl}/reviews/admin/all?page=${page}&size=${size}`);
   }
 
   deleteReview(reviewPublicId: string): Observable<any> {
-    return this.http.delete(`${environment.apiUrl}/api/v1/reviews/admin/${reviewPublicId}`);
+    return this.http.delete(`${environment.apiUrl}/reviews/admin/${reviewPublicId}`);
   }
 }

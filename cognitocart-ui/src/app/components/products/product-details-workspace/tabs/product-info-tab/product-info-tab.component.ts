@@ -1,6 +1,7 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ProductService } from '../../../../../services/product.service';
 
 @Component({
   selector: 'app-product-info-tab',
@@ -20,9 +21,9 @@ import { FormsModule } from '@angular/forms';
             
             <div class="form-group">
               <label class="form-label">Category</label>
-              <select class="form-select" [(ngModel)]="product.categoryId">
+              <select class="form-select" [(ngModel)]="product.categoryId" (change)="onCategoryChange($event)">
                 <option [value]="product.categoryId">{{product.categoryName || 'Select Category'}}</option>
-                <!-- Populate dynamically later -->
+                <option *ngFor="let cat of flatCategories" [value]="cat.publicId">{{ cat.name }}</option>
               </select>
             </div>
 
@@ -54,8 +55,40 @@ import { FormsModule } from '@angular/forms';
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   `]
 })
-export class ProductInfoTabComponent {
+export class ProductInfoTabComponent implements OnInit {
   @Input() product: any = {};
+  categories: any[] = [];
+  flatCategories: any[] = [];
+
+  constructor(private productService: ProductService) {}
+
+  ngOnInit() {
+    this.productService.getCategories().subscribe({
+      next: (res) => {
+        this.categories = res;
+        this.flattenCategories(this.categories);
+      }
+    });
+  }
+
+  flattenCategories(categories: any[], prefix = '') {
+    for (const cat of categories) {
+      this.flatCategories.push({
+        publicId: cat.publicId,
+        name: prefix + cat.name
+      });
+      if (cat.subCategories && cat.subCategories.length > 0) {
+        this.flattenCategories(cat.subCategories, prefix + cat.name + ' > ');
+      }
+    }
+  }
+
+  onCategoryChange(event: any) {
+    const selected = this.flatCategories.find(c => c.publicId === this.product.categoryId);
+    if (selected) {
+      this.product.categoryName = selected.name.split(' > ').pop();
+    }
+  }
 
   get tagsString(): string {
     return this.product.tags ? this.product.tags.join(', ') : '';
