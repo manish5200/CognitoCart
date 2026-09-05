@@ -974,7 +974,7 @@ export class SellerProductsComponent implements OnInit {
         countryOfOrigin: 'India',
         condition: 'NEW',
         productType: 'PHYSICAL',
-        isDraft: false,
+        isDraft: true,
         variants: variantsList
       };
 
@@ -1026,7 +1026,11 @@ export class SellerProductsComponent implements OnInit {
         }
       }
 
-      this.toast.success('Product published successfully!');
+      // 5. Submit for Review
+      // Now that all images and variants are attached to the draft, we submit it
+      await this.productService.submitForReview(pId).toPromise();
+
+      this.toast.success('Product submitted for review successfully!');
       this.fetchProducts(); // Refresh list
       this.showForm = false;
     } catch (e: any) {

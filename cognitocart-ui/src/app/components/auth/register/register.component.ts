@@ -6,6 +6,7 @@ import { AuthService } from '../../../services/auth.service';
 import { ToastService } from '../../../services/toast.service';
 import { AuthLayoutComponent } from '../auth-layout.component';
 import { GoogleBtnComponent } from '../google-btn.component';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-register',
@@ -349,6 +350,7 @@ export class RegisterComponent {
     this.oauthLoading = true;
     
     // Redirect to the existing backend Google OAuth initiation endpoint
-    window.location.href = 'https://cognitocart-api.onrender.com/oauth2/authorization/google';
+    const baseUrl = environment.apiUrl.replace('/api/v1', '');
+    window.location.href = `${baseUrl}/oauth2/authorization/google`;
   }
 }

@@ -4,11 +4,12 @@ import { RouterLink } from '@angular/router';
 import { WishlistService } from '../../../services/wishlist.service';
 import { CartService } from '../../../services/cart.service';
 import { ToastService } from '../../../services/toast.service';
+import { ProductCardComponent } from '../../shared/product-card/product-card.component';
 
 @Component({
   selector: 'app-wishlist',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, ProductCardComponent],
   template: `
     <div class="page">
       <div class="page-header">
@@ -42,23 +43,16 @@ import { ToastService } from '../../../services/toast.service';
         </div>
 
         <div class="grid-4" *ngIf="items.length > 0">
-          <div *ngFor="let item of items" class="product-card">
-            <div class="product-img-wrapper" [routerLink]="['/product', item.productSlug || item.productPublicId]">
-              <img [src]="item.productImageUrl || 'https://via.placeholder.com/400'" [alt]="item.productName" class="product-img" />
-              <button class="wishlist-btn active" (click)="remove(item, $event)" title="Remove from wishlist" style="display:flex; align-items:center; justify-content:center;">
-                <svg fill="currentColor" viewBox="0 0 24 24" style="width:16px;height:16px;color:var(--danger);"><path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" /></svg>
-              </button>
-            </div>
-            <div class="product-info">
-              <div class="product-name">{{item.productName}}</div>
-              <div class="product-price">\u20B9{{item.currentPrice | number:'1.0-0'}}</div>
-            </div>
-            <div class="product-card-footer" style="display:flex; gap:8px;">
-              <button class="btn btn-primary btn-sm" style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px;" (click)="moveToCart(item)">
-                <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" /></svg>
-                Move to Cart
-              </button>
-            </div>
+          <div *ngFor="let item of items" style="position: relative; display: flex; flex-direction: column; gap: 8px;">
+            <app-product-card 
+              [product]="item" 
+              [showWishlist]="true" 
+              (toggleWishlist)="remove(item, $event)">
+            </app-product-card>
+            <button class="btn btn-primary btn-sm" style="width: 100%; display:flex; align-items:center; justify-content:center; gap:6px;" (click)="moveToCart(item)">
+              <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" /></svg>
+              Move to Cart
+            </button>
           </div>
         </div>
 
@@ -87,7 +81,13 @@ export class WishlistComponent implements OnInit {
 
   load(): void {
     this.wishlistService.getWishlist().subscribe({
-      next: (res) => { this.items = res.items ?? res ?? []; this.loading = false; },
+      next: (res) => { 
+        this.items = (res as any).items ?? res ?? [];
+        // Wishlist API returns ProductResponse instances, map `isWishlisted` explicitly
+        // so the heart button on the app-product-card is correctly filled in.
+        this.items = this.items.map(item => ({...item, isWishlisted: true}));
+        this.loading = false; 
+      },
       error: () => { this.loading = false; }
     });
   }

@@ -1,4 +1,4 @@
-﻿import { Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
@@ -6,6 +6,7 @@ import { AuthService } from '../../../services/auth.service';
 import { ToastService } from '../../../services/toast.service';
 import { AuthLayoutComponent } from '../auth-layout.component';
 import { GoogleBtnComponent } from '../google-btn.component';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -317,7 +318,8 @@ export class LoginComponent {
     
     // Redirect to the existing backend Google OAuth initiation endpoint
     // We use the standard Spring Security path
-    window.location.href = 'https://cognitocart-api.onrender.com/oauth2/authorization/google';
+    const baseUrl = environment.apiUrl.replace('/api/v1', '');
+    window.location.href = `${baseUrl}/oauth2/authorization/google`;
   }
 
   private getRedirect(role: string): string {

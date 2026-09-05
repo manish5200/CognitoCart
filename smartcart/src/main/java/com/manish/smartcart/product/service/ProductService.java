@@ -100,9 +100,23 @@ public class ProductService {
             product.setIsAvailable(false); // Must remain false until Admin sets to APPROVED
         }
 
-        // 6. Save Product Parent First (Required to get DB ID for variants and
-        // embeddings)
+        // 6. Save Product Parent First (Required to get DB ID for variants and embeddings)
         Product savedProduct = productRepository.save(product);
+
+        // 6.5. Generate audit log if it bypassed DRAFT status
+        if (!Boolean.TRUE.equals(productRequest.getIsDraft())) {
+            ProductModerationHistory history = ProductModerationHistory.builder()
+                    .product(savedProduct)
+                    .adminId(null)
+                    .actorType(ActorType.SELLER)
+                    .action(ModerationAction.SUBMITTED)
+                    .approvalStatusFrom(null)
+                    .approvalStatusTo(ProductApprovalStatus.PENDING_REVIEW)
+                    .reason("Seller submitted product for administrative review during creation.")
+                    .build();
+            productModerationHistoryRepository.save(history);
+            log.info("Recorded initial moderation history for product ID: {}", savedProduct.getId());
+        }
 
         // 7. Dynamic Variant Processing
         if (productRequest.getVariants() == null || productRequest.getVariants().isEmpty()) {

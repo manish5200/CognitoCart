@@ -47,7 +47,9 @@ import { RouterModule } from '@angular/router';
         <div class="pc-brand-row">
           <span class="pc-brand">{{product.brand || product.categoryName || 'General'}}</span>
           <div class="pc-rating" *ngIf="product.averageRating">
-            <span class="pc-stars">&#9733;</span>
+            <span class="pc-stars">
+              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            </span>
             <span class="pc-rating-val">{{product.averageRating | number:'1.1-1'}}</span>
             <span class="pc-review-count">({{product.totalReviews || 0}})</span>
           </div>
@@ -267,6 +269,6 @@ export class ProductCardComponent {
     if (cat.includes('home') || cat.includes('decor')) {
       return `https://placehold.co/400x400/1e293b/10b981?text=Home`;
     }
-    return `https://placehold.co/400x400/1e293b/6366f1?text=${name}`;
+    return `https://placehold.co/400x400/1e293b/6366f1?text=No+Image`;
   }
 }
