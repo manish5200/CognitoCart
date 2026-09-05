@@ -148,9 +148,9 @@ export class ProductVariantsTabComponent implements OnInit {
     variant.saving = true;
     const payload = {
       sku: variant.sku,
-      size: variant.displayLabel, // Assuming size/color mappings for displayLabel
+      attributes: { 'Label': variant.displayLabel }, // Send as attributes map
       priceAdjustment: variant.priceAdjustment,
-      initialStock: variant.stockQuantity // For new variants
+      stockQuantity: variant.stockQuantity // Fix property name
     };
 
     if (variant.isNew) {

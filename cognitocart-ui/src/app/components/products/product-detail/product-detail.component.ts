@@ -190,15 +190,15 @@ import { AuthService } from '../../../services/auth.service';
                 <span class="icon">&#128722;</span> {{addingToCart ? 'Adding to Cart...' : 'Add to Cart'}}
               </button>
               <button class="btn btn-secondary btn-block btn-wishlist" (click)="toggleWishlist()">
-                <span class="icon">{{wishlisted ? 'â¤ï¸' : '&#9825;'}}</span> {{wishlisted ? 'Saved to Wishlist' : 'Add to Wishlist'}}
+                <span class="icon">{{wishlisted ? 'â ¤ï¸ ' : '&#9825;'}}</span> {{wishlisted ? 'Saved to Wishlist' : 'Add to Wishlist'}}
               </button>
             </div>
 
             <div class="rp-box" *ngIf="returnPolicy">
               <div class="rp-title">
-                <span class="icon">&#8617;ï¸</span> {{returnPolicy.policyType}}
+                <span class="icon">&#8617;ï¸ </span> {{formatPolicyType(returnPolicy.policyType)}}
               </div>
-              <div class="rp-desc">{{returnPolicy.windowDays}} days return window. {{returnPolicy.description}}</div>
+              <div class="rp-desc">{{returnPolicy.returnWindowDays}} days return window.</div>
             </div>
             <div class="rp-box" *ngIf="!returnPolicy">
               <div class="rp-title" style="color:var(--text-muted);">
@@ -356,7 +356,7 @@ import { AuthService } from '../../../services/auth.service';
     .vendor-details { margin-top: 24px; border-top: 1px solid var(--border-default); padding-top: 24px; }
     .vendor-details summary { font-size: 16px; font-weight: 700; color: var(--text-primary); cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; }
     .vendor-details summary::-webkit-details-marker { display: none; }
-    .vendor-details summary::after { content: '&#9662;'; font-size: 18px; color: var(--text-muted); transition: 0.3s; }
+    .vendor-details summary::after { content: '\25BE'; font-size: 18px; color: var(--text-muted); transition: 0.3s; }
     .vendor-details[open] summary::after { transform: rotate(180deg); }
     .vd-content { padding-top: 16px; display: flex; flex-direction: column; gap: 16px; }
     .vd-item { display: flex; flex-direction: column; gap: 4px; }
@@ -579,6 +579,15 @@ export class ProductDetailComponent implements OnInit {
       next: (res: any) => { this.wishlisted = !this.wishlisted; this.toast.info(res.Status || 'Wishlist updated'); },
       error: () => this.toast.error('Failed')
     });
+  }
+
+  formatPolicyType(type: string): string {
+    if (!type) return '';
+    return type.replace(/_/g, ' ')
+               .toLowerCase()
+               .split(' ')
+               .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+               .join(' ');
   }
 
   submitReview(): void {
